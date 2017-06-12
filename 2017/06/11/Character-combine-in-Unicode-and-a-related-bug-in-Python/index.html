@@ -5,17 +5,17 @@
   
   <title>Unicode中的【合字】现象以及Python中的相关Bug | IdeaWand</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器的显示效果可能不同。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक्ष में एकजुट: आजम ख">
+  <meta name="description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Unicode中的【合字】现象以及Python中的相关Bug">
 <meta property="og:url" content="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/index.html">
 <meta property="og:site_name" content="IdeaWand">
-<meta property="og:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器的显示效果可能不同。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक्ष में एकजुट: आजम ख">
+<meta property="og:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक">
 <meta property="og:image" content="https://i.creativecommons.org/l/by-sa/4.0/88x31.png">
-<meta property="og:updated_time" content="2017-06-12T02:31:29.000Z">
+<meta property="og:updated_time" content="2017-06-12T02:40:19.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Unicode中的【合字】现象以及Python中的相关Bug">
-<meta name="twitter:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器的显示效果可能不同。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक्ष में एकजुट: आजम ख">
+<meta name="twitter:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक">
 <meta name="twitter:image" content="https://i.creativecommons.org/l/by-sa/4.0/88x31.png">
   
     <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
@@ -92,7 +92,7 @@
     <div class="article-entry" itemprop="articleBody">
       
         <ul>
-<li>注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器的显示效果可能不同。</li>
+<li>注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。</li>
 </ul>
 <p>最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  <code>\w+</code>  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。</p>
 <p>输入内容为：</p>
@@ -119,7 +119,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3tio5mm000052j6an44b88b" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3tjngdu0000tbj6tlmy8b8k" class="article-share-link">Share</a>
       
       
     </footer>
