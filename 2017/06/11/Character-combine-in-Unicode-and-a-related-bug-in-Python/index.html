@@ -12,7 +12,7 @@
 <meta property="og:site_name" content="IdeaWand">
 <meta property="og:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक">
 <meta property="og:image" content="https://i.creativecommons.org/l/by-sa/4.0/88x31.png">
-<meta property="og:updated_time" content="2017-06-12T02:40:19.000Z">
+<meta property="og:updated_time" content="2017-06-12T03:00:28.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Unicode中的【合字】现象以及Python中的相关Bug">
 <meta name="twitter:description" content="注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。  最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  \w+  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。 输入内容为： 1u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक">
@@ -107,6 +107,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">In [<span class="number">154</span>]: <span class="keyword">print</span> a[<span class="number">0</span>]</div><div class="line">म</div><div class="line"></div><div class="line">In [<span class="number">155</span>]: <span class="keyword">print</span> a[<span class="number">1</span>]</div><div class="line"> े</div><div class="line"></div><div class="line">In [<span class="number">156</span>]: <span class="keyword">print</span> a[<span class="number">2</span>]</div><div class="line"> ं</div></pre></td></tr></table></figure>
 <p>后两个字符，下面是一个虚线画出的圆圈占位符，这种符号可以和前面的字母组合为新的显示形式，组合后，原来的虚线圆环就不会再显示了。</p>
 <p>这种现象，个人感觉非常类似用汉字中的偏旁部首来描述一个汉字的感觉。<br>接下来，按照这个思路，我们可以自己造一个符号出来 ;)</p>
+<p>下面的这个示例，输出应该为1个字符A，并且字符A的上面有一个 从左上至右下的斜杠以及一个点 组成的上标。如果浏览器显示为两个字符或者三个字符，则说明显示问题。复制该段代码到Python中执行，在我的OSX操作系统上可以看到正确的输出。</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">In [<span class="number">260</span>]: a = <span class="string">u'\u0041\u0947\u0902'</span></div><div class="line"></div><div class="line">In [<span class="number">261</span>]: <span class="keyword">print</span> a</div><div class="line">Aें</div></pre></td></tr></table></figure>
 <p>下面，问题来了，看看Python的自带正则表达式模块re是怎么处理这种字符的</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">In [<span class="number">157</span>]: re.findall(<span class="string">r'\w+'</span>,a,re.UNICODE)</div><div class="line">Out[<span class="number">157</span>]: [<span class="string">u'\u092e’]</span></div></pre></td></tr></table></figure>
@@ -119,7 +120,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3tjngdu0000tbj6tlmy8b8k" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3tjwzbd0000xjj69l1684bd" class="article-share-link">Share</a>
       
       
     </footer>
