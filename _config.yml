@@ -68,6 +68,6 @@ theme: landscape
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  type:git
-  repo:https://github.com/myrfy001/blog.ideawand.com.git
-  branch:master
+  type: git
+  repo: https://github.com/myrfy001/blog.ideawand.com.git
+  branch: master
