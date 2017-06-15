@@ -3,14 +3,18 @@
 <head>
   <meta charset="utf-8">
   
-  <title>Archives: 2017/6 | IdeaWand</title>
+  <title>树莓派驱动学习笔记(1) | IdeaWand</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="website">
-<meta property="og:title" content="IdeaWand">
-<meta property="og:url" content="http://yoursite.com/archives/2017/06/index.html">
+  <meta name="description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
+<meta property="og:type" content="article">
+<meta property="og:title" content="树莓派驱动学习笔记(1)">
+<meta property="og:url" content="http://yoursite.com/2015/07/04/raspberrypi-driver-develope-study-note-1/index.html">
 <meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
+<meta property="og:updated_time" content="2017-06-15T05:32:10.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="IdeaWand">
+<meta name="twitter:title" content="树莓派驱动学习笔记(1)">
+<meta name="twitter:description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
   
     <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
   
@@ -63,58 +67,64 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main">
-  
-  
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" class="archive-article-date">
-  <time datetime="2017-06-11T14:46:46.000Z" itemprop="datePublished">Jun 11</time>
+        <section id="main"><article id="post-raspberrypi-driver-develope-study-note-1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/04/raspberrypi-driver-develope-study-note-1/" class="article-date">
+  <time datetime="2015-07-04T05:22:17.000Z" itemprop="datePublished">2015-07-04</time>
 </a>
-      
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/">Unicode中的【合字】现象以及Python中的相关Bug</a>
+    <h1 class="article-title" itemprop="name">
+      树莓派驱动学习笔记(1)
     </h1>
   
 
-    </header>
-  </div>
-</article>
-  
+      </header>
     
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      <a href="/2017/06/10/hello-world/" class="archive-article-date">
-  <time datetime="2017-06-10T10:01:35.000Z" itemprop="datePublished">Jun 10</time>
-</a>
+    <div class="article-entry" itemprop="articleBody">
       
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/06/10/hello-world/">Hello World</a>
-    </h1>
-  
+        <p>以下内容来自阅读<a href="http://elinux.org/RPi_Software" target="_blank" rel="external">http://elinux.org/RPi_Software</a>的总结</p>
+<p>树莓派的启动：</p>
+<p><strong><em>在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路</em></strong></p>
+<hr>
+<p>First stage bootloader：从SD卡读取Second stage bootloader</p>
+<p>Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU</p>
+<p>GPU firmware (start.elf)：在这个固件中，GPU来启动CPU。</p>
+<p>User code：最后…………CPU开始执行的用户程序</p>
+<p>以上文件在firmware/boot/目录下，其中_cd表示cutdown,是裁剪版；_x是测试版</p>
 
-    </header>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/07/04/raspberrypi-driver-develope-study-note-1/" data-id="cj3xzlvpg0001sej69ac0wjg0" class="article-share-link">Share</a>
+      
+      
+    </footer>
   </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2017/06/10/hello-world/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Hello World
+        
+      </div>
+    </a>
+  
+  
+</nav>
+
+  
 </article>
-  
-  
-    </div></section>
-  
 
 </section>
         

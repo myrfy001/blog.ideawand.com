@@ -52,9 +52,9 @@
       </nav>
       <nav id="sub-nav">
         
-          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="Flux RSS"></a>
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Rechercher"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
@@ -116,7 +116,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3tk0bj600001jj6fdlyohbj" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" data-id="cj3xzlvpb0000sej61unxflc4" class="article-share-link">Share</a>
       
       
     </footer>
@@ -161,7 +161,52 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2017/06/10/hello-world/" data-id="cj3tk0bjb00011jj6p16u4kgp" class="article-share-link">Partager</a>
+      <a data-url="http://yoursite.com/2017/06/10/hello-world/" data-id="cj3xzlvpj0002sej6opjvvyr8" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-raspberrypi-driver-develope-study-note-1" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2015/07/04/raspberrypi-driver-develope-study-note-1/" class="article-date">
+  <time datetime="2015-07-04T05:22:17.000Z" itemprop="datePublished">2015-07-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2015/07/04/raspberrypi-driver-develope-study-note-1/">树莓派驱动学习笔记(1)</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>以下内容来自阅读<a href="http://elinux.org/RPi_Software" target="_blank" rel="external">http://elinux.org/RPi_Software</a>的总结</p>
+<p>树莓派的启动：</p>
+<p><strong><em>在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路</em></strong></p>
+<hr>
+<p>First stage bootloader：从SD卡读取Second stage bootloader</p>
+<p>Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU</p>
+<p>GPU firmware (start.elf)：在这个固件中，GPU来启动CPU。</p>
+<p>User code：最后…………CPU开始执行的用户程序</p>
+<p>以上文件在firmware/boot/目录下，其中_cd表示cutdown,是裁剪版；_x是测试版</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2015/07/04/raspberrypi-driver-develope-study-note-1/" data-id="cj3xzlvpg0001sej69ac0wjg0" class="article-share-link">Share</a>
       
       
     </footer>
@@ -188,7 +233,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/06/">June 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2015/07/">July 2015</a></li></ul>
     </div>
   </div>
 
@@ -196,7 +241,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Articles récents</h3>
+    <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
         
@@ -206,6 +251,10 @@
         
           <li>
             <a href="/2017/06/10/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2015/07/04/raspberrypi-driver-develope-study-note-1/">树莓派驱动学习笔记(1)</a>
           </li>
         
       </ul>
@@ -221,7 +270,7 @@
   <div class="outer">
     <div id="footer-info" class="inner">
       &copy; 2017 Myrfy<br>
-      Propulsé by <a href="http://hexo.io/" target="_blank">Hexo</a>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
 </footer>
