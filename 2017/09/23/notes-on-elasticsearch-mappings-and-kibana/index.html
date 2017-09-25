@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Elasticsearch,存储优化," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="0x00 背景介绍最近尝试用ES + Kibana来快速搭建一个全新的可视化平台，有机会仔细阅读了一下ES的文档，发现mapping里有很多设置选项，初次看时令人眼花缭乱，若设置不当，有可能浪费存储空间，也有可能导致无法使用Aggregations，故在此记录一下重点内容。如有错误，恳请点击这里提issue,我会及时改正。 本文参照的版本为 Elasticsearch 5.6">
+<meta name="keywords" content="Elasticsearch,存储优化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？">
+<meta property="og:url" content="http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="0x00 背景介绍最近尝试用ES + Kibana来快速搭建一个全新的可视化平台，有机会仔细阅读了一下ES的文档，发现mapping里有很多设置选项，初次看时令人眼花缭乱，若设置不当，有可能浪费存储空间，也有可能导致无法使用Aggregations，故在此记录一下重点内容。如有错误，恳请点击这里提issue,我会及时改正。 本文参照的版本为 Elasticsearch 5.6">
+<meta property="og:updated_time" content="2017-09-25T15:15:28.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？">
+<meta name="twitter:description" content="0x00 背景介绍最近尝试用ES + Kibana来快速搭建一个全新的可视化平台，有机会仔细阅读了一下ES的文档，发现mapping里有很多设置选项，初次看时令人眼花缭乱，若设置不当，有可能浪费存储空间，也有可能导致无法使用Aggregations，故在此记录一下重点内容。如有错误，恳请点击这里提issue,我会及时改正。 本文参照的版本为 Elasticsearch 5.6">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: 'Author'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/"/>
+
+
+
+
+
+  <title>Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？ | IdeaWand</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="en">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-09-23T16:32:28+08:00">
+                2017-09-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="0x00-背景介绍"><a href="#0x00-背景介绍" class="headerlink" title="0x00 背景介绍"></a>0x00 背景介绍</h2><p>最近尝试用ES + Kibana来快速搭建一个全新的可视化平台，有机会仔细阅读了一下ES的文档，发现mapping里有很多设置选项，初次看时令人眼花缭乱，若设置不当，有可能浪费存储空间，也有可能导致无法使用Aggregations，故在此记录一下重点内容。如有错误，恳请<a href="https://github.com/myrfy001/blog.ideawand.com" target="_blank" rel="external">点击这里提issue</a>,我会及时改正。</p>
+<p>本文参照的版本为 Elasticsearch 5.6</p>
+<a id="more"></a>
+<h2 id="0x01-配置项速查"><a href="#0x01-配置项速查" class="headerlink" title="0x01 配置项速查"></a>0x01 配置项速查</h2><p>这里列出了各个选项的名称、作用以及注意事项，仅供速查使用。详细解释请阅读下文。</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>作用</th>
+<th>注意事项</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>index</td>
+<td>是否加入倒排索引</td>
+<td><ul><li>关闭后无法对其进行搜索</li><li> 字段仍会存储到_source和doc_values</li><li> 字段可以被排序和聚合</li></ul></td>
+<td>开启</td>
+</tr>
+<tr>
+<td>_source</td>
+<td>存储post到ES的原始文档</td>
+<td><ul><li>会占用很多存储空间。</li><li>数据压缩存储，读取会有额外解压开销</li><li>不需要读取原始字段内容可以考虑关闭</li><li>关闭后无法reindex</li></ul></td>
+<td>开启</td>
+</tr>
+<tr>
+<td>_all</td>
+<td>提供跨字段全文检索</td>
+<td><ul><li>会占用额外存储空间</li><li>没有跨字段全文检索需求可以关闭</li></ul></td>
+<td>开启</td>
+</tr>
+<tr>
+<td>store</td>
+<td>是否单独存储该field</td>
+<td><ul><li>会占用额外存储空间</li><li>与_source独立，同时开启store和_source则会将该字段原始内容保存两份</li><li>字段单独存储，数据在磁盘上不连续，若读取多个字段需要seek多次</li><li>如需读取多个字段，需权衡比较_source与store效率</li></ul></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>doc_values</td>
+<td>排序聚合支持</td>
+<td><ul><li>会占用额外存储空间</li><li>与_source独立，同时开启doc_values和_source则会将该字段原始内容保存两份</li><li>数据在磁盘上采用列式存储</li><li>关闭后无法使用排序和聚合</li></ul></td>
+<td>开启</td>
+</tr>
+<tr>
+<td><s>fielddata</s></td>
+<td>doc_values的前身</td>
+<td>已废弃</td>
+<td></td>
+</tr>
+<tr>
+<td>term_vector</td>
+<td>记录分词信息</td>
+<td><ul><li>会占用额外存储空间</li><li>highlight功能可以借助其加速</li></ul></td>
+<td>关闭</td>
+</tr>
+<tr>
+<td>enabled</td>
+<td>是否对该字段进行处理</td>
+<td><ul><li>关闭后，只在_source中存储</li><li>类似index与doc_value的总开关</li></ul></td>
+<td>开启</td>
+</tr>
+</tbody>
+</table>
+<h2 id="0x02-冗余的存储–概述"><a href="#0x02-冗余的存储–概述" class="headerlink" title="0x02 冗余的存储–概述"></a>0x02 冗余的存储–概述</h2><p>众所周知，ES是以其全文检索功能而著名的，提到全文检索，大家的反应就是倒排索引；事实上，<strong>一个输入的文档会被ES以多种方式进行存储</strong>，从而使得ES在全文检索外还支持排序、聚合等功能。</p>
+<p>ES的检索功能在底层使用的是Lucene，根据<a href="https://www.elastic.co/blog/elasticsearch-as-a-column-store" target="_blank" rel="external">[1]</a>描述，Lucene的索引包含以下部分：</p>
+<blockquote>
+<p>A Lucene index is made of several components: an inverted index, a bkd tree, a column store (doc values), a document store (stored fields) and term vectors.</p>
+</blockquote>
+<p>其中：</p>
+<ul>
+<li>inverted index: 倒排索引，不用多说。</li>
+<li>bkd tree: Block k-d tree，用于在高维空间内做索引，如地理坐标的索引。</li>
+<li>column store: 列式存储，可以充分利用操作系统的缓存，批量读取连续的数据以提高排序和聚合的效率。（说道列式存储，联想到了Cassandra）</li>
+<li>document store: 用于存储文档，功能和_source字段有重合，下文详细介绍区别。</li>
+<li>term vectors: 用于存储各个词在文档中出现的位置等信息。</li>
+</ul>
+<p>在很多场合下，我们并不需要上述全部信息，因此可以通过设置mappings里面的属性来控制哪些是我们需要存储的，哪些不需要。</p>
+<h2 id="0x03-冗余的存储–深入"><a href="#0x03-冗余的存储–深入" class="headerlink" title="0x03 冗余的存储–深入"></a>0x03 冗余的存储–深入</h2><p>在ES的mapping设置里，有如下parameters和eta-Fields可以设置，每一项都对应着一种存储形式：</p>
+<ul>
+<li>index</li>
+<li>_source</li>
+<li>_all</li>
+<li>store</li>
+<li>doc_values</li>
+<li>fielddata</li>
+<li>term_vector</li>
+<li>enabled</li>
+</ul>
+<p>上述列表中的项目是在配置mappings时经常遇到的，其中有部分选项看似功能相似，实则不同，我们慢慢来分析：</p>
+<h4 id="index"><a href="#index" class="headerlink" title="index"></a><code>index</code></h4><p>这个属性用于控制一个字段是否需要被索引，默认情况下是开启的。如果关闭了index，则该字段的内容不会被analyze, 也不会存入倒排索引，即意味着该字段无法被搜索。</p>
+<h4 id="source"><a href="#source" class="headerlink" title="_source"></a><code>_source</code></h4><p>这个字段的作用是存储post到API接口的原始json文档。为什么要存储原始文档呢？因为ES采用倒排索引对文本进行搜索，而倒排索引无法存储原始输入文本。简单来说，一段文本交给ES后，首先会被analyzer打散成单词，为了保证搜索的准确性，在打散的过程中，会去除文本中的标点符号，统一文本的大小写，甚至对于英文等主流语言，会把发生形式变化的单词恢复成原型或词根，然后再根据统一规整之后的单词建立倒排索引，经过如此一番处理，原文已经面目全非，因此需要有一个地方来存储原始的信息，以便在所搜到这篇文档的时候能够把原文返回给查询者。那么：</p>
+<ul>
+<li>一定要存储原始文档吗？ 不一定！ 如果只关心一篇文档是否存在，而不关心这个文档的内容，可以选择不保存_source字段。</li>
+<li>可以只保存原始文档的一部分到_source里面吗？ 可以，ES提供了过滤规则，可以只将一部分字段存入_source中。</li>
+</ul>
+<p>如果不存储_source或仅存储部分内容，可以大量减小ES的存储占用量。但是，这样做有负面影响吗？ 有！</p>
+<ul>
+<li>不能获取到原文（废话）</li>
+<li>无法reindex：如果存储了_source，当index发生损坏，或需要改变mapping结构时，由于存在原始数据，ES可以通过原始数据自动重建index，如果不存_source则无法实现</li>
+<li>无法在查询中使用script：因为script需要访问_source中的字段。</li>
+</ul>
+<h4 id="all"><a href="#all" class="headerlink" title="_all"></a><code>_all</code></h4><p>这个字段的作用是提供跨字段查询的支持。ES在查询的过程中，需要指定在哪一个field里面查询。例如下面的文档<br><figure class="highlight json"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&#123;</div><div class="line">    <span class="attr">"name"</span>: <span class="string">"smith"</span>,</div><div class="line">    <span class="attr">"email"</span>: <span class="string">"John@example.com"</span></div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>用户在查询时，想查询叫做John的人，但是并不知道这个John出现在<code>name</code>字段中还是出现在<code>email</code>字段中，由于ES是为每一个字段单独建立索引，所以用户需要以John为关键词发起两次查询，分别查询<code>name</code>字段和<code>email</code>字段。<br>如果开启了_all字段，则ES会在索引过程中创建一个虚拟的字段_all，其值为文档中各个字段拼接起来所组成的一个很长的字符串，例如上面的例子，_all字段的内容为字符串”smith John@example.com”。随后，该字段将被分词打散，与其他字段一样被收入倒排索引中。由于该字段的内容都来自_source字段，因此默认情况下，该字段的内容并不会被保存，可以通过设置store属性来强制保存_all字段。<br>由于_all字段包含了所有字段的信息，因此可以实现跨字段的查询，即用户不用关心要查询的关键词在哪个字段中，ES可以将包含该关键词的文档全部检索出来，又用户进行下一步分析。</p>
+<ul>
+<li>开启_all字段，会带来额外的CPU开销和存储，如果没有使用到，可以关闭_all字段。</li>
+</ul>
+<h4 id="store"><a href="#store" class="headerlink" title="store"></a><code>store</code></h4><p>这个属性的作用是决定一个字段是否要被store，大家可能会有疑问，_source里面不是已经存储了原始的文档嘛，为什么还需要一个额外的store属性呢？原因如下：</p>
+<ul>
+<li>如果禁用了_source保存，可以通过指定store属性来单独保存某个或某几个字段，而不是将整个输入文档保存到_source中。</li>
+<li>如果_source中有长度很长的文本（如一篇文章）和较短的文本（如文章标题），当只需要取出标题时，如果使用_source字段，ES需要读取整个_source字段，然后返回其中的title，由此会引来额外的IO开销，降低效率。此时可以选择将title的store设置为true，在_source字段外单独存储一份。读取时不必在读取整个_source字段了。</li>
+</ul>
+<p>但是需要注意，应该避免使用store查询多个字段，因为store的存储在磁盘上不连续，ES在读取不同的store值时，每个字段的读取均需要在磁盘上进行seek操作,而使用_source字段可以一次性连续读取多个字段[[2]]。(<a href="http://elasticsearch-users.115913.n3.nabble.com/What-does-it-mean-to-quot-store-quot-a-field-td3514176.html" target="_blank" rel="external">http://elasticsearch-users.115913.n3.nabble.com/What-does-it-mean-to-quot-store-quot-a-field-td3514176.html</a>)</p>
+<h4 id="doc-values"><a href="#doc-values" class="headerlink" title="doc_values"></a><code>doc_values</code></h4><p>倒排索引可以提供全文检索能力，但是无法提供对排序和数据聚合的支持。doc_value采用了面向列的存储方式存储一个field的内容，可以实现高效的排序和聚合。默认情况下，ES几乎会为所有类型的字段存储doc_value，为数不多的例外类型是analyzed类型。如果不需要对某个字段进行排序或者聚合，则可以关闭该字段的doc_value存储。很多ES的功能都使用到了doc_value进行加速，因此不建议关闭。</p>
+<h4 id="fielddata"><a href="#fielddata" class="headerlink" title="fielddata"></a><code>fielddata</code></h4><p>即将被doc_values取代，已废弃，不再深入。</p>
+<h4 id="term-vector"><a href="#term-vector" class="headerlink" title="term_vector"></a><code>term_vector</code></h4><p>在对文本进行analyze的过程中，可以保留有关分词结果的相关信息，包括单词列表、单词之间的先后顺序、单词在原文中的位置等信息。查询结果返回的高亮信息就可以利用其中的数据来返回。默认情况下，term_vector是关闭的，如有需要（如加速highlight结果）可以开启该字段的存储。</p>
+<h4 id="enabled"><a href="#enabled" class="headerlink" title="enabled"></a><code>enabled</code></h4><p>这是一个总开关，如果enabled设置为false，则这个字段将会仅存在于_source中，其对应的index和doc_value都不会被创建。这意味着，该字段将不可以被搜索、排序或者聚合，但可以通过_source获取其原始值。</p>
+<p>参考文献：<br><a href="https://www.elastic.co/blog/elasticsearch-as-a-column-store" target="_blank" rel="external">[1]Elasticsearch as a column store</a><br><a href="http://elasticsearch-users.115913.n3.nabble.com/What-does-it-mean-to-quot-store-quot-a-field-td3514176.html" target="_blank" rel="external">[2]What does it mean to “store” a field?</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+      <div>
+        <ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:</strong>
+    Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link:</strong>
+    <a href="http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/" title="Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？">http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice: </strong>
+    All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" rel="external nofollow" target="_blank">CC BY-NC-ND 4.0</a> unless stating additionally.
+  </li>
+</ul>
+
+      </div>
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Elasticsearch-存储优化/" rel="tag"># Elasticsearch,存储优化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" rel="next" title="Unicode中的【合字】现象以及Python中的相关Bug">
+                <i class="fa fa-chevron-left"></i> Unicode中的【合字】现象以及Python中的相关Bug
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Myrfy" />
+          <p class="site-author-name" itemprop="name">Myrfy</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">4</span>
+                <span class="site-state-item-name">posts</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">tags</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license">
+            <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" class="cc-opacity" target="_blank">
+              <img src="/images/cc-by-nc-nd.svg" alt="Creative Commons" />
+            </a>
+          </div>
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#0x00-背景介绍"><span class="nav-number">1.</span> <span class="nav-text">0x00 背景介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x01-配置项速查"><span class="nav-number">2.</span> <span class="nav-text">0x01 配置项速查</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x02-冗余的存储–概述"><span class="nav-number">3.</span> <span class="nav-text">0x02 冗余的存储–概述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#0x03-冗余的存储–深入"><span class="nav-number">4.</span> <span class="nav-text">0x03 冗余的存储–深入</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#index"><span class="nav-number">4.0.1.</span> <span class="nav-text">index</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#source"><span class="nav-number">4.0.2.</span> <span class="nav-text">_source</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#all"><span class="nav-number">4.0.3.</span> <span class="nav-text">_all</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#store"><span class="nav-number">4.0.4.</span> <span class="nav-text">store</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#doc-values"><span class="nav-number">4.0.5.</span> <span class="nav-text">doc_values</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#fielddata"><span class="nav-number">4.0.6.</span> <span class="nav-text">fielddata</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#term-vector"><span class="nav-number">4.0.7.</span> <span class="nav-text">term_vector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#enabled"><span class="nav-number">4.0.8.</span> <span class="nav-text">enabled</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="https://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
