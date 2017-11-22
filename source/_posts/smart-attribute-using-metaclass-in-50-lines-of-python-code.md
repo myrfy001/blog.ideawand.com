@@ -2,6 +2,7 @@
 title: Python之Metaclass元类详解与实战:50行代码实现【智能属性】
 date: 2017-10-25 20:51:21
 tags:
+    - Python
 ---
 
 # 0x00 背景
