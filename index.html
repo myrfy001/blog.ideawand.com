@@ -268,6 +268,132 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/" itemprop="url">使用OpenSSL生成含有Subject Alternative Name(SAN)的证书</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2017-11-22T22:15:15+08:00">
+                2017-11-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          <h1 id="0x00-背景"><a href="#0x00-背景" class="headerlink" title="0x00 背景"></a>0x00 背景</h1><p>今天尝试将一个websocket服务升级为wss，在调试过程中需要自己生成证书。Google之后发现很多方案混杂在一起，而且很多例子对于新版的Chrome浏览器并不适用。因此找到两篇比较靠谱的文章，整理出本篇博客，文中提到的两种方法均亲测可用。<br>在浏览器兼容方面，主要是新版本对域名的认证放弃了CommonName，因此本文介绍的方法全部都使用Subject Alternative Name (SAN) ， 从而支持目前的主流浏览器。</p>
+<h2 id="生成测试环境证书的两种方法"><a href="#生成测试环境证书的两种方法" class="headerlink" title="生成测试环境证书的两种方法"></a>生成测试环境证书的两种方法</h2><p>简单来说，生成测试证书大概有两种方式。<br>一种是生成一个CA根证书和多个服务需要的证书，然后使用CA根证书去签名多个证书。这种方式可以一次管理多个证书，也比较贴近真实情况，当然也可以用来做证书过期、更新等试验，缺点是操作起来略微麻烦一点。<br>还有一种方式就是，直接用根证书作为网站的HTTPS证书使用，这样只需要建立一个证书即可，比较适合小范围的测试，操作快捷。当然，上一种方式的优点就是这种方式的缺点。</p>
+<p>闲言少叙，下面开始介绍两种方式如何制作证书。</p>
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/#more" rel="contents">
+              Read more &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1082,7 +1208,7 @@
           
             <div class="site-state-item site-state-posts">
               <a href="/archives/">
-                <span class="site-state-item-count">6</span>
+                <span class="site-state-item-count">7</span>
                 <span class="site-state-item-name">posts</span>
               </a>
             </div>
@@ -1095,7 +1221,7 @@
             
             <div class="site-state-item site-state-tags">
               
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">10</span>
                 <span class="site-state-item-name">tags</span>
               
             </div>
