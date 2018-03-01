@@ -94,17 +94,17 @@
 
 
 
-<meta name="description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。">
+<meta name="description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。此外，在写本篇博客时，即使是Google英文站也很少能搜索到不使用Minikube进行单机测试环境部署的文章，因此，在摸爬滚">
 <meta name="keywords" content="Kubernetes,GPU,单节点">
 <meta property="og:type" content="article">
 <meta property="og:title" content="搭建支持GPU的单节点Kubernetes测试环境">
 <meta property="og:url" content="http://blog.ideawand.com/2018/03/01/build-a-single-node-kubernetes-test-environment-with-GPU-support/index.html">
 <meta property="og:site_name" content="IdeaWand">
-<meta property="og:description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。">
-<meta property="og:updated_time" content="2018-03-01T08:32:45.000Z">
+<meta property="og:description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。此外，在写本篇博客时，即使是Google英文站也很少能搜索到不使用Minikube进行单机测试环境部署的文章，因此，在摸爬滚">
+<meta property="og:updated_time" content="2018-03-01T08:48:15.725Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="搭建支持GPU的单节点Kubernetes测试环境">
-<meta name="twitter:description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。">
+<meta name="twitter:description" content="本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。此外，在写本篇博客时，即使是Google英文站也很少能搜索到不使用Minikube进行单机测试环境部署的文章，因此，在摸爬滚">
 
 
 
@@ -338,7 +338,7 @@
       
 
       
-        <p>本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。</p>
+        <p>本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。此外，在写本篇博客时，即使是Google英文站也很少能搜索到不使用Minikube进行单机测试环境部署的文章，因此，在摸爬滚打一阵后，我决定写下此文……</p>
 <a id="more"></a>
 <h1 id="0x00-准备工作"><a href="#0x00-准备工作" class="headerlink" title="0x00 准备工作"></a>0x00 准备工作</h1><p>本文假设：</p>
 <ul>
