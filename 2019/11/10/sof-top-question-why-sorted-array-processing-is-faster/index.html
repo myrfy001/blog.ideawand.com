@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="0x00 问题描述计算数组中大于某个阈值的元素的和，为什么当数组是有序的情况下，代码执行速度是数组无序时的六倍左右？">
+<meta name="keywords" content="Python, 分支预测">
+<meta property="og:type" content="article">
+<meta property="og:title" content="StackOverflow高赞问题解析:为什么这段代码在有序数组上执行比乱序数组快？（附Python版实验）">
+<meta property="og:url" content="http://blog.ideawand.com/2019/11/10/sof-top-question-why-sorted-array-processing-is-faster/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="0x00 问题描述计算数组中大于某个阈值的元素的和，为什么当数组是有序的情况下，代码执行速度是数组无序时的六倍左右？">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-11-10T11:38:05.496Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="StackOverflow高赞问题解析:为什么这段代码在有序数组上执行比乱序数组快？（附Python版实验）">
+<meta name="twitter:description" content="0x00 问题描述计算数组中大于某个阈值的元素的和，为什么当数组是有序的情况下，代码执行速度是数组无序时的六倍左右？">
+
+<link rel="canonical" href="http://blog.ideawand.com/2019/11/10/sof-top-question-why-sorted-array-processing-is-faster/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>StackOverflow高赞问题解析:为什么这段代码在有序数组上执行比乱序数组快？（附Python版实验） | IdeaWand</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2019/11/10/sof-top-question-why-sorted-array-processing-is-faster/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          StackOverflow高赞问题解析:为什么这段代码在有序数组上执行比乱序数组快？（附Python版实验）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2019-11-10 18:23:24 / 修改时间：19:38:05" itemprop="dateCreated datePublished" datetime="2019-11-10T18:23:24+08:00">2019-11-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="0x00-问题描述"><a href="#0x00-问题描述" class="headerlink" title="0x00 问题描述"></a>0x00 问题描述</h1><p>计算数组中大于某个阈值的元素的和，为什么当数组是有序的情况下，代码执行速度是数组无序时的六倍左右？</p>
+<a id="more"></a>
+<blockquote>
+<p>SOF原始问题链接:<a href="https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array" target="_blank" rel="noopener">https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array</a></p>
+</blockquote>
+<p>问题中所使用的代码如下所示：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;ctime&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// 产生试验用的数组</span></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">unsigned</span> arraySize = <span class="number">32768</span>;</span><br><span class="line">    <span class="keyword">int</span> data[arraySize];</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> c = <span class="number">0</span>; c &lt; arraySize; ++c)</span><br><span class="line">        data[c] = <span class="built_in">std</span>::rand() % <span class="number">256</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// !!! 当加入下面一行代码后，主循环的耗时会减小，而注释掉下面一行代码后，主循环耗时增加</span></span><br><span class="line">    <span class="built_in">std</span>::sort(data, data + arraySize);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">clock_t</span> start = clock();</span><br><span class="line">    <span class="keyword">long</span> <span class="keyword">long</span> sum = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">unsigned</span> i = <span class="number">0</span>; i &lt; <span class="number">100000</span>; ++i)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// 主循环</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">unsigned</span> c = <span class="number">0</span>; c &lt; arraySize; ++c)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (data[c] &gt;= <span class="number">128</span>)</span><br><span class="line">                sum += data[c];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">double</span> elapsedTime = <span class="keyword">static_cast</span>&lt;<span class="keyword">double</span>&gt;(clock() - start) / CLOCKS_PER_SEC;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; elapsedTime &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"sum = "</span> &lt;&lt; sum &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br><span class="line">``` </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># <span class="number">0x01</span> 高赞回答</span><br><span class="line"></span><br><span class="line">因为现代CPU在执行指令过程时运用了分支预测技术，对于有序数组，CPU可以通过统计规律来提高分支预测的成功概率，从而避免频繁清洗指令流水线，从而提高执行速度。</span><br><span class="line"></span><br><span class="line">#### 如何通俗理解分支预测？</span><br><span class="line">假设你是一个生活在没有电子通信技术时代的铁路扳道工，那么你有两种工作方式：</span><br><span class="line">* 方案一：每过来一辆火车，你都要让司机停下来，问清楚司机要去哪个方向，然后调整道岔</span><br><span class="line">* 方案二：你根据你的经验，提前把道岔调整到一个方向，让火车直接开过去。</span><br><span class="line">  * 如果你猜对了，那么火车就可以不停车快速通过，节省大量时间</span><br><span class="line">  * 如果你猜错了，那么火车司机会在通过道岔后发现错误，然后停车，后退，这时你就知道发生了错误，就可以重新调整道岔，让火车去正确的方向。</span><br><span class="line">  </span><br><span class="line"> 如果你能够在绝大多数情况下预测正确，那么显然第二种方案会大幅提高火车通过道岔的效率；反之，如果你预测的不是那么准，那么火车通过的效率就可能和第一种方案差不多（每次都要停下来）</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#### CPU中的分支预测是什么东西</span><br><span class="line"></span><br><span class="line">对于代码中的<span class="keyword">if</span>语句、<span class="keyword">switch</span>语句等，经过编译器转换为汇编语言后，对应的都是`分支指令（branch instruction）`，现代CPU通常都会尝试从最近执行的一些列指令中学习某些“经验数据”，从而提高自己预测分支的正确率。</span><br><span class="line"></span><br><span class="line">#### 如何解释上述问题中的现象</span><br><span class="line"></span><br><span class="line">对于排序的数组的前一段数据，由于判断条件会一直不成立，因此CPU的分支预测机制会学习到这个特征，并且每次假设条件不成立，而当进入到数组后半段的处理时，CPU也能很快发现每次循环判断条件都是成立的，从而调整自己的预测行为。也就是说，对于排序数组而言，绝大部分情况下，分支预测都可以生效，每次处理流水线都不需要被重新清洗（也就是火车不用停车，后退，再前前进），因而执行速度会很快。</span><br><span class="line"></span><br><span class="line">对于没有排序的数组，由于每次判断条件会随机的成立或者不成立，从而导致CPU无法学习到一个预测分支的模式，从而导致CPU进行分支预测时经常出现呢失误，也就会导致CPU内部的流水线会不断被刷洗再重新装填，导致无法发挥CPU的最大性能。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"># Python版本实验</span><br><span class="line">我们编写如下的Python程序，看看能不能在Python语言中复现上述问题。</span><br><span class="line"></span><br><span class="line">奇怪，好像在两种情况下，耗时没有明显差异啊。之所以看不到明显差异的原因，是因为Python是一门解释型语言，而非编译型语言。Python解释器的核心是一个巨大的<span class="keyword">switch</span>语句(代码参见ceval.c),而我们一个简单的Python语句实际上会被转换为多个Python字节码，通过多次<span class="keyword">switch</span>语句才能执行，也就是说，为了执行我们的上述Python代码，CPU实际上要处理多次分支场景，已经把CPU搞蒙了，分支预测的功效无法发挥出来。从这里大家也可以更深一层来理解为什么大家说Python解释器“慢”了。</span><br><span class="line"></span><br><span class="line">```Python</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">import</span> random</span><br><span class="line"></span><br><span class="line">def test():</span><br><span class="line">    data = [random.randint(<span class="number">0</span>,<span class="number">256</span>) <span class="keyword">for</span> _ in range(<span class="number">32768</span>)]</span><br><span class="line">    </span><br><span class="line">    # 尝试注释或打开下面的语句，观察效果</span><br><span class="line">    data.sort()</span><br><span class="line"></span><br><span class="line">    t0 = time.time()</span><br><span class="line">    sum = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> _ in range(<span class="number">100000</span>):</span><br><span class="line">        <span class="keyword">for</span> v in data:</span><br><span class="line">            <span class="keyword">if</span> v &gt;= <span class="number">128</span>:</span><br><span class="line">                sum += v</span><br><span class="line">    t1 = time.time()</span><br><span class="line"></span><br><span class="line">    print(t1-t0)</span><br><span class="line"></span><br><span class="line">test()</span><br></pre></td></tr></table></figure>
+
+<p>那么，真的无法用Python语言来复现上面这个问题吗？答案是否定的，只不过我们需要换一个Python解释器实现，在这里，我们用PyPy来执行上面的代码，就可以看到明显的差异:排序后的执行时间大约是乱序执行时间的一半。</p>
+<p>想进一步了解PyPy是什么，想看上述代码用pypy加速的具体实现？关注公众号，回复pypy获取文章。</p>
+<p>用Python正则表达式处理带有注音符号的Unicode文本会有坑吗？点击这里</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Python-分支预测/" rel="tag"># Python, 分支预测</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2018/03/01/build-a-single-node-kubernetes-test-environment-with-GPU-support/" rel="next" title="搭建支持GPU的单节点Kubernetes测试环境">
+                  <i class="fa fa-chevron-left"></i> 搭建支持GPU的单节点Kubernetes测试环境
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x00-问题描述"><span class="nav-number">1.</span> <span class="nav-text">0x00 问题描述</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
