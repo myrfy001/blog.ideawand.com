@@ -198,6 +198,87 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/" class="post-title-link" itemprop="url">Python之Metaclass元类详解与实战:50行代码实现【智能属性】</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-10-25 20:51:21" itemprop="dateCreated datePublished" datetime="2017-10-25T20:51:21+08:00">2017-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-11-22 22:55:34" itemprop="dateModified" datetime="2017-11-22T22:55:34+08:00">2017-11-22</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="0x00-背景"><a href="#0x00-背景" class="headerlink" title="0x00 背景"></a>0x00 背景</h1><p>由于工作需要，最近学习Python元编程方面的东西。本文介绍了Metaclass的一个示例，是笔者在学习过程中编写的一个小例子，虽然只有50行代码，但其中涉及了闭包、元编程等内容，而且具有较高的实用性。 Let’s Go!</p>
+<blockquote>
+<p>注：本文以Python3.6为例，早期版本中元类的使用方式与本文所述方式不同。<br>   上述目的也可以通过装饰器或者闭包实现，不过这里是为了学习元类，因此使用元类来做。</p>
+</blockquote>
+<h1 id="0x01-我们的目标（没有蛀-牙Bug）"><a href="#0x01-我们的目标（没有蛀-牙Bug）" class="headerlink" title="0x01 我们的目标（没有蛀 牙Bug）"></a>0x01 我们的目标（没有<del>蛀 牙</del>Bug）</h1><p>为了了解元类是什么，我们先看一个很实用的例子，这样先知道了目标，再去分析后面的原理，大家思路会清晰一些。<br>我们要实现的目标类似于ORM框架：用一个Python类来表示一个Model，这个Model具有很多属性用来存储数据，我们可以为这些属性设置约束条件（例如数据类型等），当给这些属性进行赋值操作时，会自动根据约束检验数据是否合法，就像下面这样：</p>
+<p>假设我们要定义一个叫做News的Model用来代表一片新闻，那么我希望能够这样：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义News类作为保存新闻信息的Model</span></span><br><span class="line"><span class="comment"># SmartAttrBase为News类的基类</span></span><br><span class="line"><span class="comment"># SmartAttrDesc类用来存储各个字段的约束条件</span></span><br><span class="line"><span class="comment"># SmartAttrBase和SmartAttrDesc类的具体实现在后文中会有介绍，目前不必关心。</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">News</span><span class="params">(SmartAttrBase)</span>:</span></span><br><span class="line">    title = SmartAttrDesc(default=<span class="string">""</span>, type_=str, func=<span class="keyword">lambda</span> x: x.upper())</span><br><span class="line">    content = SmartAttrDesc(default=<span class="string">""</span>, type_=str)</span><br><span class="line">    publisher = SmartAttrDesc(default=<span class="string">""</span>, type_=str)</span><br><span class="line">    publish_time = SmartAttrDesc(default=<span class="number">0</span>, type_=int)</span><br></pre></td></tr></table></figure>
+
+<p>上面的News Model具有4个属性，其中3个是字符串类型，1个是整数类型，对于title字段，我们要求无论传入什么内容，都转换为大写形式进行存储。如果提供的数据类型不符，则应抛出异常，如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>news = News()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title</span><br><span class="line"><span class="string">''</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title = <span class="string">"The quick brown fox."</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title</span><br><span class="line"><span class="string">'THE QUICK BROWN FOX.'</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time = <span class="number">1508941663</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time</span><br><span class="line"><span class="number">1508941663</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time = <span class="string">"20171025"</span></span><br><span class="line">TypeError: Proprety [publish_time] need type of &lt;<span class="class"><span class="keyword">class</span> '<span class="title">int</span>'&gt; <span class="title">but</span> <span class="title">get</span> &lt;<span class="title">class</span> '<span class="title">str</span>'&gt;</span></span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/10/12/setup-a-js-mining-proxy/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -620,7 +701,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">15</span>
+          <span class="site-state-item-count">16</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>

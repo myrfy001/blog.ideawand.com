@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人">
+<meta name="keywords" content="Terminal Consol TTY Shell">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
+<meta property="og:url" content="http://blog.ideawand.com/2020/12/31/what-is-console-terminal-tty-and-shell-2/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png">
+<meta property="og:updated_time" content="2020-12-30T13:53:03.432Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
+<meta name="twitter:description" content="在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人">
+<meta name="twitter:image" content="http://blog.ideawand.com/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png">
+
+<link rel="canonical" href="http://blog.ideawand.com/2020/12/31/what-is-console-terminal-tty-and-shell-2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列 | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2020/12/31/what-is-console-terminal-tty-and-shell-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-12-31 08:00:20" itemprop="dateCreated datePublished" datetime="2020-12-31T08:00:20+08:00">2020-12-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-12-30 21:53:03" itemprop="dateModified" datetime="2020-12-30T21:53:03+08:00">2020-12-30</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人主页<a href="http://blog.ideawand.com。" target="_blank" rel="noopener">http://blog.ideawand.com。</a></p>
+<a id="more"></a>
+
+<p>本篇我们讨论的，依旧是那种直接连接在主机上，没有图形界面的情况下的纯终端实现，也就是，物理终端和主机之间通过一根简单的电缆相相互，在这根电缆上，只能传递ASCII表中规定的字符（暂时认为是编号为0~127这几个字符）。回想上篇文章中提到的电传打印机，主机和打印机之间传递的也仅仅是要打印哪些字符，当然也包括类似换行、回车这样的控制字符，而文字的颜色、字体、是否闪烁等、有无背景色、下划线等等，在电传打字机的时代是不支持的，当电传打字机收到一个字符时，其内部的控制电路会决定将字车移动到哪个位置，是否需要将打印纸滚动一行；而我们今天讨论着Terminal，你就可以认为是电传打字机的升级版，它使用荧光屏代替了打印纸，使用电子束和偏转线圈代替了字车，当其收到一个要显示的字符时，内部的控制电路会相应地控制电子束如何在荧光屏上绘制出文字的图案。下图所示的是一台历史上著名的VT100终端，大家可以先记住它，后面还会再提到。（图片来源：<a href="https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）" target="_blank" rel="noopener">https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）</a><br><img src="/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png" alt="VT100终端"></p>
+<p>如果上面的描述你还是不能理解，那就这样想：现在电脑的显示器通常是通过HDMI或者VGA信号线，这些信号线与主机上的显卡相连接，显卡是内置在主机里的，显卡决定如何在屏幕上显示图案，并且把渲染好的图像信息通过信号线发送给显示器，显示器只需要解码信号线上传递过来的像素信号，在指定的位置把他们显示出来就可以了，显示器本身不需要关心怎么画一个圆出来，显示器本身也不知道组成a和A的点阵是什么样子的，所有的渲染工作都是在主机里的显卡上完成的。而我们今天要讨论的终端，还处在刚刚替代电传打字机的时代，为了保证兼容性，它仍然使用了与电传打字机同样的接口，也就是说，从主机的角度来看，主机并不关心对面连接的是一台电传打字机，还是一台荧光显示器，我只要把我想让你显示的字符发送给你就好了。这也就是说，在这个时期，“显卡”这个东西其实是在终端里的，而不是在主机上的，终端接收到主机发送过来的字符以后，先由终端内的“显卡”把字符转换为控制电子束移动的信号，然后才能显示在显示器上。那么，和电传打字机时代，一个打字机能打印哪些字体由打印机上安装的击锤或者FontBall决定类似，一个有荧光屏的终端设备能显示哪些字符、哪些字体，是由终端来决定的，并不像现在这样，在主机操作系统中安装一个字体就可以。</p>
+<p>在了解完硬件的基础设定之后，我们来思考一个问题：带有荧光屏的终端，可以实现诸如显示彩色文字、让文字闪烁、给文字加背景色等功能，也可以实现将闪烁的光标移动到屏幕上任一点的功能，这在传统的电传打字机时代是不能够支持的，而新老两种终端却使用了同样的电气连接标准，例如都使用了RS232串口作为标准，那么，新设备是如何支持这些新功能的呢？</p>
+<p>解决这个问题的答案便是<code>转义序列</code>。在荧光屏Terminal出现的早期，生产厂商几乎都会为自己的产品定义一些转义序列，当终端接收到满足某种特定序列模式的字符串时，终端不会直接显示它们，而是会把这些字符序列作为一种指令去执行。起初，不同的厂商都会定制不同的转义序列，从而使得自己的产品相比于其他产品更有优势，比如你的支持改变颜色，我除了能改变颜色，还能闪烁等等。当然，那是一个没有统一标准的年代，不同厂家生产的设备，其转义序列往往不能兼容，而不同的终端设备，其能够支持的扩展功能也不一样，这就导致了软件的开发者们非常痛苦，你在一种Terminal上开发的软件，能五颜六色高亮显示非常漂亮的文字，但连接上另一台Terminal后，由于另一台不识别你的转义序列，它可能就会把转义序列当做普通文本输出到屏幕上，结果就是不仅你看不到五颜六色的文本，还会看到夹杂在原始文本之间的各种人类难以理解的转义控制字符，也就是我们通常说的乱码……</p>
+<p>有问题，自然就会有解决问题的办法，于是，为了应对上面的问题，出现了两个相辅相成的解决问题的手段：</p>
+<ul>
+<li>制定标准，统一各大设备生产商，咱们新生产的设备，都按照标准来搞</li>
+<li>建立一个权威的数据库，记录下各种设备支持哪些功能。比如有的便宜设备，只能支持一部分转义标准，那就不要给它发送它不支持的转义序列</li>
+</ul>
+<p>其中，第一个手段，对应的就是<code>ECMA-48</code>、<code>ANSI X3.64</code>、<code>ISO 6429</code>等标准，他们之间有什么区别，我也没有仔细研究过，不过他们对于基本功能的规范都是差不多的。</p>
+<p>上述的第二个手段，逐步演进成为当今*nix操作系统上都存在但知道的人并不多的<code>Termcap</code>，以及它的进化版本<code>Terminfo</code>库，在这两个基础数据库之上，由逐渐出现了<code>curses</code>库和其继任者<code>ncurses</code>库。<code>ncurses</code>基于<code>Terminfo</code>开发，开发者使用<code>ncurses</code>库时，便不用担心各种设备不兼容的问题，<code>ncurses</code>会从环境变量中获取当前Terminal的名字，在<code>Terminfo</code>中查找对应设备的支持的特性，并将其以正确的转义序列输出给Terminal。</p>
+<p>敲黑板，划重点：</p>
+<p>敲黑板，划重点：</p>
+<p>敲黑板，划重点：</p>
+<p>你可以打开一个终端，在shell中输入<code>printenv</code>，你应该可以看见一个名为<code>TERM</code>的环境变量，例如，在我的机器上，可以看到<code>TERM=xterm-256color</code>，这便是代表了当前你使用的终端设备是名为<code>xterm-256color</code>的终端，<code>ncurses</code>等库就是通过读取这个环境变量来选择对应的转义序列的。如果你修改了当前Shell下的<code>TERM</code>环境变量，则有可能导致你看到的输出和预期不一样，比如看到乱码。请大家记住<code>TERM</code>这个环境变量，后面我们应该还会在PTY和SSH相关的地方提到如何在远程机器和本地机器之间保持<code>TERM</code>变量的一致。</p>
+<p>下面我们来具体看看一个转义序列是什么样子的。下面的例子中，大家可以在自己的Linux系统上来尝试。通常，大家会选择一个带有图形环境的Linux发行版来使用，因此你通常会使用一个<code>终端模拟器</code>来代替真正的终端，我们暂时先不深入什么是<code>终端模拟器</code>,后面我们会有专门的文章来介绍它。现在，随便打开一个你熟悉的Terminal进行操作就好了。</p>
+<p>你可以在Shell的提示符下输入下面这行文本：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo -e 'This is a post from \033[31mGeek\033[32m kindergarten\033[m with copyright.'</span><br></pre></td></tr></table></figure>
+
+<p>预期你应该得到下面这样的输出，其中的Geek被标为红色，而kindergarten被标为绿色<br>This is a post from <font color="red">Geek</font> <font color="green">kindergarten</font> with copyright.</p>
+<p>好了，让我们来仔细分析一下上面这行命令的含义：</p>
+<ul>
+<li><code>echo</code> 这个命令表示我们要向输出设备输出一些字符，这些字符由echo后续的参数指定</li>
+<li><code>-e</code>  参数告诉<code>echo</code>命令，需要对后面参数中以<code>\</code>开头的字符做转义处理，等一下我们细说</li>
+<li>接下来是一段用单引号引住的文本，因为我们没有使用Shell中的变量替换，所以你用双引号在这里也可以</li>
+<li>接下来的<code>This is a post from</code>就是普通的文本，它们会被echo直接输出到显示设备</li>
+<li>接下里碰到了<code>\033</code>，由于我们前面指定了<code>-e</code>参数，因此echo命令会将<code>033</code>解析为八进制的<code>33</code><ul>
+<li>我们可以去查一下ASCII表，八进制33，也就是10进制的27，对应的是ASCII字符是Escape。Escape这个词的中文是逃逸的意思，也就是说，碰到这个字符以后，我们就要从正经的路上逃走，做一些不正常的事情。当然，转义也是Escape的中文翻译之一。</li>
+<li>在ASCII的定义中，Escape属于控制字符，也就是说它是一个不可见字符，它的作用就是用来指示接收到这个字符的设备，要把我后面的内容用转义的方法来解释。</li>
+<li>既然<code>\033</code>是八进制的表示，而八进制的<code>33</code>对应十六进制的<code>1b</code>,所以，当然也可以用<code>\x1b</code>替换上面的<code>\033</code>，都是一样的。有的资料上可能用的是<code>\x1b</code>，道理一样</li>
+<li>虽然在我们书写的命令中，无论是<code>\033</code>还是<code>\x1b</code>,它们都是4个字符，占用了4个字节，但经过<code>echo</code>命令的转义以后，真正发送给显示设备的，只有一个字节的数据，就是ASCII表里那个名叫Escape的字符</li>
+</ul>
+</li>
+<li><code>\033</code>后面可以跟随一些不同的符号，比如<code>N</code>、<code>O</code>、<code>P</code>等等，不同的字符代表了不同的功能类。我们这里跟了一个<code>[</code>，这个左方括号表示后面要跟随一些列控制序列，这个<code>[</code>是最常用的一个。其他的控制字符可以参考维基百科。</li>
+<li>接下来的<code>31</code>也是协议中规定的一个数值，表示红色，这里的<code>31</code>不是转义，因此发送到显示设备的就是<code>31</code>这两个字符</li>
+<li>后面的<code>m</code>表示转义序列结束，<code>m</code>后面接受到的字符要恢复成正常的模式，直接显示在屏幕上。因此后面的<code>Geek</code>将被显示在屏幕上，并且以红色显示<ul>
+<li>如果没有其他的转义序列，后面的一切输出都会保持红色</li>
+</ul>
+</li>
+<li>接下来，我们有传递了一个转义序列<code>\033[32m</code>，其中的<code>32</code>表示绿色，即从这个转义开始，后面要显示的普通字符，都要以绿色来展示,因此后面的<code>kindergarten</code>以绿色显示。<ul>
+<li>注意这里<code>kindergarten</code>的开头有一个空格，理论上这个空格也应该是绿色的，只是，空格没办法显示出来，所以你看不到绿色的空格。</li>
+</ul>
+</li>
+<li>然后，我们传递了<code>\033[m</code>，这里的<code>[</code>和<code>m</code>之间没有任何数字，默认表示中间的数字是0，它的含义是关闭掉一切的样式，按照最普通的样式输出后面的内容，因此，后面的<code>with copyright.</code>显示为普通颜色。</li>
+</ul>
+<p>实际上，上面的<code>[</code>和<code>m</code>之间，可以写多个参数，他们之间用分号隔开，例如3表示斜体，那么，大家可以这样写，从而使输出带有颜色的同时增加斜体</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo -e 'This is a post from \033[31;3mGeek\033[32m kindergarten\033[m with copyright.'</span><br></pre></td></tr></table></figure>
+
+<p>This is a post from <i><font color="red">Geek</font> <font color="green">kindergarten</font></i> with copyright.</p>
+<p>请注意上面的例子里，我们仅在第一个转义序列中增加了斜体，而后面改变颜色时，我们并没有再次指定斜体，直到我们使用<code>\033[m</code>将所有样式清除。因此可以看到，各种类型的样式设置是互相独立的。更多的转义规则信息，大家同样可以去维基百科搜索<code>ANSI escape code</code>即可</p>
+<blockquote>
+<p>我相信如果你按照上面的步骤去操作了，那么99.99%你是使用了一台现代的计算机，并且在一个打开的Terminal窗口中完成了上面的操作。而读到这里，我要再次强调一下，我们在本篇讨论的内容，是20世纪70~80年代的终端设备。你在图形界面的Linux环境下，只是开启了一个叫做“终端模拟器”的软件，这个软件在模拟一台古老的显示设备。你可以尝试重新思考上面的流程：你有一台古老的设备摆在你面前，它只有很简单的输入信号线，一个一个的字节组成字节序列，被这根线送进显示设备。如果你对单片机这类的硬件有一些概念的话，把这条线理解为串口再合适不过了。你通过把要显示的普通文本，以及各种古怪的控制命令，一起通过这根线发送到终端设备。终端设备知道如何解析这些夹杂在要显示的文本中的控制指令，从而显示出不同的颜色。</p>
+</blockquote>
+<blockquote>
+<p>Linux下一切皆文件，实际上，一个终端设备，在Linux下就映射为一个设备文件。你可以用<code>open</code>来打开这个设备文件，向其中写入数据，这些数据就会被操作系统的驱动程序，控制主板上的硬件针脚，改变信号线上的电平状态，把数据以二进制的形式，一个bit一个bit的发送给终端设备。这些细节，我们后面应该会再次提到并详细解释。</p>
+</blockquote>
+<p>下面列出了一个时间表，有兴趣的同学可以对照着梳理一下时间线：</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>时间</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1960</td>
+<td>开始制定ascii标准, 1963年发布第一版</td>
+</tr>
+<tr>
+<td>1976</td>
+<td>ECMA-48 转义序列</td>
+</tr>
+<tr>
+<td>1978</td>
+<td>Digital VT100  终端，支持一些转义序列</td>
+</tr>
+<tr>
+<td>1978</td>
+<td>Termcap 库</td>
+</tr>
+<tr>
+<td>1979</td>
+<td>ANSI escape sequence</td>
+</tr>
+<tr>
+<td>1981</td>
+<td>Terminfo 库</td>
+</tr>
+<tr>
+<td>1982-1984</td>
+<td>pcurses 库</td>
+</tr>
+<tr>
+<td>1991</td>
+<td>ECMA-48 转义序列  第五版</td>
+</tr>
+<tr>
+<td>1993</td>
+<td>ncurses 库</td>
+</tr>
+</tbody></table>
+<p>本篇文章到此结束，这是本系列的第二篇文章，主要介绍了在电传打字机之后出现的以CRT为显示设备的终端系统，并且介绍了在CRT终端下所逐步形成的一套转义序列的规范。</p>
+<p>可以说，前面这两篇文章，主要是在介绍终端这种硬件外设，并没有太多的和计算机软件和操作系统打交道，而我们在使用计算机时，输出到终端设备的各种字符序列、控制序列，其实都是由操作系统产生的，也就是说，操作系统中必然有一种专门的程序，来驱动连接在我们主机上的物理终端设备。从下一篇文章开始，我们开始逐步进入到Linux操作系统中与终端有关的部分。</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>合作微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2020/12/31/what-is-console-terminal-tty-and-shell-2/" title="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">http://blog.ideawand.com/2020/12/31/what-is-console-terminal-tty-and-shell-2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Terminal-Consol-TTY-Shell/" rel="tag"># Terminal Consol TTY Shell</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2020/11/14/what-is-console-terminal-tty-and-shell-1/" rel="next" title="Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY">
+                  <i class="fa fa-chevron-left"></i> Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">16</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>合作微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script>
+<script src="/js/schemes/muse.js"></script>
+<script src="/js/next-boot.js"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
