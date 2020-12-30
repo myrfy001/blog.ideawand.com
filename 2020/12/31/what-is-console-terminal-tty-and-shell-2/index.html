@@ -60,7 +60,7 @@
 <meta property="og:description" content="在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png">
-<meta property="og:updated_time" content="2020-12-30T13:53:03.432Z">
+<meta property="og:updated_time" content="2020-12-30T15:19:12.004Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
 <meta name="twitter:description" content="在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人">
@@ -235,7 +235,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-12-30 21:53:03" itemprop="dateModified" datetime="2020-12-30T21:53:03+08:00">2020-12-30</time>
+                <time title="修改时间：2020-12-30 23:19:12" itemprop="dateModified" datetime="2020-12-30T23:19:12+08:00">2020-12-30</time>
               </span>
 
           
@@ -252,7 +252,7 @@
         <p>在上一篇文章中，我们从历史发展的角度介绍了Console、Terminal、TTY这些概念，并且给大家展示了各种上古时代的显示设备，特别是使用印章和打印纸形式作为输出的设备。这一篇文章中，我们将重点聊聊有了荧光显示器之后，输出设备与操作系统之间的关系，例如如何显示彩色的文字。这是本系列的第二篇文章，后续应该还会有几篇文章。欢迎大家关注我的公众号【极客幼稚园】来获取最新的推送，当然也可以访问我的个人主页<a href="http://blog.ideawand.com。" target="_blank" rel="noopener">http://blog.ideawand.com。</a></p>
 <a id="more"></a>
 
-<p>本篇我们讨论的，依旧是那种直接连接在主机上，没有图形界面的情况下的纯终端实现，也就是，物理终端和主机之间通过一根简单的电缆相相互，在这根电缆上，只能传递ASCII表中规定的字符（暂时认为是编号为0~127这几个字符）。回想上篇文章中提到的电传打印机，主机和打印机之间传递的也仅仅是要打印哪些字符，当然也包括类似换行、回车这样的控制字符，而文字的颜色、字体、是否闪烁等、有无背景色、下划线等等，在电传打字机的时代是不支持的，当电传打字机收到一个字符时，其内部的控制电路会决定将字车移动到哪个位置，是否需要将打印纸滚动一行；而我们今天讨论着Terminal，你就可以认为是电传打字机的升级版，它使用荧光屏代替了打印纸，使用电子束和偏转线圈代替了字车，当其收到一个要显示的字符时，内部的控制电路会相应地控制电子束如何在荧光屏上绘制出文字的图案。下图所示的是一台历史上著名的VT100终端，大家可以先记住它，后面还会再提到。（图片来源：<a href="https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）" target="_blank" rel="noopener">https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）</a><br><img src="/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png" alt="VT100终端"></p>
+<p>本篇我们讨论的，依旧是那种直接连接在主机上，没有图形界面的情况下的纯终端实现，也就是，物理终端和主机之间通过一根简单的电缆相相互，在这根电缆上，只能传递ASCII表中规定的字符（暂时认为是编号为0~127这几个字符）。回想上篇文章中提到的电传打印机，主机和打印机之间传递的也仅仅是要打印哪些字符，当然也包括类似换行、回车这样的控制字符，而文字的颜色、字体、是否闪烁等、有无背景色、下划线等等，在电传打字机的时代是不支持的，当电传打字机收到一个字符时，其内部的控制电路会决定将字车移动到哪个位置，是否需要将打印纸滚动一行；而我们今天讨论的Terminal，你就可以认为是电传打字机的升级版，它使用荧光屏代替了打印纸，使用电子束和偏转线圈代替了字车，当其收到一个要显示的字符时，内部的控制电路会相应地控制电子束如何在荧光屏上绘制出文字的图案。下图所示的是一台历史上著名的VT100终端，大家可以先记住它，后面还会再提到。（图片来源：<a href="https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）" target="_blank" rel="noopener">https://commons.wikimedia.org/wiki/File:DEC_VT100_terminal_transparent.png#/media/File:DEC_VT100_terminal_transparent.png）</a><br><img src="/images/console-terminal-keybord/1217px-DEC_VT100_terminal_transparent.png" alt="VT100终端"></p>
 <p>如果上面的描述你还是不能理解，那就这样想：现在电脑的显示器通常是通过HDMI或者VGA信号线，这些信号线与主机上的显卡相连接，显卡是内置在主机里的，显卡决定如何在屏幕上显示图案，并且把渲染好的图像信息通过信号线发送给显示器，显示器只需要解码信号线上传递过来的像素信号，在指定的位置把他们显示出来就可以了，显示器本身不需要关心怎么画一个圆出来，显示器本身也不知道组成a和A的点阵是什么样子的，所有的渲染工作都是在主机里的显卡上完成的。而我们今天要讨论的终端，还处在刚刚替代电传打字机的时代，为了保证兼容性，它仍然使用了与电传打字机同样的接口，也就是说，从主机的角度来看，主机并不关心对面连接的是一台电传打字机，还是一台荧光显示器，我只要把我想让你显示的字符发送给你就好了。这也就是说，在这个时期，“显卡”这个东西其实是在终端里的，而不是在主机上的，终端接收到主机发送过来的字符以后，先由终端内的“显卡”把字符转换为控制电子束移动的信号，然后才能显示在显示器上。那么，和电传打字机时代，一个打字机能打印哪些字体由打印机上安装的击锤或者FontBall决定类似，一个有荧光屏的终端设备能显示哪些字符、哪些字体，是由终端来决定的，并不像现在这样，在主机操作系统中安装一个字体就可以。</p>
 <p>在了解完硬件的基础设定之后，我们来思考一个问题：带有荧光屏的终端，可以实现诸如显示彩色文字、让文字闪烁、给文字加背景色等功能，也可以实现将闪烁的光标移动到屏幕上任一点的功能，这在传统的电传打字机时代是不能够支持的，而新老两种终端却使用了同样的电气连接标准，例如都使用了RS232串口作为标准，那么，新设备是如何支持这些新功能的呢？</p>
 <p>解决这个问题的答案便是<code>转义序列</code>。在荧光屏Terminal出现的早期，生产厂商几乎都会为自己的产品定义一些转义序列，当终端接收到满足某种特定序列模式的字符串时，终端不会直接显示它们，而是会把这些字符序列作为一种指令去执行。起初，不同的厂商都会定制不同的转义序列，从而使得自己的产品相比于其他产品更有优势，比如你的支持改变颜色，我除了能改变颜色，还能闪烁等等。当然，那是一个没有统一标准的年代，不同厂家生产的设备，其转义序列往往不能兼容，而不同的终端设备，其能够支持的扩展功能也不一样，这就导致了软件的开发者们非常痛苦，你在一种Terminal上开发的软件，能五颜六色高亮显示非常漂亮的文字，但连接上另一台Terminal后，由于另一台不识别你的转义序列，它可能就会把转义序列当做普通文本输出到屏幕上，结果就是不仅你看不到五颜六色的文本，还会看到夹杂在原始文本之间的各种人类难以理解的转义控制字符，也就是我们通常说的乱码……</p>
@@ -271,7 +271,8 @@
 <p>你可以在Shell的提示符下输入下面这行文本：</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">echo -e 'This is a post from \033[31mGeek\033[32m kindergarten\033[m with copyright.'</span><br></pre></td></tr></table></figure>
 
-<p>预期你应该得到下面这样的输出，其中的Geek被标为红色，而kindergarten被标为绿色<br>This is a post from <font color="red">Geek</font> <font color="green">kindergarten</font> with copyright.</p>
+<p>预期你应该得到下面这样的输出，其中的Geek被标为红色，而kindergarten被标为绿色</p>
+<p>This is a post from <font color="red">Geek</font> <font color="green">kindergarten</font> with copyright.</p>
 <p>好了，让我们来仔细分析一下上面这行命令的含义：</p>
 <ul>
 <li><code>echo</code> 这个命令表示我们要向输出设备输出一些字符，这些字符由echo后续的参数指定</li>
