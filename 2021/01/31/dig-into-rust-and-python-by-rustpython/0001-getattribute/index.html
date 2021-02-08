@@ -51,19 +51,20 @@
   };
 </script>
 
-  <meta name="description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
+  <meta name="description" content="先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟">
+<meta name="keywords" content="rust,rustpython,python">
 <meta property="og:type" content="article">
-<meta property="og:title" content="树莓派驱动学习笔记(1)">
-<meta property="og:url" content="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/index.html">
+<meta property="og:title" content="通过rustpython学习rust和Python系列之1--getattribute">
+<meta property="og:url" content="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/index.html">
 <meta property="og:site_name" content="IdeaWand">
-<meta property="og:description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
+<meta property="og:description" content="先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2017-06-15T05:32:10.000Z">
+<meta property="og:updated_time" content="2021-02-04T09:17:07.276Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="树莓派驱动学习笔记(1)">
-<meta name="twitter:description" content="以下内容来自阅读http://elinux.org/RPi_Software的总结 树莓派的启动： 在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路  First stage bootloader：从SD卡读取Second stage bootloader Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU GP">
+<meta name="twitter:title" content="通过rustpython学习rust和Python系列之1--getattribute">
+<meta name="twitter:description" content="先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟">
 
-<link rel="canonical" href="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/">
+<link rel="canonical" href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/">
 
 
 <script id="page-configurations">
@@ -78,7 +79,7 @@
 </script>
 
 <script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  <title>树莓派驱动学习笔记(1) | IdeaWand</title>
+  <title>通过rustpython学习rust和Python系列之1--getattribute | IdeaWand</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
     <script>
@@ -202,7 +203,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -215,7 +216,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          树莓派驱动学习笔记(1)
+          通过rustpython学习rust和Python系列之1--getattribute
         </h1>
 
         <div class="post-meta">
@@ -225,14 +226,14 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2015-07-04 13:22:17" itemprop="dateCreated datePublished" datetime="2015-07-04T13:22:17+08:00">2015-07-04</time>
+              <time title="创建时间：2021-01-31 15:00:10" itemprop="dateCreated datePublished" datetime="2021-01-31T15:00:10+08:00">2021-01-31</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2017-06-15 13:32:10" itemprop="dateModified" datetime="2017-06-15T13:32:10+08:00">2017-06-15</time>
+                <time title="修改时间：2021-02-04 17:17:07" itemprop="dateModified" datetime="2021-02-04T17:17:07+08:00">2021-02-04</time>
               </span>
 
           
@@ -246,15 +247,39 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>以下内容来自阅读<a href="http://elinux.org/RPi_Software" target="_blank" rel="noopener">http://elinux.org/RPi_Software</a>的总结</p>
-<p>树莓派的启动：</p>
-<p><strong><em>在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路</em></strong></p>
-<hr>
-<p>First stage bootloader：从SD卡读取Second stage bootloader</p>
-<p>Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU</p>
-<p>GPU firmware (start.elf)：在这个固件中，GPU来启动CPU。</p>
-<p>User code：最后…………CPU开始执行的用户程序</p>
-<p>以上文件在firmware/boot/目录下，其中_cd表示cutdown,是裁剪版；_x是测试版</p>
+        <p>先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟速更新的文章我也会继续写的。如果你看到这系列文章感觉还有点意思，可以把我的网站加收藏哈~<a href="http://blog.ideawand.com。我还有一个微信公众号叫做【极客幼稚园】，大家也可以关注一下，这样有什么更新大家也可以看到。" target="_blank" rel="noopener">http://blog.ideawand.com。我还有一个微信公众号叫做【极客幼稚园】，大家也可以关注一下，这样有什么更新大家也可以看到。</a></p>
+<p>本系列随笔的第一篇，基本算是随机挑选的，我们来看看个python中<code>__getattribute__</code>这个魔术方法在rustpython中有关的实现吧。</p>
+<a id="more"></a>
+
+<blockquote>
+<p>本次阅读对应的rustpython commit: 1976740d3c0015514db8863584ed7a015c18521f。</p>
+</blockquote>
+<p><code>PyAttributes</code>类型的定义在RP中是用的Rust标准库的HashMap，代码注释中(pyobject.rs:64)的说明是这样可能会比用dict更快一些。而CPython里毕竟C语言自己没有hashmap，所以用的都是CPython自己实现的dict来做。</p>
+<ul>
+<li>但是毕竟逃不掉，还要和Python语言中的字典有些关系，所以在RustPython的<code>Dict</code>实现中，实现了与<code>PyAttributes</code>的互相转换（<code>from_attributes</code> @ dict.rs:377、<code>to_attributes</code> @ dict.rs:452）。</li>
+</ul>
+<p>为<code>PyType</code>实现<code>SlotGetattro</code> Trait，定义了<code>getattro</code>方法，流程如下：</p>
+<ul>
+<li><code>PyType</code>为解释器自己快速查找一个类型的属性开了后门，定义了<code>get_attr</code>方法。先调用这个方法<ul>
+<li>该方法先尝试直接从自己的<code>attributes</code>属性（上面提到了，他没有有dict实现，而是直接使用了HashMap）里去按名字查找<ul>
+<li>如果没有找到，再去自己的MRO里面找，也是遍历MRO，直接读它们的<code>attributes</code>属性</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Python官方的《Descriptor HowTo Guide》中有如下的描述</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Instance lookup scans through a chain of namespaces giving data descriptors the highest priority, followed by instance variables, then non-data descriptors, then class variables, and lastly __getattr__() if it is provided.</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">The mechanism for descriptors is embedded in the __getattribute__() methods for object, type, and super().</span><br><span class="line"></span><br><span class="line">The important points to remember are:</span><br><span class="line"></span><br><span class="line">Descriptors are invoked by the __getattribute__() method.</span><br><span class="line"></span><br><span class="line">Classes inherit this machinery from object, type, or super().</span><br><span class="line"></span><br><span class="line">Overriding __getattribute__() prevents automatic descriptor calls because all the descriptor logic is in that method.</span><br><span class="line"></span><br><span class="line">object.__getattribute__() and type.__getattribute__() make different calls to __get__(). The first includes the instance and may include the class. The second puts in None for the instance and always includes the class.</span><br><span class="line"></span><br><span class="line">Data descriptors always override instance dictionaries.</span><br><span class="line"></span><br><span class="line">Non-data descriptors may be overridden by instance dictionaries.</span><br></pre></td></tr></table></figure>
+
+<p>我暂时认为可以这样理解，Python默认为<code>object</code>、<code>type</code>、<code>super()</code>三种类型实现了默认的<code>__getattribute__</code>方法，默认方法里支持了描述器的行为。我们大多数自定义的结构都继承了这些行为，当然，你也可以自定义一个<code>__getattribute__</code>方法，这样描述器的机制在当前类就不一定有效了。不过由于在编写自定义的<code>__getattribute__</code>方法时，为了避免无限递归调用，不能使用<code>self.xxx</code>的语法，而是显示使用父类的<code>__getattribute__</code>方法，因此描述器的机制在父类中还会起作用。</p>
+<p><code>__set__</code>只在当前类下找，而<code>__get__</code>要按MRO顺序找，为什么呢，存疑，再看看文档</p>
+<p>上文提到对于<code>object</code>、<code>type</code>、<code>super()</code>三种类型实现了默认的<code>__getattribute__</code>方法，所以在RP的代码中也可以在不同位置看到这些逻辑</p>
+<ul>
+<li><code>generic_getattribute_opt</code> @ vm.rs:1244  这个对应实现了CPython中的<code>_PyObject_GenericGetAttrWithDict</code></li>
+<li><code>getattro</code> @ pytype.rs:539</li>
+<li>目前的感觉是，vm.rs中的逻辑是对普通对象的，而pytype.rs中的逻辑是对type的，对super的应该是通过某种方式最终使用了上面两个方法</li>
+</ul>
+<p><a href="https://www.hongweipeng.com/index.php/archives/1241/" target="_blank" rel="noopener">https://www.hongweipeng.com/index.php/archives/1241/</a></p>
 
     </div>
 
@@ -276,7 +301,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/" title="树莓派驱动学习笔记(1)">http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/</a>
+    <a href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/" title="通过rustpython学习rust和Python系列之1--getattribute">http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -286,19 +311,24 @@
 
 
       <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/rust/" rel="tag"># rust</a>
+              <a href="/tags/rustpython/" rel="tag"># rustpython</a>
+              <a href="/tags/python/" rel="tag"># python</a>
+          </div>
 
         
 
           <div class="post-nav">
             <div class="post-nav-next post-nav-item">
+                <a href="/2020/12/31/what-is-console-terminal-tty-and-shell-2/" rel="next" title="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
+                  <i class="fa fa-chevron-left"></i> Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列
+                </a>
             </div>
 
             <span class="post-nav-divider"></span>
 
             <div class="post-nav-prev post-nav-item">
-                <a href="/2017/06/10/hello-world/" rel="prev" title="Hello World">
-                  Hello World <i class="fa fa-chevron-right"></i>
-                </a>
             </div>
           </div>
       </footer>
