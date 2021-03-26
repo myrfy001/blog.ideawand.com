@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="如果想用Rust去开发大型项目，特别是框架级别的项目，那么Rust的过程宏(proc-macro)机制肯定是一个必须掌握的技能。极客幼稚园公众号从本期开始，将进行一个系列连载，以文字 + 视频的形式，介绍过程宏的相关知识点，并通过几个项目实战，手把手书写几种不同类型的过程宏。我的视频将会上传至B站，文字版本与视频版本内容会大致相符，但文字版本对原理的讲解会更加清晰，大家看到的是一个最终【正确】的版">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理">
+<meta property="og:url" content="http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="如果想用Rust去开发大型项目，特别是框架级别的项目，那么Rust的过程宏(proc-macro)机制肯定是一个必须掌握的技能。极客幼稚园公众号从本期开始，将进行一个系列连载，以文字 + 视频的形式，介绍过程宏的相关知识点，并通过几个项目实战，手把手书写几种不同类型的过程宏。我的视频将会上传至B站，文字版本与视频版本内容会大致相符，但文字版本对原理的讲解会更加清晰，大家看到的是一个最终【正确】的版">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-02-27T14:09:26.000Z">
+<meta property="article:modified_time" content="2021-03-26T15:44:22.045Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="Rust,过程宏,proc-macro">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理 | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-02-27 22:09:26" itemprop="dateCreated datePublished" datetime="2021-02-27T22:09:26+08:00">2021-02-27</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-26 23:44:22" itemprop="dateModified" datetime="2021-03-26T23:44:22+08:00">2021-03-26</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>如果想用Rust去开发大型项目，特别是框架级别的项目，那么Rust的过程宏(proc-macro)机制肯定是一个必须掌握的技能。极客幼稚园公众号从本期开始，将进行一个系列连载，以文字 + 视频的形式，介绍过程宏的相关知识点，并通过几个项目实战，手把手书写几种不同类型的过程宏。我的视频将会上传至B站，文字版本与视频版本内容会大致相符，但文字版本对原理的讲解会更加清晰，大家看到的是一个最终【正确】的版本，而视频版本对于编写和调试过程的展示更加友好，大家可以看到编写一个过程宏的整个过程中是如何一步步阅读文档、踩坑的。另外，这一系列文章也是我本人近期在学习过程宏的过程中边学边写的，可能有很多野路子，如果大家有更好的实现方式或者编码方式，欢迎与我交流讨论。</p>
+<p>视频教程在这里，完整文字版本请点击视频下方的【阅读原文】</p>
+<span id="more"></span>
+
+<p>过程宏的用处、背景信息等，我就不再介绍了，看这系列教程的同学应该都是有明确目的才来看的，我们就直接上手实战，请大家准备好电脑，我们从如何搭建一个Rust过程宏的开发调试环境入手。</p>
+<p>新建一个文件夹，我们要在其中建立两个<strong>嵌套</strong>的crate。因为在rust中，有以下几个约束：</p>
+<ul>
+<li>过程宏必须定义在一个独立的crate中。不能在一个crate中既定义过程宏，又使用过程宏。<ul>
+<li>原理：考虑<code>过程宏</code>是在编译一个crate之前，对crate的代码进行加工的一段程序，这段程序也是需要编译后执行的。如果定义过程宏和使用过程宏的代码写在一个crate中，那就陷入了死锁:<ul>
+<li>要编译的代码首先需要运行过程宏来展开，否则代码是不完整的，没法编译crate。</li>
+<li>不能编译crate，crate中的过程宏代码就没法执行，就不能展开被过程宏装饰的代码</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>过程宏必须定义定义在<code>lib</code>目标中，不能定义在<code>bin</code>目标中</li>
+</ul>
+<p>创建实验环境目录结构的Shell命令如下：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cd blog.ideawand.com # 进入我们的工作目录</span><br><span class="line">mkdir rust_proc_macro_guide &amp;&amp; cd rust_proc_macro_guide</span><br><span class="line">cargo init --bin  # 创建使用过程宏的crate</span><br><span class="line"></span><br><span class="line">mkdir proc_macro_define_crate &amp;&amp; cd proc_macro_define_crate</span><br><span class="line">cargo init --lib # 创建定义过程宏的crate</span><br></pre></td></tr></table></figure>
+
+<p>我们在上面创建了一个嵌套的层级结构，其实这就是为了便于管理。如果你把<code>rust_proc_macro_guide</code>文件夹和<code>proc_macro_define_crate</code>文件夹平级放置，或者把他俩放到不同的磁盘分区上去，都是没问题的。以上面的操作为例，创建完成以后，你的目录结构应该是这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">blog.ideawand.com</span><br><span class="line">└── rust_proc_macro_guide</span><br><span class="line">    ├── Cargo.lock</span><br><span class="line">    ├── Cargo.toml</span><br><span class="line">    ├── proc_macro_define_crate  # 这是一个用于定义过程宏的独立的crate</span><br><span class="line">    │   ├── Cargo.toml</span><br><span class="line">    │   └── src</span><br><span class="line">    │       └── lib.rs  # 我们的过程宏代码在这里编写</span><br><span class="line">    └── src</span><br><span class="line">        └── main.rs  # 在这里使用我们定义的过程宏</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>重点：后文中为了表述方便，我们将定义过程宏的crate称为内层crate，将使用过程宏的crate叫外层crate</p>
+</blockquote>
+<p>接下来，我们修改两个项目的<code>Cargo.toml</code>，配置我们的实验环境。</p>
+<p>首先在内层<code>proc_macro_define_crate/Cargo.toml</code>中添加<code>[lib]</code>节点并在下面增加<code>proc-macro = true</code>，表示这个crate是一个<code>proc-macro</code>，增加这个配置以后，这个crate的特性就会发生一些变化，例如，这个crate将只能对外导出内部定义的过程宏，而不能导出内部定义的其他内容。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[lib]</span></span><br><span class="line"><span class="attr">proc-macro</span> = <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p>然后在<code>dependencies</code>节点下，添加如下两个依赖包，这也是开发rust过程宏必备的两个依赖包，后面再详细说。其中syn包的<code>extra-traits</code>特性是为了方便我们后续打印调试信息。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">quote</span> = <span class="string">&quot;1&quot;</span></span><br><span class="line"><span class="attr">syn</span> = &#123;features=[<span class="string">&quot;full&quot;</span>,<span class="string">&quot;extra-traits&quot;</span>]&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后打开外层crate的<code>rust_proc_macro_guide/Cargo.toml</code>文件，添加上面的内层crate作为依赖。我们已经说过了，这两个crate本质上是独立的，这里仅仅是通过依赖关系把它们给关联起来了。只要下面这两行配置文件中的路径写的对，这两个包在磁盘上存在哪个目录下都行。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">proc_macro_define_crate</span> = &#123;path=<span class="string">&quot;./proc_macro_define_crate&quot;</span>&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>接下来，我们开始写一个最简单的过程宏。编辑<code>proc_macro_define_crate/src/lib.rs</code>,代码如下，对照代码下面的说明食用口味更佳：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro_attribute]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">mytest_proc_macro</span></span>(attr: TokenStream, item: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    eprintln!(<span class="string">&quot;&#123;:#?&#125;&quot;</span>, attr);</span><br><span class="line">    eprintln!(<span class="string">&quot;&#123;:#?&#125;&quot;</span>, item);</span><br><span class="line">    item</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>我接下来会提到<code>编译原理</code>这几个字，不过别慌，没学过也没关系</li>
+<li>我们引入了一个叫做<code>TokenStream</code>的类型，稍微了解一点点编译原理的同学看到<code>Token</code>这个词应该就会想到，这个八成和源代码做词法分析有关。实际上，这个类型表示的就是输入的源码文件，经过词法分析后的结果。我们在后面会给大家演示里面保存的数据是什么样子的。保证给大家一个清晰直观的认识。</li>
+<li><code>#[proc_macro_attribute]</code>是在告诉编译器我们在定义一个”属性式”的过程宏<ul>
+<li>它还有两个兄弟：<code>#[proc_macro]</code>和<code>#[proc_macro_derive]</code>,分别用于定义”函数式”和”派生式”两种类型的过程宏</li>
+</ul>
+</li>
+<li>接下来的函数名称，就是我们的过程宏的名称</li>
+<li>函数输入有两个参数，分别是<code>attr</code>和<code>item</code>，别紧张，后面看例子就清楚了</li>
+<li>我们这里在打印的时候使用了<code>eprintln!</code>，这是因为cargo在调用rustc进行编译的时候，stdout的输出会被cargo吞掉，而stderr上的输出会在控制台被打印出来，所以我们要把输出打印到stderr上。</li>
+<li>Rust过程宏的本质就是一个编译环节的过滤器，或者说是一个中间件，它接收一段用户编写的源代码，做一通酷炫的操作，然后返回给编译器一段经过修改的代码。<ul>
+<li>函数的返回值直接返回了<code>item</code>，表示的含义是，我什么都不修改，输入代码是什么样，还原封不动给回去。<ul>
+<li>而我们后面要学习的，就是如何编写更复杂的逻辑，返回一个加工后的<code>item</code>给编译器用</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>入坑提示：</p>
+<ul>
+<li>rust的过程宏代码目前没有比较好的调试方法，print大法应该是最好用的。</li>
+<li>做个广告，本篇文章出自微信公众号【极客幼稚园】，欢迎关注，您也可以访问我的个人博客<a href="http://blog.ideawand.com">http://blog.ideawand.com</a></li>
+<li>如需转载，请注明出处</li>
+</ul>
+</blockquote>
+<p>这段过程宏定义的代码是写完了，但是现在还不能直接用，我们没法直接运行它，因为它是由编译器在编译其他代码的过程中调用的，所以我们现在回到外层crate中，使用我们编写的过程宏，这样，在编译外层crate的时候，我们写的过程宏代码就会被执行啦。</p>
+<p>我们打开<code>rust_proc_macro_guide/src/main.rs</code>，输入如下代码,注意其中的blog、ideawand、com等大家可以所以换成其他的标识符：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro_define_crate::mytest_proc_macro;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[mytest_proc_macro(blog(::ideawand::com))]</span></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">foo</span></span>(a:<span class="built_in">i32</span>)&#123;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;hello, blog.ideawand.com, hello, 极客幼稚园&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>保存之后呢，我们在<code>rust_proc_macro_guide</code>目录下，运行<code>cargo check</code>命令，我们在这里不需要执行build，check的过程就会将宏进行展开。也可以看到我们的<code>main.rs</code>里面并没有定义<code>main</code>函数，因为我们要关心的是过程宏展开的过程，还没到具体编译那一步呢，没有<code>main</code>函数，<code>cargo check</code>虽然会在最后报错，但是不影响我们观察过程宏展开情况。（顺便，通过我们在过程宏中打印的输出信息和编译报错信息打印在控制台的先后顺序，我们可以从侧面证明，宏展开是在编译之前完成的）。</p>
+<p><code>cargo check</code>的输出结果如下所示，比较长，我先给出食用建议，然后大家再开始食用，以免无法品鉴其中的美味。</p>
+<ul>
+<li>一定要对照着用户输入的源代码来阅读<code>attr</code>和<code>item</code>这两个<code>TokenStream</code>类型数据的内容，我们在过程宏的定义中先后打印了<code>attr</code>变量和<code>item</code>变量的值，为了便于大家阅读，我把这两个输出在下面分别给大家展示。</li>
+<li>仔细观察用户源码中每一个元素在<code>TokenStream</code>类型中的表示形式</li>
+</ul>
+<p>下面这一行用户原始代码，被编译器解析为<code>TokenStream</code>后，作为<code>attr</code>变量，传递给我们的过程宏。解析后的<code>attr</code>内容也列在下面供对照阅读：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[mytest_proc_macro(blog(::ideawand::com))]</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">TokenStream [</span><br><span class="line">    Ident &#123;</span><br><span class="line">        ident: <span class="string">&quot;blog&quot;</span>,</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">69</span>..<span class="number">73</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">    Group &#123;</span><br><span class="line">        delimiter: Parenthesis,</span><br><span class="line">        stream: TokenStream [</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;:&#x27;</span>,</span><br><span class="line">                spacing: Joint,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">74</span>..<span class="number">76</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;:&#x27;</span>,</span><br><span class="line">                spacing: Alone,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">74</span>..<span class="number">76</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Ident &#123;</span><br><span class="line">                ident: <span class="string">&quot;ideawand&quot;</span>,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">76</span>..<span class="number">84</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;:&#x27;</span>,</span><br><span class="line">                spacing: Joint,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">84</span>..<span class="number">86</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;:&#x27;</span>,</span><br><span class="line">                spacing: Alone,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">84</span>..<span class="number">86</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Ident &#123;</span><br><span class="line">                ident: <span class="string">&quot;com&quot;</span>,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">86</span>..<span class="number">89</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">        ],</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">73</span>..<span class="number">90</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>我们先分析<code>attr</code>变量中的内容，这样后面再看<code>item</code>变量的内容就小菜一碟了。我们可以看到：</p>
+<ul>
+<li><code>TokenStream</code>以树形结构的数据组织，表达了用户源代码中各个语言元素的类型以及相互之间的关系</li>
+<li>每个语言元素都有一个<code>span</code>属性，记录了这个元素在用户源代码中的位置。</li>
+<li>不同类型的节点，有各自独有的属性，其他我们在这个例子中没有涉及到的节点类型，大家可以去阅读文档</li>
+<li><code>Ident</code>类型表示的是一个标识符，这可能是我们后面会用的非常频繁的一个类型。变量名、函数名等等，都是标识符。</li>
+<li><code>TokenStream</code>里面的信息，是没有语义信息的，比如在上面的例子中，路径表达式中的双冒号<code>::</code>被拆分为两个独立的冒号对待，<code>TokenStream</code>并没有把它们识别为路径表达式，同样，它也不区分这个冒号是出现在一个引用路径中，还是用来表示数据类型。</li>
+<li>针对<code>attr</code>属性而言，其中不包括宏自己的名称的标识符，它包含的仅仅是传递给这个过程宏的参数的信息</li>
+</ul>
+<p>看完<code>attr</code>,我们再来看看<code>item</code>参数的值。<code>item</code>参数对应的是被过程宏修饰的代码块，也就是以下三行代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">foo</span></span>(a:<span class="built_in">i32</span>)&#123;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;hello, blog.ideawand.com, hello, 极客幼稚园&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对应的<code>TokenStream</code>为：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">TokenStream [</span><br><span class="line">    Ident &#123;</span><br><span class="line">        ident: <span class="string">&quot;fn&quot;</span>,</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">93</span>..<span class="number">95</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">    Ident &#123;</span><br><span class="line">        ident: <span class="string">&quot;foo&quot;</span>,</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">96</span>..<span class="number">99</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">    Group &#123;</span><br><span class="line">        delimiter: Parenthesis,</span><br><span class="line">        stream: TokenStream [</span><br><span class="line">            Ident &#123;</span><br><span class="line">                ident: <span class="string">&quot;a&quot;</span>,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">100</span>..<span class="number">101</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;:&#x27;</span>,</span><br><span class="line">                spacing: Alone,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">101</span>..<span class="number">102</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Ident &#123;</span><br><span class="line">                ident: <span class="string">&quot;i32&quot;</span>,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">102</span>..<span class="number">105</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">        ],</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">99</span>..<span class="number">106</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">    Group &#123;</span><br><span class="line">        delimiter: Brace,</span><br><span class="line">        stream: TokenStream [</span><br><span class="line">            Ident &#123;</span><br><span class="line">                ident: <span class="string">&quot;println&quot;</span>,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">112</span>..<span class="number">119</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;!&#x27;</span>,</span><br><span class="line">                spacing: Alone,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">119</span>..<span class="number">120</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Group &#123;</span><br><span class="line">                delimiter: Parenthesis,</span><br><span class="line">                stream: TokenStream [</span><br><span class="line">                    Literal &#123;</span><br><span class="line">                        kind: Str,</span><br><span class="line">                        symbol: <span class="string">&quot;hello, blog.ideawand.com, hello, 极客幼稚园&quot;</span>,</span><br><span class="line">                        suffix: <span class="literal">None</span>,</span><br><span class="line">                        span: #<span class="number">0</span> bytes(<span class="number">121</span>..<span class="number">171</span>),</span><br><span class="line">                    &#125;,</span><br><span class="line">                ],</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">120</span>..<span class="number">172</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">            Punct &#123;</span><br><span class="line">                ch: <span class="string">&#x27;;&#x27;</span>,</span><br><span class="line">                spacing: Alone,</span><br><span class="line">                span: #<span class="number">0</span> bytes(<span class="number">172</span>..<span class="number">173</span>),</span><br><span class="line">            &#125;,</span><br><span class="line">        ],</span><br><span class="line">        span: #<span class="number">0</span> bytes(<span class="number">106</span>..<span class="number">175</span>),</span><br><span class="line">    &#125;,</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>上面的结果我就不再深入分析了，相信通过上面的例子，大家会发现，我们的<code>代码</code>也被转换成了一种<code>数据</code>,也就是一种<code>代码即数据</code>的思想，这可能也和Rust借鉴了Lisp语言有关吧，都说Rust上能看到很多种语言的影子。<code>TokenStream</code>类型的数据，可以和Rust源代码之间做等价的转换。</p>
+<p>有了上面的铺垫，我们现在就很容易理解了：所谓的Rust过程宏，就是我们可以自己修改上面的<code>item</code>变量中的值，从而等价于<code>加工原始输入代码</code>,最后将加工后的代码返回给编译器即可。</p>
+<p>在这里，我们再补充一个实验，来证明<code>TokenStream</code>只是一系列符号的组合，和语义无关。我们将上面的实例修改为如下的形式,虽然我们写了一堆没有任何含义的乱码，可是编译器依然会按照词法规则，将其进行切分，然后将其变为一个与之等价的<code>TokenStream</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[mytest_proc_macro(aa@@3 324 +_ &#123;&#125; %^*$^%# []</span> [  &amp;&#125; )]</span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">foo</span></span>(a:<span class="built_in">i32</span>)&#123;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;hello, blog.ideawand.com, hello, 极客幼稚园&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>通过上面的实验，我们就会认识到，<code>TokenStream</code>还是一种比较低级的表达形式，手工去写这样的树形结构，也一定会让人发疯，因此，我们就要借助<code>syn</code>和<code>quote</code>这两个Rust库来提供更友好的开发体验。他们可以把<code>TokenStream</code>转化为具有语义信息，抽象程度更高的一种数据结构——<code>语法树</code>。我们把之前的过程宏定义代码修改成下面这个样子，大家可以先试着自己理解一下，然后再看后面的要点说明：</p>
+<blockquote>
+<p>注意：我们这里提到的是<code>语法树(Syntax Tree，ST）</code>，大家可能经常听到的另一个词是<code>抽象语法树（Abstract Syntax Tree，AST）</code>。通常，抽象语法树是指经过引用消解等一系列后续操作而得到的，具有高度抽象表达能力的数据结构，而Rust的过程宏系统并没有引用消解等能力，因此我们将下面过程得到的数据结构成为AST是不严谨的。但是，由于AST被大家说的太多了，我在后续的介绍中也可能出现笔误或者视频中口误，大家根据上下文，理解我想表达的意思即可。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"><span class="keyword">use</span> syn::&#123;parse_macro_input, AttributeArgs, Item&#125;;</span><br><span class="line"><span class="keyword">use</span> quote::quote;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro_attribute]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">mytest_proc_macro</span></span>(attr: TokenStream, item: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    eprintln!(<span class="string">&quot;&#123;:#?&#125;&quot;</span>, parse_macro_input!(attr <span class="keyword">as</span> AttributeArgs));</span><br><span class="line">    <span class="keyword">let</span> body_ast = parse_macro_input!(item <span class="keyword">as</span> Item);</span><br><span class="line">    eprintln!(<span class="string">&quot;&#123;:#?&#125;&quot;</span>, body_ast);</span><br><span class="line">    quote!(#body_ast).into()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码要点：</p>
+<ul>
+<li>与之前相比，我们新引入了<code>syn</code>包的<code>AttributeArgs</code>、<code>Item</code>两个数据类型和<code>parse_macro_input!</code>宏，以及<code>quote</code>包中的<code>quote!</code>宏。</li>
+<li><code>parse_macro_input!</code>宏将<code>TokenStream</code>类型的参数解析为语法树<ul>
+<li>注意，<code>parse_macro_input!</code>宏内部用到了<code>as</code>关键字，这里的<code>as</code>并不是rust内置的用来做类型转换的关键字，而是<code>parse_macro_input!</code>宏提供的一种用来做类型注解的方法，通过这样的一种写法，告诉<code>parse_macro_input!</code>宏应该如何解析<code>TokenStream</code>，或者说，告诉了<code>parse_macro_input!</code>宏这些<code>TokenStream</code>来自于代码的那些环节。<ul>
+<li>这里又体现出了Rust宏的强大之处，通过宏，这里让人似乎感觉到我们扩展了Rust的语法，或者说，通过宏实现了一种领域特定语言(DSL)</li>
+<li>虽然<code>attr</code>和<code>item</code>都是<code>TokenStream</code>类型的数据，但是不同的类型提示，会导致<code>parse_macro_input!</code>宏输出不同类型的结果<ul>
+<li><code>parse_macro_input!(attr as AttributeArgs)</code>输出的是<code>Vec&lt;NestedMeta&gt;</code>类型的语法树节点</li>
+<li><code>parse_macro_input!(item as Item)</code>输出的是<code>Item</code>类型的语法树节点</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>通过<code>quote!</code>宏，可以将语法树节点及其子节点重新转换为<code>TokenStream</code><ul>
+<li>这里的<code>#body_ast</code>的写法，同样是通过<code>quote!</code>宏实现的一种自定义语法，并不是合法的Rust语言表达式。</li>
+<li><code>quote!</code>宏返回的结果实际是<code>proc_macro2::TokenStream</code>类型的数据，所以要通过<code>into()</code>进行一下转换，变成<code>proc_macro::TokenStream</code>类型的数据，这是有一定的历史背景的<ul>
+<li>由于Rust语言还处在年幼阶段，编译器内部结构变化也会比较大，所以rust编译器给我们提供的接口是没有语义的，近似于一堆字符串片段的<code>proc_macro::TokenStream</code>类型的数据。这个<code>proc_macro</code>包是由rust官方提供的。</li>
+<li><code>quote</code>、<code>syn</code>、<code>proc_macro2</code>这些包，都是由社区或者第三方提供的，这些包基于官方的<code>proc_macro::TokenStream</code>做了很多额外的功能，目的是为了方便我们更方便地去处理、编辑、生成<code>proc_macro::TokenStream</code></li>
+<li>从这一点来体会，rust提供了标准（<code>proc_macro::TokenStream</code>），通过这些标准，可以在上层发展各种生态（<code>quote</code>、<code>syn</code>、<code>proc_macro2</code>）来扩展rust。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>我们回到外层crate所在的目录，再次执行<code>cargo check</code>观察过程宏展开的结果，这次我们可以看到<code>TokenStream</code>解析得到的语法树结构如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[mytest_proc_macro(blog(::ideawand::com))]</span></span><br></pre></td></tr></table></figure>
+<p>对应的语法树为：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line">[</span><br><span class="line">    Meta(</span><br><span class="line">        List(</span><br><span class="line">            MetaList &#123;</span><br><span class="line">                path: Path &#123;</span><br><span class="line">                    leading_colon: <span class="literal">None</span>,</span><br><span class="line">                    segments: [</span><br><span class="line">                        PathSegment &#123;</span><br><span class="line">                            ident: Ident &#123;</span><br><span class="line">                                ident: <span class="string">&quot;blog&quot;</span>,</span><br><span class="line">                                span: #<span class="number">0</span> bytes(<span class="number">69</span>..<span class="number">73</span>),</span><br><span class="line">                            &#125;,</span><br><span class="line">                            arguments: <span class="literal">None</span>,</span><br><span class="line">                        &#125;,</span><br><span class="line">                    ],</span><br><span class="line">                &#125;,</span><br><span class="line">                paren_token: Paren,</span><br><span class="line">                nested: [</span><br><span class="line">                    Meta(</span><br><span class="line">                        Path(</span><br><span class="line">                            Path &#123;</span><br><span class="line">                                leading_colon: <span class="literal">Some</span>(</span><br><span class="line">                                    Colon2,</span><br><span class="line">                                ),</span><br><span class="line">                                segments: [</span><br><span class="line">                                    PathSegment &#123;</span><br><span class="line">                                        ident: Ident &#123;</span><br><span class="line">                                            ident: <span class="string">&quot;ideawand&quot;</span>,</span><br><span class="line">                                            span: #<span class="number">0</span> bytes(<span class="number">76</span>..<span class="number">84</span>),</span><br><span class="line">                                        &#125;,</span><br><span class="line">                                        arguments: <span class="literal">None</span>,</span><br><span class="line">                                    &#125;,</span><br><span class="line">                                    Colon2,</span><br><span class="line">                                    PathSegment &#123;</span><br><span class="line">                                        ident: Ident &#123;</span><br><span class="line">                                            ident: <span class="string">&quot;com&quot;</span>,</span><br><span class="line">                                            span: #<span class="number">0</span> bytes(<span class="number">86</span>..<span class="number">89</span>),</span><br><span class="line">                                        &#125;,</span><br><span class="line">                                        arguments: <span class="literal">None</span>,</span><br><span class="line">                                    &#125;,</span><br><span class="line">                                ],</span><br><span class="line">                            &#125;,</span><br><span class="line">                        ),</span><br><span class="line">                    ),</span><br><span class="line">                ],</span><br><span class="line">            &#125;,</span><br><span class="line">        ),</span><br><span class="line">    ),</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>可以看到，在上面的语法树中，已经包含了通过上下文推导出的语义信息，<code>::ideawand::com</code>已经不再被认为是4个冒号和两个标识符了，在语法树中，这个结构被一个<code>Path</code>类型的节点所表示，而<code>Path</code>类型中，又有<code>segments</code>字段来表示其中的<code>ideawand</code>和<code>com</code>。通过这个例子，大家应该可以直观感受到，语法树是经过语义分析得到的结果，是一种对源代码更加完善的表示，每一个元素不再是冰冷的字符，而是拥有了特定的含义。同样也正因为如此，传入<code>parse_macro_input!</code>的TokenStream必须是符合Rust语法规则的Token序列才行，前文中我们用来做实验的<code>#[mytest_proc_macro(aa@@3 324 +_ &#123;&#125; %^*$^%# [] [  &amp;&#125; )]</code>虽然可以用<code>TokenStream</code>来表示，但是却不能被解析为语法树节点，你可以试一下，会得到什么样的报错信息。</p>
+<p>语法树节点同样有很多种类型，上面的示例中只涉及到很少的几种，大家可以在读完本篇文章以后，自行去阅读相关文档。</p>
+<p>本篇文章到这里先告一段落，总结一下，本篇主要是为了给大家介绍Rust的过程宏系统的实现机制，并且带领大家搭建了一个实验工程的目录结构，在其中直观感受了一下在过程宏实现的各个环节中，我们面对的数据是什么样子的。</p>
+<p>本篇文章所实现的过程宏，并没有对<code>TokenStream</code>做任何修改，只是把代码原封不动还给了编译器。因为如何修改、生成代码又是一个大话题，需要结合项目动手实战才能有收获，我会在接下来的文章中带领大家实战几个过程宏的编写。</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/" title="Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理">http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Rust-%E8%BF%87%E7%A8%8B%E5%AE%8F-proc-macro/" rel="tag"># Rust,过程宏,proc-macro</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/" rel="next" title="通过rustpython学习rust和Python系列之1--getattribute">
+                  <i class="fa fa-chevron-left"></i> 通过rustpython学习rust和Python系列之1--getattribute
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

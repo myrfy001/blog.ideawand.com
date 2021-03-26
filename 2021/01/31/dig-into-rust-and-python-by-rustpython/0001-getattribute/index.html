@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通过rustpython学习rust和Python系列之1--getattribute">
+<meta property="og:url" content="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-01-31T07:00:10.000Z">
+<meta property="article:modified_time" content="2021-03-26T15:20:50.939Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="rust">
+<meta property="article:tag" content="rustpython">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>通过rustpython学习rust和Python系列之1--getattribute | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          通过rustpython学习rust和Python系列之1--getattribute
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-31 15:00:10" itemprop="dateCreated datePublished" datetime="2021-01-31T15:00:10+08:00">2021-01-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-26 23:20:50" itemprop="dateModified" datetime="2021-03-26T23:20:50+08:00">2021-03-26</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>先写个算是开篇语的东西吧。从去年起就开始关注rustpython这个项目，也一直想写一系列长篇文章来深入分析这个项目。这样一直拖了差不多一年了，总想着先把整个项目看完再书写一套有体系有章法的文章，但事实证明碎片的时间还是不足以让我把整个项目看完。因此，在今天决定，不管什么体系了，就按照随笔来写吧，看到啥写啥。正好之前因为追求高质量的文章，这个博客之前几个月才更新一次，所以这也算是一个尝试，当然，龟速更新的文章我也会继续写的。如果你看到这系列文章感觉还有点意思，可以把我的网站加收藏哈~ <a href="http://blog.ideawand.com">http://blog.ideawand.com</a> 。我还有一个微信公众号叫做【极客幼稚园】，大家也可以关注一下，这样有什么更新大家也可以看到。</p>
+<p>本系列随笔的第一篇，基本算是随机挑选的，我们来看看个python中<code>__getattribute__</code>这个魔术方法在rustpython中有关的实现吧。</p>
+<span id="more"></span>
+
+<blockquote>
+<p>本次阅读对应的rustpython commit: 1976740d3c0015514db8863584ed7a015c18521f。</p>
+</blockquote>
+<p><code>PyAttributes</code>类型的定义在RP中是用的Rust标准库的HashMap，代码注释中(pyobject.rs:64)的说明是这样可能会比用dict更快一些。而CPython里毕竟C语言自己没有hashmap，所以用的都是CPython自己实现的dict来做。</p>
+<ul>
+<li>但是毕竟逃不掉，还要和Python语言中的字典有些关系，所以在RustPython的<code>Dict</code>实现中，实现了与<code>PyAttributes</code>的互相转换（<code>from_attributes</code> @ dict.rs:377、<code>to_attributes</code> @ dict.rs:452）。</li>
+</ul>
+<p>为<code>PyType</code>实现<code>SlotGetattro</code> Trait，定义了<code>getattro</code>方法，流程如下：</p>
+<ul>
+<li><code>PyType</code>为解释器自己快速查找一个类型的属性开了后门，定义了<code>get_attr</code>方法。先调用这个方法<ul>
+<li>该方法先尝试直接从自己的<code>attributes</code>属性（上面提到了，他没有有dict实现，而是直接使用了HashMap）里去按名字查找<ul>
+<li>如果没有找到，再去自己的MRO里面找，也是遍历MRO，直接读它们的<code>attributes</code>属性</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Python官方的《Descriptor HowTo Guide》中有如下的描述</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Instance lookup scans through a chain of namespaces giving data descriptors the highest priority, followed by instance variables, then non-data descriptors, then class variables, and lastly __getattr__() if it is provided.</span><br><span class="line"></span><br><span class="line">......</span><br><span class="line"></span><br><span class="line">The mechanism for descriptors is embedded in the __getattribute__() methods for object, type, and super().</span><br><span class="line"></span><br><span class="line">The important points to remember are:</span><br><span class="line"></span><br><span class="line">Descriptors are invoked by the __getattribute__() method.</span><br><span class="line"></span><br><span class="line">Classes inherit this machinery from object, type, or super().</span><br><span class="line"></span><br><span class="line">Overriding __getattribute__() prevents automatic descriptor calls because all the descriptor logic is in that method.</span><br><span class="line"></span><br><span class="line">object.__getattribute__() and type.__getattribute__() make different calls to __get__(). The first includes the instance and may include the class. The second puts in None for the instance and always includes the class.</span><br><span class="line"></span><br><span class="line">Data descriptors always override instance dictionaries.</span><br><span class="line"></span><br><span class="line">Non-data descriptors may be overridden by instance dictionaries.</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>我暂时认为可以这样理解，Python默认为<code>object</code>、<code>type</code>、<code>super()</code>三种类型实现了默认的<code>__getattribute__</code>方法，默认方法里支持了描述器的行为。我们大多数自定义的结构都继承了这些行为，当然，你也可以自定义一个<code>__getattribute__</code>方法，这样描述器的机制在当前类就不一定有效了。不过由于在编写自定义的<code>__getattribute__</code>方法时，为了避免无限递归调用，不能使用<code>self.xxx</code>的语法，而是显示使用父类的<code>__getattribute__</code>方法，因此描述器的机制在父类中还会起作用。</p>
+<p><code>__set__</code>只在当前类下找，而<code>__get__</code>要按MRO顺序找，为什么呢，存疑，再看看文档</p>
+<p>上文提到对于<code>object</code>、<code>type</code>、<code>super()</code>三种类型实现了默认的<code>__getattribute__</code>方法，所以在RP的代码中也可以在不同位置看到这些逻辑</p>
+<ul>
+<li><code>generic_getattribute_opt</code> @ vm.rs:1244  这个对应实现了CPython中的<code>_PyObject_GenericGetAttrWithDict</code></li>
+<li><code>getattro</code> @ pytype.rs:539</li>
+<li>目前的感觉是，vm.rs中的逻辑是对普通对象的，而pytype.rs中的逻辑是对type的，对super的应该是通过某种方式最终使用了上面两个方法</li>
+</ul>
+<p>未完待续。。。。</p>
+<p>参考资料：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.hongweipeng.com/index.php/archives/1241/">https://www.hongweipeng.com/index.php/archives/1241/</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/" title="通过rustpython学习rust和Python系列之1--getattribute">http://blog.ideawand.com/2021/01/31/dig-into-rust-and-python-by-rustpython/0001-getattribute/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/rust/" rel="tag"># rust</a>
+              <a href="/tags/rustpython/" rel="tag"># rustpython</a>
+              <a href="/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2020/12/31/what-is-console-terminal-tty-and-shell-2/" rel="next" title="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
+                  <i class="fa fa-chevron-left"></i> Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+                <a href="/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/" rel="prev" title="Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理">
+                  Rust过程宏系列教程(1)--搭建过程宏开发环境并熟悉基本原理 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta property="og:type" content="website">
+<meta property="og:title" content="IdeaWand">
+<meta property="og:url" content="http://blog.ideawand.com/page/2/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:author" content="Myrfy">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/page/2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: true,
+    isPost: false,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2018/02/14/to-cc-2018/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/02/14/to-cc-2018/" class="post-title-link" itemprop="url">棉花糖宝宝 2018 Happy Valentine's Day</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2018-02-14 21:18:18 / 修改时间：21:35:12" itemprop="dateCreated datePublished" datetime="2018-02-14T21:18:18+08:00">2018-02-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          
+<div>
+<p style="text-align: center;">
+<canvas id="c" height="500" width="500"></canvas>
+<script>
+ var b = document.body;
+ var c = document.getElementsByTagName('canvas')[0];
+ var a = c.getContext('2d');
+ document.body.clientWidth; 
+</script> 
+<script>
+// start of submission //
+with(m=Math)C=cos,S=sin,P=pow,R=random;c.width=c.height=f=500;h=-250;function p(a,b,c){if(c>60)return[S(a*7)*(13+5/(.2+P(b*4,4)))-S(b)*50,b*f+50,625+C(a*7)*(13+5/(.2+P(b*4,4)))+b*400,a*1-b/2,a];A=a*2-1;B=b*2-1;if(A*A+B*B<1){if(c>37){n=(j=c&1)?6:4;o=.5/(a+.01)+C(b*125)*3-a*300;w=b*h;return[o*C(n)+w*S(n)+j*610-390,o*S(n)-w*C(n)+550-j*350,1180+C(B+A)*99-j*300,.4-a*.1+P(1-B*B,-h*6)*.15-a*b*.4+C(a+b)/5+P(C((o*(a+1)+(B>0?w:-w))/25),30)*.1*(1-B*B),o/1e3+.7-o*w*3e-6]}if(c>32){c=c*1.16-.15;o=a*45-20;w=b*b*h;z=o*S(c)+w*C(c)+620;return[o*C(c)-w*S(c),28+C(B*.5)*99-b*b*b*60-z/2-h,z,(b*b*.3+P((1-(A*A)),7)*.15+.3)*b,b*.7]}o=A*(2-b)*(80-c*2);w=99-C(A)*120-C(b)*(-h-c*4.9)+C(P(1-b,7))*50+c*2;z=o*S(c)+w*C(c)+700;return[o*C(c)-w*S(c),B*99-C(P(b, 7))*50-c/3-z/1.35+450,z,(1-b/1.2)*.9+a*.1, P((1-b),20)/4+.05]}}setInterval('for(i=0;i<1e4;i++)if(s=p(R(),R(),i%46/.74)){z=s[2];x=~~(s[0]*f/z-h);y=~~(s[1]*f/z-h);if(!m[q=y*f+x]|m[q]>z)m[q]=z,a.fillStyle="rgb("+~(s[3]*h)+","+~(s[4]*h)+","+~(s[3]*s[3]*-80)+")",a.fillRect(x,y,1,1)}',100)
+// end of submission //
+</script><br>
+</div>
+
+
+<p>To 棉花糖宝宝：</p>
+<p>上述玫瑰生成代码来自 西班牙程序员 Roman Cortes 的博客<a target="_blank" rel="noopener" href="http://www.romancortes.com/blog/1k-rose/">http://www.romancortes.com/blog/1k-rose/</a>。</p>
+<p>虽然代码不是我写的，但是这篇博客已经被commit到github永久保存啦~</p>
+<p>2018 Happy Valentine’s Day</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/" class="post-title-link" itemprop="url">使用OpenSSL生成含有Subject Alternative Name(SAN)的证书</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2017-11-22 22:15:15 / 修改时间：22:55:00" itemprop="dateCreated datePublished" datetime="2017-11-22T22:15:15+08:00">2017-11-22</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="0x00-背景"><a href="#0x00-背景" class="headerlink" title="0x00 背景"></a>0x00 背景</h1><p>今天尝试将一个websocket服务升级为wss，在调试过程中需要自己生成证书。Google之后发现很多方案混杂在一起，而且很多例子对于新版的Chrome浏览器并不适用。因此找到两篇比较靠谱的文章，整理出本篇博客，文中提到的两种方法均亲测可用。<br>在浏览器兼容方面，主要是新版本对域名的认证放弃了CommonName，因此本文介绍的方法全部都使用Subject Alternative Name (SAN) ， 从而支持目前的主流浏览器。</p>
+<h2 id="生成测试环境证书的两种方法"><a href="#生成测试环境证书的两种方法" class="headerlink" title="生成测试环境证书的两种方法"></a>生成测试环境证书的两种方法</h2><p>简单来说，生成测试证书大概有两种方式。<br>一种是生成一个CA根证书和多个服务需要的证书，然后使用CA根证书去签名多个证书。这种方式可以一次管理多个证书，也比较贴近真实情况，当然也可以用来做证书过期、更新等试验，缺点是操作起来略微麻烦一点。<br>还有一种方式就是，直接用根证书作为网站的HTTPS证书使用，这样只需要建立一个证书即可，比较适合小范围的测试，操作快捷。当然，上一种方式的优点就是这种方式的缺点。</p>
+<p>闲言少叙，下面开始介绍两种方式如何制作证书。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/11/22/build-certificate-that-support-Subject-Alternative-Name-SAN/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/" class="post-title-link" itemprop="url">Python之Metaclass元类详解与实战:50行代码实现【智能属性】</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-10-25 20:51:21" itemprop="dateCreated datePublished" datetime="2017-10-25T20:51:21+08:00">2017-10-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-11-22 22:55:34" itemprop="dateModified" datetime="2017-11-22T22:55:34+08:00">2017-11-22</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="0x00-背景"><a href="#0x00-背景" class="headerlink" title="0x00 背景"></a>0x00 背景</h1><p>由于工作需要，最近学习Python元编程方面的东西。本文介绍了Metaclass的一个示例，是笔者在学习过程中编写的一个小例子，虽然只有50行代码，但其中涉及了闭包、元编程等内容，而且具有较高的实用性。 Let’s Go!</p>
+<blockquote>
+<p>注：本文以Python3.6为例，早期版本中元类的使用方式与本文所述方式不同。<br>   上述目的也可以通过装饰器或者闭包实现，不过这里是为了学习元类，因此使用元类来做。</p>
+</blockquote>
+<h1 id="0x01-我们的目标（没有蛀-牙Bug）"><a href="#0x01-我们的目标（没有蛀-牙Bug）" class="headerlink" title="0x01 我们的目标（没有蛀 牙Bug）"></a>0x01 我们的目标（没有<del>蛀 牙</del>Bug）</h1><p>为了了解元类是什么，我们先看一个很实用的例子，这样先知道了目标，再去分析后面的原理，大家思路会清晰一些。<br>我们要实现的目标类似于ORM框架：用一个Python类来表示一个Model，这个Model具有很多属性用来存储数据，我们可以为这些属性设置约束条件（例如数据类型等），当给这些属性进行赋值操作时，会自动根据约束检验数据是否合法，就像下面这样：</p>
+<p>假设我们要定义一个叫做News的Model用来代表一片新闻，那么我希望能够这样：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义News类作为保存新闻信息的Model</span></span><br><span class="line"><span class="comment"># SmartAttrBase为News类的基类</span></span><br><span class="line"><span class="comment"># SmartAttrDesc类用来存储各个字段的约束条件</span></span><br><span class="line"><span class="comment"># SmartAttrBase和SmartAttrDesc类的具体实现在后文中会有介绍，目前不必关心。</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">News</span>(<span class="params">SmartAttrBase</span>):</span></span><br><span class="line">    title = SmartAttrDesc(default=<span class="string">&quot;&quot;</span>, type_=<span class="built_in">str</span>, func=<span class="keyword">lambda</span> x: x.upper())</span><br><span class="line">    content = SmartAttrDesc(default=<span class="string">&quot;&quot;</span>, type_=<span class="built_in">str</span>)</span><br><span class="line">    publisher = SmartAttrDesc(default=<span class="string">&quot;&quot;</span>, type_=<span class="built_in">str</span>)</span><br><span class="line">    publish_time = SmartAttrDesc(default=<span class="number">0</span>, type_=<span class="built_in">int</span>)</span><br></pre></td></tr></table></figure>
+
+<p>上面的News Model具有4个属性，其中3个是字符串类型，1个是整数类型，对于title字段，我们要求无论传入什么内容，都转换为大写形式进行存储。如果提供的数据类型不符，则应抛出异常，如下所示：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&gt;&gt;&gt; </span>news = News()</span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title</span><br><span class="line"><span class="string">&#x27;&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title = <span class="string">&quot;The quick brown fox.&quot;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.title</span><br><span class="line"><span class="string">&#x27;THE QUICK BROWN FOX.&#x27;</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time = <span class="number">1508941663</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time</span><br><span class="line"><span class="number">1508941663</span></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>news.publish_time = <span class="string">&quot;20171025&quot;</span></span><br><span class="line">TypeError: Proprety [publish_time] need <span class="built_in">type</span> of &lt;<span class="class"><span class="keyword">class</span> &#x27;<span class="title">int</span>&#x27;&gt; <span class="title">but</span> <span class="title">get</span> &lt;<span class="title">class</span> &#x27;<span class="title">str</span>&#x27;&gt;</span></span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/10/25/smart-attribute-using-metaclass-in-50-lines-of-python-code/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/10/12/setup-a-js-mining-proxy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/10/12/setup-a-js-mining-proxy/" class="post-title-link" itemprop="url">搭建自己的JavaScript挖矿代理</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-10-12 22:09:26" itemprop="dateCreated datePublished" datetime="2017-10-12T22:09:26+08:00">2017-10-12</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本文介绍了如何搭建自己的js挖矿代理服务器，并在本篇博客中提供了示例。因此，当您决定继续阅读本篇博文时，您已经在为笔者挖取门罗币（Monero）了。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/10/12/setup-a-js-mining-proxy/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/" class="post-title-link" itemprop="url">Elasticsearch的mapping设置：enabled, index, doc_values, store, _source到底是什么鬼？</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-09-23 16:32:28" itemprop="dateCreated datePublished" datetime="2017-09-23T16:32:28+08:00">2017-09-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-09-25 23:15:28" itemprop="dateModified" datetime="2017-09-25T23:15:28+08:00">2017-09-25</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="0x00-背景介绍"><a href="#0x00-背景介绍" class="headerlink" title="0x00 背景介绍"></a>0x00 背景介绍</h2><p>最近尝试用ES + Kibana来快速搭建一个全新的可视化平台，有机会仔细阅读了一下ES的文档，发现mapping里有很多设置选项，初次看时令人眼花缭乱，若设置不当，有可能浪费存储空间，也有可能导致无法使用Aggregations，故在此记录一下重点内容。如有错误，恳请<a target="_blank" rel="noopener" href="https://github.com/myrfy001/blog.ideawand.com">点击这里提issue</a>,我会及时改正。</p>
+<p>本文参照的版本为 Elasticsearch 5.6</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2017/09/23/notes-on-elasticsearch-mappings-and-kibana/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" class="post-title-link" itemprop="url">Unicode中的【合字】现象以及Python中的相关Bug</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-11 22:46:46" itemprop="dateCreated datePublished" datetime="2017-06-11T22:46:46+08:00">2017-06-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-06-12 11:03:08" itemprop="dateModified" datetime="2017-06-12T11:03:08+08:00">2017-06-12</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li>注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。</li>
+</ul>
+<p>最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  <code>\w+</code>  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。</p>
+<p>输入内容为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक्ष में एकजुट: आजम खान”</span></span><br></pre></td></tr></table></figure>
+
+<p>经过匹配后重组的句子变为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">u&quot;बसप भ जप म स ठग ठ म सलम न सप क पक ष म एकज ट आजम ख न”</span></span><br></pre></td></tr></table></figure>
+<p>对比前后两段文字，可以看到经过正则匹配的文字丢失掉了一些细节， 比如某些符号上面的小黑点等。</p>
+<p>造成这个现象的原因是Unicode里面存在的 “合字” 机制（刷新了我对字符的理解），我们以字符<code>में</code>为例进行说明。</p>
+<p>在IPython下查看这个符号的组成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">152</span>]: a = <span class="string">u&#x27;में&#x27;</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">153</span>]: a</span><br><span class="line">Out[<span class="number">153</span>]: <span class="string">u&#x27;\u092e\u0947\u0902&#x27;</span>	</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，我们看起来的一个“字符”实际上是由3个Unicode字符组成的，那么，我们分别看一下这三个Unicode字符分别是什么：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">154</span>]: <span class="built_in">print</span> a[<span class="number">0</span>]</span><br><span class="line">म</span><br><span class="line"></span><br><span class="line">In [<span class="number">155</span>]: <span class="built_in">print</span> a[<span class="number">1</span>]</span><br><span class="line"> े</span><br><span class="line"></span><br><span class="line">In [<span class="number">156</span>]: <span class="built_in">print</span> a[<span class="number">2</span>]</span><br><span class="line"> ं</span><br></pre></td></tr></table></figure>
+
+<p>后两个字符，下面是一个虚线画出的圆圈占位符，这种符号可以和前面的字母组合为新的显示形式，组合后，原来的虚线圆环就不会再显示了。</p>
+<p>这种现象，个人感觉非常类似用汉字中的偏旁部首来描述一个汉字的感觉。<br>接下来，按照这个思路，我们可以自己造一个符号出来 ;)</p>
+<p>下面的这个示例，输出应该为1个字符A，并且字符A的上面有一个 从左上至右下的斜杠以及一个点 组成的上标。如果浏览器显示为两个字符或者三个字符，则说明显示问题。复制该段代码到Python中执行，在我的OSX操作系统上可以看到正确的输出。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">260</span>]: b = <span class="string">u&#x27;\u0041\u0947\u0902&#x27;</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">261</span>]: <span class="built_in">print</span> b</span><br><span class="line">Aें</span><br></pre></td></tr></table></figure>
+
+<p>下面，问题来了，看看Python的自带正则表达式模块re是怎么处理这种字符的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">157</span>]: re.findall(<span class="string">r&#x27;\w+&#x27;</span>, a, re.UNICODE)</span><br><span class="line">Out[<span class="number">157</span>]: [<span class="string">u&#x27;\u092e’]</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到，re只把字根保留了下来，而其他部分被当做标点符号给去除掉了。</p>
+<p>解决方案是，使用第三方正则库regex</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">160</span>]: regex.findall(<span class="string">r&#x27;\w+&#x27;</span>, a, regex.UNICODE)</span><br><span class="line">Out[<span class="number">160</span>]: [<span class="string">u&#x27;\u092e\u0947\u0902&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+
+<p>最后一句话：使用Python的正则表达式库处理不常见语言要小心。</p>
+<p><a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/06/10/hello-world/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2017/06/10/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2017-06-10 18:01:35" itemprop="dateCreated datePublished" datetime="2017-06-10T18:01:35+08:00">2017-06-10</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/deployment.html">Deployment</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2015/07/04/raspberrypi-driver-develope-study-note-1/" class="post-title-link" itemprop="url">树莓派驱动学习笔记(1)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-07-04 13:22:17" itemprop="dateCreated datePublished" datetime="2015-07-04T13:22:17+08:00">2015-07-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-06-15 13:32:10" itemprop="dateModified" datetime="2017-06-15T13:32:10+08:00">2017-06-15</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>以下内容来自阅读<a target="_blank" rel="noopener" href="http://elinux.org/RPi_Software">http://elinux.org/RPi_Software</a>的总结</p>
+<p>树莓派的启动：</p>
+<p><strong><em>在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路</em></strong></p>
+<hr>
+<p>First stage bootloader：从SD卡读取Second stage bootloader</p>
+<p>Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU</p>
+<p>GPU firmware (start.elf)：在这个固件中，GPU来启动CPU。</p>
+<p>User code：最后…………CPU开始执行的用户程序</p>
+<p>以上文件在firmware/boot/目录下，其中_cd表示cutdown,是裁剪版；_x是测试版</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+  </div>
+
+  
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+  </nav>
+
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

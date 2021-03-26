@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="Terminal(终端)和Console(控制台)这两个词，在使用Linux操作系统或者查阅资料的时候，经常会看到。但它们究竟是什么呢？笔者最近在捣鼓一台Linux系统的笔记本，并对其做键盘键位的映射，使其能够符合Mac操作系统下的按键习惯，在这个过程中，顺道深入了解了一下Terminal和Console的区别。关于键位映射，我会在后面再写一系列文章来介绍背后的原理以及实战，这里先卖个关子。本篇文">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY">
+<meta property="og:url" content="http://blog.ideawand.com/2020/11/14/what-is-console-terminal-tty-and-shell-1/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="Terminal(终端)和Console(控制台)这两个词，在使用Linux操作系统或者查阅资料的时候，经常会看到。但它们究竟是什么呢？笔者最近在捣鼓一台Linux系统的笔记本，并对其做键盘键位的映射，使其能够符合Mac操作系统下的按键习惯，在这个过程中，顺道深入了解了一下Terminal和Console的区别。关于键位映射，我会在后面再写一系列文章来介绍背后的原理以及实战，这里先卖个关子。本篇文">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/Used_Punchcard_(5151286161).jpg">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/BRLESC-1_computer.jpg">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/1578396079322.gif">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/tty.gif">
+<meta property="og:image" content="http://blog.ideawand.com/images/console-terminal-keybord/512px-Selectric-iii-balls.jpg">
+<meta property="article:published_time" content="2020-11-14T14:32:29.000Z">
+<meta property="article:modified_time" content="2020-11-14T09:57:40.275Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="Terminal Consol TTY Shell">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://blog.ideawand.com/images/console-terminal-keybord/Used_Punchcard_(5151286161).jpg">
+
+<link rel="canonical" href="http://blog.ideawand.com/2020/11/14/what-is-console-terminal-tty-and-shell-1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2020/11/14/what-is-console-terminal-tty-and-shell-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-11-14 22:32:29 / 修改时间：17:57:40" itemprop="dateCreated datePublished" datetime="2020-11-14T22:32:29+08:00">2020-11-14</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Terminal(终端)和Console(控制台)这两个词，在使用Linux操作系统或者查阅资料的时候，经常会看到。但它们究竟是什么呢？笔者最近在捣鼓一台Linux系统的笔记本，并对其做键盘键位的映射，使其能够符合Mac操作系统下的按键习惯，在这个过程中，顺道深入了解了一下Terminal和Console的区别。关于键位映射，我会在后面再写一系列文章来介绍背后的原理以及实战，这里先卖个关子。本篇文章主要带领大家回顾一下计算机的发展历史，随着历史的发展，看看Terminal、Console这些概念是如何演进的。</p>
+<span id="more"></span>
+
+<p>在最早的时候，计算机还是一种要占几间房子的庞然大物，其基本逻辑单元还是电子管，如果再早一点，甚至是用继电器组成的数字逻辑。在那个年代，还没有键盘和显示器，计算机的输入可能是一个机柜上的一组按钮或者打孔卡的读卡器，而输出设备可能就是一排指示灯。读到这里，可能学过51单片机开发的同学就能想到一块开发版，上面有LED灯和按键的样子（现在可以理解为什么点亮流水灯是大多数单片机教程的第一课了吗？学习单片机的过程，其实可以带领大家重温一下历史的发展，更好的了解硬件底层……有点跑题了）。</p>
+<p>刚才提到了，那个年代的计算机可能是使用打孔卡作为输入的，下面这张图就展示了一张IBM的打孔卡，类似高考的答题卡，只不过是把答题卡要涂黑的地方打上孔，然后由读卡器根据是否透光来获取信息。</p>
+<p><img src="/images/console-terminal-keybord/Used_Punchcard_(5151286161).jpg" alt="80列、矩形孔的标准的IBM打孔卡片"></p>
+<p>（图片来源：By Pete Birkinshaw from Manchester, UK - Used Punchcard, CC BY 2.0, <a target="_blank" rel="noopener" href="https://commons.wikimedia.org/w/index.php?curid=49758093）">https://commons.wikimedia.org/w/index.php?curid=49758093）</a></p>
+<p>处于当时这个年代的设备，一般会有一个柜子，柜子上有各种指示灯，可能还有一些开关等，这样一个可以显示计算机内部状态的面板，是最早意义上的console，也就是控制台。从这个名字，大家应该也可以感受到，它表达了一种类似桌子一样的工作台，工作台上有各种机械按钮或者指示灯的设备，是一种机械感很强的概念。当时的计算机操作人员，可以根据Console上的各种指示灯，判断系统的工作状态，或者读取系统的输出。好了，这就是最原始的Console的含义，总结一下，就是一个可以直接对硬件进行控制，并且监控硬件工作状态的物理面板。下面是一张Console的图片，加深一下大家的印象。</p>
+<p><img src="/images/console-terminal-keybord/BRLESC-1_computer.jpg" alt="The console of the BRLESC computer (US Army photo)"></p>
+<p>（图片来源：Public Domain, <a target="_blank" rel="noopener" href="https://commons.wikimedia.org/w/index.php?curid=2885330">https://commons.wikimedia.org/w/index.php?curid=2885330</a>)</p>
+<p>随着时代的推移，键盘和打印机也逐步成为了计算机的标配外设。这个阶段，向计算机输入命令可以不用再给卡片打孔了，通过键盘就可以输入ABCDE这样的字母了，同时，设备的输出也不用通过Console上的各种指示灯来读取了，而是可以通过打印机打印到纸上。</p>
+<p>注意，我这里说的是打印到纸上。没错，在哪个年代，荧光屏还没有普及。让我们再临时跑个题，去看一下比计算机发展早一些的打字机和电报设备。最早的打字机是这样的，键盘上的每一个按键都，都对应着一个连杆，连杆的一端是带有一个字母的印章，这些连杆排列在一个圆周上，每当按下一个按键时，通过机械连杆传动，会使得连杆头部的字母印章击向圆周的圆心。打印纸放在一个可以移动的支架上，支架与一个弹簧连接，当支架被推到最右侧时，弹簧压紧，支架被卡住，每敲击一个按键，这个支架就会被机械结构放松一下，弹簧就会推动支架向左移动一个字符的位置。然后在打印纸和击锤之间还有一个色带，类似于复写纸，击锤敲击色带，将色带上的颜色印到打印纸上。</p>
+<p><img src="/images/console-terminal-keybord/1578396079322.gif" alt="机械打字机"></p>
+<p>(图片来源：<a target="_blank" rel="noopener" href="http://www.aixifan.com/a/ac12265436">http://www.aixifan.com/a/ac12265436</a>)</p>
+<p>当一行文字打印完成以后，就像动图里描述的那样，需要手工把支架再推回到最右侧。根据打字机的结构不同，推回右侧的时候，可能会自动将纸向上滚动一行，也可能保留来原来的行不动。如果没有自动换行，那么还要再通过其他的按键，控制滚筒走纸移动到下一行。</p>
+<p>我们上面提到的用于装载打印纸的移动支架，有一个学名，叫做<code>字车</code>，看到这里的<code>车</code>字，你应该理解为什么现在电脑键盘上的那个键为什么叫做<code>回车</code>键了吧！同样，我们也要注意到，换行和回车，其实是两个操作，一个是控制打印纸向上移动一行，另一个是将字车推回到最右边。只不过有的设备将这两个操作连成了一个操作。这两个操作，要不要合并到一起的争执，一直延续到了今天，影响着Windows用户和*nix用户，我想一部分同学读到这里应该已经突然明白了什么，这个我们后面的文章再说，欢迎关注我的公众号：极客幼稚园，获取更多文章。</p>
+<p>机械打字机另一个好玩的地方是他的Shift键，大家都知道，在电脑键盘上，按住Shift键就可以打出大写的字母，那么在机械打字机上是如何实现的呢？其实，我们前面提到的每个击锤上是有两个字母的，一个大写，一个小写，上下排列在击锤上。当没有按下Shift键时，小写字母恰好可以打击到纸上，而按下Shift键时，整个字车会被抬起一个字符的高度,或者击锤会下沉一个字符的高度（如上面的动图），因设计而异，这时敲击键盘时，击锤上的大写字母就恰好可以印到纸上。在英语中，Shift就有换挡的意思，就像手动档的汽车，档杆会推动变速箱里的齿轮一样，机械打字机的Shift键，完全是通过机械抬升或下沉的方式，将小写字符输出转换为了大写字符输出，这也就是Shift键为什么被翻译为上档键的原因吧，因为和汽车挂挡挺像的。</p>
+<p>再后来，人们觉得手工打字太不方便了，速度也不快，随着电气化时代的到来，打字机也逐步变得更加自动化了。其中，最好的代表应该就是电传打字机了。电传打字机，英文是teleprinter、teletypewriter或者teletype，缩写为TTY（某些*nix操作系统的用户到这里可能又开始有些眼熟了）。它是随着电报技术的普及而普及的，人们将两台电传打字机通过（无线）电信号建立连接，当你在其中一台机器上按下一个按键时，几百公里之外与之建立连接的另一台打字机上对应的击锤就会在电力的驱动下击向打印纸，人们再也不用去背诵莫尔斯电码了，字符编码和解码的操作，都在机器中完成了。这些编码解码的规则，可以看做是最早的编码、通信协议。</p>
+<p><img src="/images/console-terminal-keybord/tty.gif" alt="电传打字机"></p>
+<p>(图片来源：<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=CiUXDHtPnWY">https://www.youtube.com/watch?v=CiUXDHtPnWY</a>)</p>
+<p>另外，随着发展，机械打字机也发生了一些变化，比如，字车的含义发生了变化，打印纸和滚筒逐渐变为固定的部件，而由杠杆原理实现的击锤，变成了一个一圈刻满字符的类似球状的物品，称之为<code>Font Ball</code>，可以在马达的驱动下左右移动，并沿着轴向转动到任何一个字母的位置，这样的电传打字机体积相对会更小一些。同时，正如它的名字一样，通过更换不同的Font Ball，可以更改输出的字体样式。另外要注意的是，这种打印头，和后来的针式打印机是完全不一样的哈。</p>
+<p><img src="/images/console-terminal-keybord/512px-Selectric-iii-balls.jpg" alt="Font Ball"></p>
+<p>(图片来源：Ecloud at en.wikipedia, CC BY-SA 3.0 <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-sa/3.0">https://creativecommons.org/licenses/by-sa/3.0</a>, via Wikimedia Commons)</p>
+<p>电报技术和电传打字机的出现，以及它们所使用的信号编码协议和通信技术，被理所当然的用到了计算机上，电传打字机摇身一变，成为了当时计算机的输入输出设备。因此，在那个年代，大家是没有屏幕的，输出被打印在纸上，所以，C语言标准库里提供的输出函数才会被叫做printf吧。跑题到此结束，我们再回到对Console和Terminal的讨论。</p>
+<p>当时的计算机有两个特点，一个是贵，一个是大，因此那时的计算机肯定不叫PC，而是要多个人共享。其实，最早的计算机是不支持多用户共享的，但后来逐步支持了多用户，比如Unix、Linux，都是支持多用户的操作系统。虽然计算机贵，但电传打字机便宜啊，所以，大家就会在一台计算机上，连接多个电传打字机，这样不同的用户就可以在自己的键盘和打印纸前工作了。这个时候，每一台电传打字机，就叫做一个Terminal。所以，一台计算机可以同时有多个Terminal。</p>
+<p>那Console呢？Console也是存在的，这个时候的Console可以有两种形态，一种形态仍然是物理的面板，另一种形式则是一个特殊的Terminal，或者说，在计算机的连线接口中，有很多个可以连接Terminal的接口，但这些接口中，有一个接口是特殊的，连接到这个接口上的Terminal拥有的功能会比其他Terminal多，比如，对于一些操作系统内核的日志，只会输出到Console对应的Terminal中，而不会输出到普通的Terminal中。比如在面板式Console的年代，如果系统某个模块出现了故障，可能只会在Console上亮起一个指示灯，或者在数码管显示一个错误码，而随着打印机成为普遍的输出设备后，错误信息可以以文本的形式更加友好地打印到纸上，而这类和计算机内部运行状态有关的日志信息，只会在Console对应的打印机上输出。有一篇参考文献中写了个有意思的例子，在那个年代，可能Console接口上连接的Terminal会被专门锁在一个小房间里，只有系统管理员才可以使用，而其他的Terminal，则可以出租给普通用户来使用。</p>
+<p>到这里再总结一下，Terminal是给普通用户操作计算机的IO设备，不同用户的Terminal可以输入和显示不同的内容，Console仍然是对计算机具有最高管理权限的操作入口，通常只有一个，在键盘和打印机取代按钮和指示灯成为计算机的主流输入输出设备以后，Console也主要开始以Terminal的形式存在，但他是一个有特权的Terminal。</p>
+<p>随着科技的继续发展，计算机逐渐变为了个人计算机，输出设备也从打印机逐步变为了显示器，这个时候，大家不用再通过多个Terminal来共享一台主机了，主机就摆在你面前，你就是这台计算机的管理者。那么，这个时候，Console和Terminal的区别，就已经不那么明显了。（我们这里暂时先谈论的是没有图形界面的Linux操作系统，图形界面环境下的Console和Terminal我们在下一篇文章中再介绍）</p>
+<p>假设你正在面对一台只有命令行界面的Linux主机，你的键盘和显示器直接连接到你的主机上。当你按下开机按钮后，屏幕上首先显示了Bios的一些输出信息，随后加载了Linux内核，Linux内核打印输出了一系列与操作系统初始化相关的日志，这个过程，你的显示器所起到的作用，主要就是Console的作用。我们知道Linux是一个多用户、多任务的操作系统，不同的用户可以同时登录到主机上，不同的用户可以拥有不同的Terminal，执行不同的任务，但在操作系统启动时呢？这个时候，整个系统都运行在内核态，还没有用户态的任务在运行，也没有任何用户登录到操作系统中，因此也就不会有属于某个用户的Terminal之说，那么，操作系统启动这个阶段的日志输出到哪里呢？当然是输出到Console了，而此时，你的主机上只连接着一个显示器，那么这个显示器所显示的数据，就是Console的数据。</p>
+<p>当操作系统启动后，你输入密码，登录到你个人用户的会话中，此时，你仍然面对的是这台显示器，但他的作用更多的是一个Terminal，因为我们日常的使用，并不是对计算机的硬件、或者操作系统内核进行参数设置，我们绝大多数时间是以一个普通用户的角色在使用计算机，这时候，你可能就在Console中操作，但你却没有发挥Console的特有功能，仅仅是在把它当做一个Terminal在使用。</p>
+<p>实际上，现代的Linux系统在启动后会创建7个虚拟控制台，其中1-6是6个字符模式的控制台，而第7个是图形模式的控制台。我们上面不是说过控制台一般只有一个的嘛，这里怎么会有7个控制台呢……这就又要引出虚拟控制台的概念了，而虚拟控制台又和操作系统内核的各个模块之间有不少联系，先挖个坑，以后有机会填上。</p>
+<p>最后，我再提一个小的知识点：行缓冲。这个概念在后面的系列中应该也会用到，所以先提一下，顺便，通过行缓冲这个，先让大家略微感受一下各种硬件设备的功能是如何被逐渐被软件虚拟出来的。</p>
+<p>回到我们的电传打字机时代，假设两台电传打字之间应电线相连，在一台机器上按下一个键的同时，另一台机器的打印头也同步在纸上印下了一个字符。如果你按错了一个键，那不好意思，对方的纸上已经印下了这个字符，想擦掉？不存在的！在机械打字机上，确实也有Backspace键，但他的作用实际上是退回一个字符，然后在同样的位置打上一条删除线，就是在字母中间画一条横线，现在的文本排版工具在修改字体的时候可以增加删除线，应该也是从打字机年代继承过来的。所以，后来人们给Terminal增加了三种缓冲模式：</p>
+<ul>
+<li>字符模式</li>
+<li>行缓冲模式</li>
+<li>屏模式</li>
+</ul>
+<p>其中，屏模式，主要是在有了荧光显示屏以后才有的概念，对于纸和打印机的时代并不适用，所以我们暂时不讨论。</p>
+<p>字符模式，有的时候也叫Raw模式，就是，你在键盘上按了啥，就把啥直接发送出去。而行缓冲模式，则可以先在发送方进行缓冲，等我确认这一行文本没有错误后，再一批发送给对方。</p>
+<p>当电传打字机在电报应用场景下，毫无疑问，行缓冲的实现，是电传打字机本身实现的。但是，当电传打字机被当做计算机的输入设备以后，行缓冲的实现就有两种方式了。一种就是继续让Terminal这个外置硬件设备做行缓冲，然后把一整条命令整体发送给计算机，另一种，则是电传打字仍然使用字符模式，实时发送每一个字符，缓冲命令的工作由计算机来完成。随着时代的发展，越来越多的工作被计算机取代，或者说被软件虚拟化了，例如我们上面提到了Linux提供了虚拟控制台的功能，所以，今天我们所使用的键盘，已经完全不具备行缓冲功能了。</p>
+<p>本篇的最后，附送参考文件以及两个油管视频，使用电传打字机作为Linux的终端，可以用它加深一下对电传打字机的概念，也可以稍微预习一下后面文章要提到的与操作系统有关的内容：</p>
+<p>参考文献：</p>
+<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=2XLZ4Z8LpEE">https://www.youtube.com/watch?v=2XLZ4Z8LpEE</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=S81GyMKH7zw">https://www.youtube.com/watch?v=S81GyMKH7zw</a></p>
+<p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Punched_card">打孔卡 https://en.wikipedia.org/wiki/Punched_card</a></p>
+<p>扫盲 Linux＆UNIX 命令行——从“电传打字机”聊到“shell 脚本编程”  (本篇文章不便于给出链接，大家有能力就自己去搜一下吧)</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2020/11/14/what-is-console-terminal-tty-and-shell-1/" title="Terminal、Console、TTY与Shell系列之1 -- 考古Terminal、Console与TTY">http://blog.ideawand.com/2020/11/14/what-is-console-terminal-tty-and-shell-1/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Terminal-Consol-TTY-Shell/" rel="tag"># Terminal Consol TTY Shell</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2020/08/01/go-gc-tuning-practice-1/" rel="next" title="Golang GC调优实战系列之一">
+                  <i class="fa fa-chevron-left"></i> Golang GC调优实战系列之一
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+                <a href="/2020/12/31/what-is-console-terminal-tty-and-shell-2/" rel="prev" title="Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列">
+                  Terminal、Console、TTY与Shell系列之2 -- 考古CRT终端与转义控制序列 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
