@@ -198,6 +198,82 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/" class="post-title-link" itemprop="url">Rust过程宏系列教程(2)--实现proc-macro-workshop项目之Builder题目</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-03-24 22:09:26" itemprop="dateCreated datePublished" datetime="2021-03-24T22:09:26+08:00">2021-03-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-05-05 16:34:48" itemprop="dateModified" datetime="2021-05-05T16:34:48+08:00">2021-05-05</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>上一期中，我们介绍了Rust过程宏开发的基础流程，从本期开始，我们以戴维·托尔奈（David Tolnay，也就是<code>syn</code>和<code>quote</code>这两个库的作者）的教学项目<code>proc-macro-workshop</code>出发，带领大家实战几个Rust过程宏的编写。</p>
+<p><code>proc-macro-workshop</code>是一个包含5个过程宏的“解题游戏”，每一个过程宏都是有实际应用价值的案例，通过一系列由简到繁的测试用例，指导你去完成每一个过程宏的开发，而我们要做的，就是编写代码，像闯关游戏一样依次通过每一个测试用例，在这个过程中，我们会学到不同类型的过程宏的开发方法。</p>
+<p>好了，不废话了，准备好一台电脑，我们从第一个过程宏挑战任务<code>builder</code>开始，每一关对应的视频教程我也放在下面了，点击【阅读原文】就可以看到所有的视频教程。</p>
+<p>序言视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=332284630&bvid=BV16A411N7m2&cid=316964888&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/02/27/rust_procedural_macro/rust_proc_marco_workshop_guide-01/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -848,72 +924,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2018/03/01/build-a-single-node-kubernetes-test-environment-with-GPU-support/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Myrfy">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="IdeaWand">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/03/01/build-a-single-node-kubernetes-test-environment-with-GPU-support/" class="post-title-link" itemprop="url">搭建支持GPU的单节点Kubernetes测试环境</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2018-03-01 15:00:10 / 修改时间：16:48:15" itemprop="dateCreated datePublished" datetime="2018-03-01T15:00:10+08:00">2018-03-01</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文介绍了如何在不使用Minikube的情况下，在一台机器上搭建支持GPU的k8s测试环境。为什么要这么干呢——因为Minikube对GPU的支持还不完善，而手头正好在做的是一个使用GPU的机器学习项目。为了踩使用k8s编排机器学习微服务的坑，需要搭建一个本地的单机测试环境。此外，在写本篇博客时，即使是Google英文站也很少能搜索到不使用Minikube进行单机测试环境部署的文章，因此，在摸爬滚打一阵后，我决定写下此文……</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2018/03/01/build-a-single-node-kubernetes-test-environment-with-GPU-support/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -962,12 +972,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">19</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-count">17</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>
