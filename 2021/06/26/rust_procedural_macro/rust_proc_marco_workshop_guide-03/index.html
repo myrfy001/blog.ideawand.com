@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的builder题目。并且介绍了proc_macro_workshop这个项目的概况，如果您是第一次阅读本系列文章，对proc_macro_workshop项目的结构还是不很熟悉的话，可以先阅读一下上一篇文章。 好了，不废话了，准备好一台电脑，开始我们的第二个挑战任务debug">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目">
+<meta property="og:url" content="http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的builder题目。并且介绍了proc_macro_workshop这个项目的概况，如果您是第一次阅读本系列文章，对proc_macro_workshop项目的结构还是不很熟悉的话，可以先阅读一下上一篇文章。 好了，不废话了，准备好一台电脑，开始我们的第二个挑战任务debug">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-26T04:13:56.000Z">
+<meta property="article:modified_time" content="2021-06-26T06:03:58.913Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="Rust,过程宏,proc-macro,proc_macro_workshop">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目 | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-06-26 12:13:56 / 修改时间：14:03:58" itemprop="dateCreated datePublished" datetime="2021-06-26T12:13:56+08:00">2021-06-26</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本系列的上一篇文章中，我们实战了<code>proc_macro_workshop</code>项目的<code>builder</code>题目。并且介绍了<code>proc_macro_workshop</code>这个项目的概况，如果您是第一次阅读本系列文章，对<code>proc_macro_workshop</code>项目的结构还是不很熟悉的话，可以先阅读一下上一篇文章。</p>
+<p>好了，不废话了，准备好一台电脑，开始我们的第二个挑战任务<code>debug</code></p>
+<span id="more"></span>
+
+<p>首先打开<code>proc_macro_workshop</code>项目的<code>readme.md</code>文件，看一下<code>debug</code>这个项目要实现什么样的功能。根据其中的描述，这个题目的最终目标是实现一个可以输出指定格式调试信息的派生宏，他要实现的功能和rust自带的<code>Debug</code>派生宏是一样的，只不过我们要实现的这个宏比<code>Debug</code>更强大一些，可以指定每一个字段的输出格式。</p>
+<p>我们之前提到过，Rust中的过程宏分为三种样式：派生样式的、属性样式的，还有函数样式的，上一篇和本篇要讨论的过程宏都是派生样式的，另外两种样式的过程宏会在后续文章中对另外三道题目讲解时介绍。如果你对派生样式的过程宏还不了解，请一定先阅读本系列的前一篇文章。本篇文章介绍的<code>debug</code>挑战题目，除了在大量使用上一篇<code>builder</code>项目使用的知识点之外，主要增加了对泛型的处理。</p>
+<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>第一关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=672894128&bvid=BV1vU4y187TR&cid=334128842&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+
+<p>第一关的工作和上一篇文章中介绍的<code>builder</code>题目的第一关一样，搭建一个框架，配置好<code>cargo.toml</code>，然后把输入的<code>TokenStream</code>转换为<code>syn::DeriveInput</code>类型即可。项目代码结构可以参考第一篇文章<a href="./rust_proc_marco_workshop_guide-02.md">Rust过程宏系列教程(2)–实现proc-macro-workshop项目之builder题目</a>，回忆一下上篇文章提到的知识点，我们要实现一个类似下面这种结构的框架，便于我们做错处处理：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"><span class="keyword">use</span> syn::&#123;<span class="keyword">self</span>, spanned::Spanned&#125;;</span><br><span class="line"><span class="keyword">use</span> quote::&#123;ToTokens, quote&#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro_derive(CustomDebug)]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">derive</span></span>(input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> syn::DeriveInput);</span><br><span class="line">    <span class="keyword">match</span> do_expand(&amp;st) &#123;</span><br><span class="line">        <span class="literal">Ok</span>(token_stream) =&gt; token_stream.into(),</span><br><span class="line">        <span class="literal">Err</span>(e) =&gt; e.to_compile_error().into(),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">do_expand</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>第二关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=290420019&bvid=BV1Kf4y1W7ss&cid=336004646&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>第二关要实现基本的<code>Debug</code> Trait，其原理是使用rust标准库提供的<code>std::fmt::DebugStruct</code>结构来实现，例如对于下面这个结构体</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span> &#123;</span><br><span class="line">    blog: <span class="built_in">String</span>,</span><br><span class="line">    ideawand: <span class="built_in">i32</span>,</span><br><span class="line">    com: <span class="built_in">bool</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们要生成如下模式的代码,实现<code>Debug</code> Trait：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> fmt::<span class="built_in">Debug</span> <span class="keyword">for</span> GeekKindergarten &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">fmt</span></span>(&amp;<span class="keyword">self</span>, fmt: &amp;<span class="keyword">mut</span> fmt::Formatter) -&gt; fmt::<span class="built_in">Result</span> &#123;</span><br><span class="line">        fmt.debug_struct(<span class="string">&quot;GeekKindergarten&quot;</span>)</span><br><span class="line">           .field(<span class="string">&quot;blog&quot;</span>, &amp;<span class="keyword">self</span>.blog)</span><br><span class="line">           .field(<span class="string">&quot;ideawand&quot;</span>, &amp;<span class="keyword">self</span>.ideawand)</span><br><span class="line">           .field(<span class="string">&quot;com&quot;</span>, &amp;<span class="keyword">self</span>.com)</span><br><span class="line">           .finish()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样，我们就可以在<code>println!</code>中使用<code>&#123;:?&#125;</code>来打印结构体中的各个字段。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">main</span></span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> g = GeekKindergarten&#123;blog:<span class="string">&quot;foo&quot;</span>.into(), ideawand:<span class="number">123</span>, com:<span class="literal">true</span>&#125;;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;&#123;:?&#125;&quot;</span>, g);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所以，我们目标也很明确了，和上一篇的<code>builder</code>类似，我们要首先读取出被过程宏处理的结构体的每一个字段的名字，然后按照模板生成上面的代码即可，没有什么新的知识，所以我们直接给出代码即可：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">do_expand</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> ret = generate_debug_trait(st)?;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">type</span> <span class="title">StructFields</span></span> = syn::punctuated::Punctuated&lt;syn::Field,syn::Token!(,)&gt;;</span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_fields_from_derive_input</span></span>(d: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;&amp;StructFields&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> syn::Data::Struct(syn::DataStruct &#123;</span><br><span class="line">        fields: syn::Fields::Named(syn::FieldsNamed &#123; <span class="keyword">ref</span> named, .. &#125;),</span><br><span class="line">        ..</span><br><span class="line">    &#125;) = d.data&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">Ok</span>(named)</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="literal">Err</span>(syn::Error::new_spanned(d, <span class="string">&quot;Must define on a Struct, not Enum&quot;</span>.to_string()))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> fields = get_fields_from_derive_input(st)?;</span><br><span class="line">    <span class="keyword">let</span> struct_name_ident = &amp;st.ident;</span><br><span class="line">    <span class="keyword">let</span> struct_name_literal = struct_name_ident.to_string();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> fmt_body_stream = proc_macro2::TokenStream::new();</span><br><span class="line"></span><br><span class="line">    fmt_body_stream.extend(quote!(</span><br><span class="line">        fmt.debug_struct(#struct_name_literal) <span class="comment">// 注意这里引用的是一个字符串，不是一个syn::Ident，生成的代码会以字面量形式表示出来</span></span><br><span class="line">    ));</span><br><span class="line">    <span class="keyword">for</span> field <span class="keyword">in</span> fields.iter()&#123;</span><br><span class="line">        <span class="keyword">let</span> field_name_idnet = field.ident.as_ref().unwrap();</span><br><span class="line">        <span class="keyword">let</span> field_name_literal = field_name_idnet.to_string();</span><br><span class="line">        </span><br><span class="line">        fmt_body_stream.extend(quote!(</span><br><span class="line">            .field(#field_name_literal, &amp;<span class="keyword">self</span>.#field_name_idnet)  <span class="comment">// 这行同样注意literal和ident的区别</span></span><br><span class="line">        ));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fmt_body_stream.extend(quote!(</span><br><span class="line">        .finish()</span><br><span class="line">    ));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> ret_stream = quote!(</span><br><span class="line">        <span class="keyword">impl</span> std::fmt::<span class="built_in">Debug</span> <span class="keyword">for</span> #struct_name_ident &#123;</span><br><span class="line">            <span class="function"><span class="keyword">fn</span> <span class="title">fmt</span></span>(&amp;<span class="keyword">self</span>, fmt: &amp;<span class="keyword">mut</span> std::fmt::Formatter) -&gt; std::fmt::<span class="built_in">Result</span> &#123;</span><br><span class="line">                #fmt_body_stream</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret_stream)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p>第三关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=290533932&bvid=BV1df4y1a73x&cid=338115162&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>这一关要求我们可以为结构体中的每一个字段指定自己独立的格式化样式，也就是可以在结构体内部写下面这样的惰性属性标注：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[derive(CustomDebug)]</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span> &#123;</span><br><span class="line">    blog: <span class="built_in">String</span>,</span><br><span class="line">    <span class="meta">#[debug = <span class="meta-string">&quot;0b&#123;:32b&#125;&quot;</span>]</span>    <span class="comment">// 在派生式过程宏中，这是个`惰性属性`，在上一篇文章中有介绍</span></span><br><span class="line">    ideawand: <span class="built_in">i32</span>,</span><br><span class="line">    com: <span class="built_in">bool</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在上面代码中，<code>#[debug=xxx]</code>是我们编写的<code>CustomDebug</code>派生宏的惰性属性，派生宏惰性属性的概念在上一篇文章中介绍过了，因此我们可以参照一下前面文章中编写的提取惰性属性的函数，进行编写即可。一个提示是，在编写的过程中，可以继续使用print大法来分析属性的结构。</p>
+<ul>
+<li>在上一篇文章中，我们处理的惰性属性是<code>#[builder(each=xxxx)]</code>的形式，这个写法在解析成语法树时是两层的嵌套结构，外面的<code>builder(xxxx)</code>转换成语法树节点的<code>MetaList</code>类型结构，而内部的<code>each=xxxx</code>转换成语法树节点的<code>NameValue</code>类型结构</li>
+<li>本篇文章处理的，直接就是<code>#[debug = xxxx]</code>的形式，所以处理起来，其实比上一题的简单一些</li>
+</ul>
+<p>在我们从惰性属性中拿到格式模板以后，接下来要做的就是使用<code>fmt</code>包中提供的相关方法，来格式化我们的结构，这部分只是与过程宏的开发无关，主要是<code>fmt</code>包中相关格式化工具的用法，参考资料在第三关的测试文件中也已经给出，我将其复制在下面，大家可以自行参阅：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://doc.rust-lang.org/std/macro.format_args.html">https://doc.rust-lang.org/std/macro.format_args.html</a></li>
+</ul>
+<p>通过阅读上面的参考资料，我们可以了解到，想在<code>debug_struct</code>工具方法里指定输出的格式，我们就要借助<code>format_args!</code>宏，生成例如下面这样的代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 原来的样子是：</span></span><br><span class="line"><span class="comment">// .field(&quot;ideawand&quot;, &amp;self.ideawand)</span></span><br><span class="line"><span class="comment">// 现在的样子是：</span></span><br><span class="line">.field(<span class="string">&quot;ideawand&quot;</span>, &amp;<span class="built_in">format_args!</span>(<span class="string">&quot;0b&#123;:32b&#125;&quot;</span>, <span class="keyword">self</span>.ideawand))</span><br></pre></td></tr></table></figure>
+
+<p>有了上述的分析，我们可以直接给出第三关的核心代码，首先是提取字段惰性属性的函数：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_custom_format_of_field</span></span>(field: &amp;syn::Field) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="built_in">Option</span>&lt;<span class="built_in">String</span>&gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">for</span> attr <span class="keyword">in</span> &amp;field.attrs &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Ok</span>(syn::Meta::NameValue(syn::MetaNameValue &#123;</span><br><span class="line">            <span class="keyword">ref</span> path,</span><br><span class="line">            <span class="keyword">ref</span> lit,</span><br><span class="line">            ..</span><br><span class="line">        &#125;)) = attr.parse_meta()</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> path.is_ident(<span class="string">&quot;debug&quot;</span>) &#123;</span><br><span class="line">                <span class="keyword">if</span> <span class="keyword">let</span> syn::Lit::Str(<span class="keyword">ref</span> ident_str) =lit &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="literal">Ok</span>(<span class="literal">Some</span>(</span><br><span class="line">                        ident_str.value()</span><br><span class="line">                    ));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="literal">Ok</span>(<span class="literal">None</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后修改一下<code>generate_debug_trait()</code>函数，这里只给出了进行调整的核心循环体的代码片段</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// &lt;此处省略未修改代码&gt; ................</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> field <span class="keyword">in</span> fields.iter()&#123;</span><br><span class="line">        <span class="keyword">let</span> field_name_idnet = field.ident.as_ref().unwrap();</span><br><span class="line">        <span class="keyword">let</span> field_name_literal = field_name_idnet.to_string();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 以下若干行代码直到循环体结束 是第三关进行修改的部分</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> format_str = <span class="string">&quot;&#123;:?&#125;&quot;</span>.to_string();</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(format) = get_custom_format_of_field(field)? &#123;</span><br><span class="line">            format_str = format;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="comment">// 这里是没有指定用户自定义的格式</span></span><br><span class="line">        fmt_body_stream.extend(quote!(</span><br><span class="line">            .field(#field_name_literal, &amp;<span class="built_in">format_args!</span>(#format_str, <span class="keyword">self</span>.#field_name_idnet))</span><br><span class="line">        ));</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// &lt;此处省略未修改代码&gt; ................</span></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>第四关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=758236208&bvid=BV1S64y1d7fc&cid=340192285&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>从这一关开始，我们接触一下泛型参数的处理，有点小激动~~</p>
+<p>在前几关中我们生成的<code>Debug</code> Trait的代码是没有泛型参数的，因此，对于形如下面的带有泛型参数的结构体：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T&gt; &#123;</span><br><span class="line">    blog: T,</span><br><span class="line">    ideawand: <span class="built_in">i32</span>,</span><br><span class="line">    com: <span class="built_in">bool</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们生成的代码应该是形如</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span>&lt;T&gt; <span class="built_in">Debug</span> <span class="keyword">for</span> GeekKindergarten&lt;T&gt; &#123;</span><br><span class="line">    <span class="comment">// .....</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>但由于我们在代码模板中只是用了结构体的标识符，也就是<code>GeekKindergarten</code>这一部分，而没有使用泛型参数信息，也就是丢掉了<code>&lt;T&gt;</code>这一部分，因此我们生成的代码会是下面这个样子：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="built_in">Debug</span> <span class="keyword">for</span> GeekKindergarten &#123;</span><br><span class="line"><span class="comment">//  ^---- 这里丢掉了泛型参数 -----^</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>第四关的提示文档里，给出了泛型参数语法树节点的链接：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.rs/syn/1.0/syn/struct.Generics.html">https://docs.rs/syn/1.0/syn/struct.Generics.html</a></li>
+</ul>
+<p>这个语法树节点提供了一个工具函数，可以帮助我们把泛型参数切分成三个用于生成<code>impl</code>块的片段，这个函数是：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.rs/syn/1.0/syn/struct.Generics.html#method.split_for_impl">https://docs.rs/syn/1.0/syn/struct.Generics.html#method.split_for_impl</a></li>
+</ul>
+<p>此外，他还给出了另一个示例程序的代码库地址，里面演示了如何处理泛型参数，推荐大家去看一下，不过毕竟这个链接只是纯代码，没什么讲解，所以大家还是要先读完我的文章，关注一下我的微信公众号【极客幼稚园】~ 示例项目地址：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/dtolnay/syn/tree/master/examples/heapsize">https://github.com/dtolnay/syn/tree/master/examples/heapsize</a></li>
+</ul>
+<p>我们重点来看一下<code>split_for_impl()</code>这个工具函数的用法，比如说我们有这样一个泛型结构体，泛型参数<code>T</code>，<code>U</code>分别受到<code>Blog</code>、<code>IdeaWand</code>、<code>Com</code>这三个Trait Bound的限制：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T, U&gt; <span class="keyword">where</span> T: Blog + IdeaWand, U: Com &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>那么，我们生成的<code>Debug</code> Trait的形式应该是下面这样的：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span>&lt;T,U&gt; <span class="built_in">Debug</span> <span class="keyword">for</span> GeekKindergarten&lt;T, U&gt; <span class="keyword">where</span> T: Blog + IdeaWand + <span class="built_in">Debug</span>, U: Com + <span class="built_in">Debug</span> &#123;</span><br><span class="line"> <span class="comment">// ^^^^^                           ^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^          ^^^^^^</span></span><br><span class="line"> <span class="comment">//  |                                 |            |                           |   </span></span><br><span class="line"> <span class="comment">//  |                                 |            +---------第三部分 ----------+</span></span><br><span class="line"> <span class="comment">//  |                                 +--第二部分</span></span><br><span class="line"> <span class="comment">//  +------第一部分</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>而<code>split_for_impl()</code>这个工具函数就是用来帮助我们生成上面这三个代码片段的，上面的限定在还出现了<code>Debug</code>，这个是我们要后面再手动加上去的，并不是<code>split_for_impl()</code>能帮我们生成的，所以我没有把他们标出来。</p>
+<p>好了，我们总结一下第四关需要做的事情，然后给出示例代码：</p>
+<ul>
+<li>从<code>DeriveInput</code>语法树节点获取泛型参数信息</li>
+<li>为每一个泛型参数都添加一个<code>Debug</code> Trait限定</li>
+<li>使用<code>split_for_impl()</code>工具函数切分出用于模板生成代码的三个片段</li>
+<li>修改<code>impl</code>块的模板代码，使用上述三个片段，加入泛型参数信息</li>
+<li>此外由于目前<code>generate_debug_trait()</code>函数已经较为冗长，我们也对代码的结构进行微调，将其拆分为两个函数。</li>
+</ul>
+<p>接下来上代码,首先是拆分出的新函数：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait_core</span></span>(st :&amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> fields = get_fields_from_derive_input(st)?;</span><br><span class="line">    <span class="keyword">let</span> struct_name_ident = &amp;st.ident;</span><br><span class="line">    <span class="keyword">let</span> struct_name_literal = struct_name_ident.to_string();</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> fmt_body_stream = proc_macro2::TokenStream::new();</span><br><span class="line"></span><br><span class="line">    fmt_body_stream.extend(quote!(</span><br><span class="line">        fmt.debug_struct(#struct_name_literal) </span><br><span class="line">    ));</span><br><span class="line">    <span class="keyword">for</span> field <span class="keyword">in</span> fields.iter()&#123;</span><br><span class="line">        <span class="keyword">let</span> field_name_idnet = field.ident.as_ref().unwrap();</span><br><span class="line">        <span class="keyword">let</span> field_name_literal = field_name_idnet.to_string();</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> format_str = <span class="string">&quot;&#123;:?&#125;&quot;</span>.to_string();</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(format) = get_custom_format_of_field(field)? &#123;</span><br><span class="line">            format_str = format;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="comment">// 这里是没有指定用户自定义的格式</span></span><br><span class="line">        fmt_body_stream.extend(quote!(</span><br><span class="line">            .field(#field_name_literal, &amp;<span class="built_in">format_args!</span>(#format_str, <span class="keyword">self</span>.#field_name_idnet))</span><br><span class="line">        ));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    fmt_body_stream.extend(quote!(</span><br><span class="line">        .finish()</span><br><span class="line">    ));</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(fmt_body_stream)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后是我们生成impl块的代码,详细阅读一下其中的注释，添加<code>Debug</code> Trait限定的代码一开始我也不知道怎么写，是参考了第四关提示中的<code>heapsize</code>项目的范例：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> fmt_body_stream = generate_debug_trait_core(st)?;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> struct_name_ident = &amp;st.ident;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 从输入的派生宏语法树节点获取被修饰的输入结构体的泛型信息</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> generics_param_to_modify = st.generics.clone();</span><br><span class="line">    <span class="comment">// 我们需要对每一个泛型参数都添加一个`Debug` Trait限定</span></span><br><span class="line">    <span class="keyword">for</span> <span class="keyword">mut</span> g <span class="keyword">in</span> generics_param_to_modify.params.iter_mut() &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> syn::GenericParam::Type(t) = g &#123;</span><br><span class="line">            t.bounds.push(parse_quote!(std::fmt::<span class="built_in">Debug</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 使用工具函数把泛型抽取成3个片段</span></span><br><span class="line">    <span class="keyword">let</span> (impl_generics, type_generics, where_clause) = generics_param_to_modify.split_for_impl();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> ret_stream = quote!(</span><br><span class="line">        <span class="comment">// 注意下面这一行是如何使用三个与泛型参数有关的代码片段的</span></span><br><span class="line">        <span class="keyword">impl</span> #impl_generics std::fmt::<span class="built_in">Debug</span> <span class="keyword">for</span> #struct_name_ident #type_generics #where_clause &#123;</span><br><span class="line">            <span class="function"><span class="keyword">fn</span> <span class="title">fmt</span></span>(&amp;<span class="keyword">self</span>, fmt: &amp;<span class="keyword">mut</span> std::fmt::Formatter) -&gt; std::fmt::<span class="built_in">Result</span> &#123;</span><br><span class="line">                #fmt_body_stream</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret_stream)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>第五关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=973345685&bvid=BV1v44y1z7eb&cid=344558950&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>这一关的关卡说明非常长，信息量不少，我们来仔细看看：</p>
+<p>首先抛出了一个问题，例如对于下面这个结构体：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T&gt; &#123;</span><br><span class="line">    ideawand: PhantomData&lt;T&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个结构体中使用了<code>PhantomData</code>这个类型，而<code>PhantomData</code>类型本身在标准库中实现了<code>Debug</code> Trait，如下所示：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span>&lt;T: ?<span class="built_in">Sized</span>&gt; <span class="built_in">Debug</span> <span class="keyword">for</span> PhantomData&lt;T&gt; &#123;...&#125;</span><br></pre></td></tr></table></figure>
+<p>在这种情况下，我们没有必要限定<code>T</code>是<code>Debug</code>的。面对这类本身已经实现了<code>Debug</code>的泛型结构体，我们有一种应对办法，即我们在生成Trait限定时，不是针对每一个泛型参数去限制，而是对结构体中每一个字段的类型来添加限制，还是以下面这个结构体为例来说：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T, U&gt; &#123;</span><br><span class="line">    blog: Foo&lt;U&gt;,</span><br><span class="line">    ideawand: PhantomData&lt;T&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>原来我们代码生成的限定条件是:</p>
+<ul>
+<li><code>T: Debug, U: Debug</code><br>而我们现在应该生成的是:</li>
+<li><code>Foo&lt;U&gt;: Debug, PhantomData&lt;T&gt;: Debug</code></li>
+</ul>
+<p>但是，这样的限定会有很大的副作用，这些副作用在后续的关卡中大家会遇到，所以，解题提示中给我们指出了另一个方法：</p>
+<ul>
+<li>因为<code>PhantomData</code>类型的使用太常见了，所以我们就把<code>PhantomData</code>这个类型作为一个特例，我们检测是不是有<code>PhantomData</code>类型的字段，如果有，我们看看它所使用的泛型参数是不是只在<code>PhantomData</code>中出现过，如果是，我们就不为它添加<code>Debug</code>限定了。</li>
+<li>在后续关卡中，我们会为<code>PhantomData</code>之外的情况，提供一个“逃生出口”(escape hatch)，用来标记某一个字段的类型限定。</li>
+</ul>
+<p>在给出上述提示之后，出题人还给我们介绍了一下Rust过程宏的一些设计上的取舍：</p>
+<ul>
+<li>在Rust过程宏中，你不可能获得到一个完全正确的Trait限定，这是因为假设要实现这个功能，就要在展开过程宏时做命名解析。而这样做会导致rust编译器复杂度急剧上升</li>
+<li>Rust核心团队认为这样的取舍带来的收益非常大，因此没有任何计划打算在后续支持宏展开时的命名解析</li>
+<li>使用escape hatch来解决问题是一种常用手段</li>
+<li>另一种更加常见的手段是，通过Rust的Trait机制，将命名解析的执行时间推后到真正的编译阶段去处理<ul>
+<li>特别注意一下本关的测试用例代码，看看过程宏的调用是如何能够在不知道<code>S</code>指代的是<code>String</code>类型的情况下，产生出可以调用<code>String</code>类型的<code>Debug</code>Trait实现的。</li>
+</ul>
+</li>
+</ul>
+<p>第五关的解题提示到这里就分析完了，在我们开始写代码之前，我们先看看下面新增代码的主要逻辑，例如有这样一个泛型结构体,则我们的过程宏的行为应该是:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T, U, V, W&gt; &#123;</span><br><span class="line">    blog: T,</span><br><span class="line">    ideawand: PhantomData&lt;U&gt;,</span><br><span class="line">    com: U,</span><br><span class="line">    foo: PhantomData&lt;V&gt;,</span><br><span class="line">    bar: Baz&lt;W&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>对T，由于没有出现在<code>PhantomData</code>中，则需要对T增加<code>Debug</code>限定</li>
+<li>对U，虽然出现在<code>PhantomData</code>中,但因为其同时直接作为<code>com</code>字段的类型，所以仍然需要加<code>Debug</code>限定</li>
+<li>对于V，满足这一关设定的特殊条件，不添加<code>Debug</code>限定</li>
+<li>对于W，因为其不在<code>PhantomData</code>的泛型参数中，所以需要加<code>Debug</code>限定</li>
+</ul>
+<p>可以看到，想实现上面的逻辑，我们需要获取<code>&lt;&gt;</code>之前的类型名称，以及<code>&lt;&gt;</code>内部的类型名称，剩下的就是各种判断这些类型名字对应的字符串是不是满足各种组合条件了。</p>
+<p>下面开始撸代码，先定义一个获取<code>PhantomData</code>泛型参数名字的函数，这个函数的作用是把<code>PhantomData&lt;X&gt;</code>里面的<code>X</code>作为字符串提取出来：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_phantomdata_generic_type_name</span></span>(field: &amp;syn::Field) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="built_in">Option</span>&lt;<span class="built_in">String</span>&gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> syn::Type::Path(syn::TypePath&#123;path: syn::Path&#123;<span class="keyword">ref</span> segments, ..&#125;, ..&#125;) = field.ty &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(syn::PathSegment&#123;<span class="keyword">ref</span> ident, <span class="keyword">ref</span> arguments&#125;) = segments.last() &#123;</span><br><span class="line">            <span class="keyword">if</span> ident == <span class="string">&quot;PhantomData&quot;</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> <span class="keyword">let</span> syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments&#123;args, ..&#125;) = arguments &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(syn::GenericArgument::Type(syn::Type::Path( <span class="keyword">ref</span> gp))) = args.first() &#123;</span><br><span class="line">                        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(generic_ident) = gp.path.segments.first() &#123;</span><br><span class="line">                            <span class="keyword">return</span> <span class="literal">Ok</span>(<span class="literal">Some</span>(generic_ident.ident.to_string()))</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(<span class="literal">None</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后再定义一个函数，用于把结构体定义中<code>foo: XXX</code>或<code>foo:XXX&lt;YYY&gt;</code>这种形式中，<code>XXX</code>所在位置的类型名字（即不包括泛型参数）作为字符串返回：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_field_type_name</span></span>(field: &amp;syn::Field) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="built_in">Option</span>&lt;<span class="built_in">String</span>&gt;&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> syn::Type::Path(syn::TypePath&#123;path: syn::Path&#123;<span class="keyword">ref</span> segments, ..&#125;, ..&#125;) = field.ty &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(syn::PathSegment&#123;<span class="keyword">ref</span> ident,..&#125;) = segments.last() &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">Ok</span>(<span class="literal">Some</span>(ident.to_string()))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(<span class="literal">None</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后我们来修改<code>generate_debug_trait()</code>函数的代码，请仔细阅读其中的注释：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> fmt_body_stream = generate_debug_trait_core(st)?;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> struct_name_ident = &amp;st.ident;</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> generics_param_to_modify = st.generics.clone();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 以下代码构建两个列表，一个是`PhantomData`中使用到的泛型参数，另一个是输入结构体中所有字段的类型名称</span></span><br><span class="line">    <span class="keyword">let</span> fields = get_fields_from_derive_input(st)?;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> field_type_names = <span class="built_in">Vec</span>::new();</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> phantomdata_type_param_names = <span class="built_in">Vec</span>::new();</span><br><span class="line">    <span class="keyword">for</span> field <span class="keyword">in</span> fields&#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(s) = get_field_type_name(field)? &#123;</span><br><span class="line">            field_type_names.push(s);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(s) = get_phantomdata_generic_type_name(field)? &#123;</span><br><span class="line">            phantomdata_type_param_names.push(s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> <span class="keyword">mut</span> g <span class="keyword">in</span> generics_param_to_modify.params.iter_mut() &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> syn::GenericParam::Type(t) = g &#123;</span><br><span class="line">            <span class="keyword">let</span> type_param_name = t.ident.to_string();</span><br><span class="line">            <span class="comment">// 注意这个判断条件的逻辑，精华都在这个条件里了，自己试着看看能不能把上面的4种情况整理成这个条件</span></span><br><span class="line">            <span class="comment">// 如果是PhantomData，就不要对泛型参数`T`本身再添加约束了,除非`T`本身也被直接使用了</span></span><br><span class="line">            <span class="keyword">if</span> phantomdata_type_param_names.contains(&amp;type_param_name) &amp;&amp; !field_type_names.contains(&amp;type_param_name) &#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            t.bounds.push(parse_quote!(std::fmt::<span class="built_in">Debug</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// &lt;省略未修改代码&gt; ............</span></span><br><span class="line">    </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>在结束第五关之前，我们再来回想一下出题人给我们留下的思考题：</p>
+<blockquote>
+<p>在第五关的测试用例中，过程宏的调用是如何能够在不知道<code>S</code>指代的是<code>String</code>类型的情况下，产生出可以调用<code>String</code>类型的<code>Debug</code>Trait实现的？</p>
+</blockquote>
+<p>其实，这个问题很简单，大家只要记住一件事，过程宏，其实就是在玩“字符串替换拼接”的游戏，在过程宏执行的时候，虽然我们把它解析成了语法树，但语法也只是一种字符串排列形式上的约束，并没有类型的概念。你只要能生成出符合rust语法的字符串排列组合即可。真正的符号消解、类型检验等等，是在后面的编译阶段完成的。</p>
+<h3 id="第六关"><a href="#第六关" class="headerlink" title="第六关"></a>第六关</h3><p>这一关展示了第五关被舍弃掉的一个解决方案所存在的问题，比较绕，有兴趣的同学可以自己看看。我们的代码不需要修改就可以通过第六关。</p>
+<h3 id="第七关"><a href="#第七关" class="headerlink" title="第七关"></a>第七关</h3><p>第七关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=545994446&bvid=BV1Gq4y1774f&cid=348534507&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>第七关我们要处理关联类型的问题。从第七关的提示里，我们了解到需要做的一个主要工作是寻找出同时满足如下要求的类型为<code>syn::TypePath</code>的语法树节点：</p>
+<ul>
+<li>其Path长度大于等于2</li>
+<li>其Path的第一项为泛型参数列表中某一个</li>
+</ul>
+<p>根据Rust的语法，我们面临的关联类型可以有如下的形式：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">trait</span> <span class="title">Trait</span></span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">type</span> <span class="title">Value</span></span>;    <span class="comment">// 定义一个关联类型</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T:Trait&gt; &#123;</span><br><span class="line">    blog: T::Value,</span><br><span class="line">    ideawand: PhantomData&lt;T::Value&gt;,</span><br><span class="line">    com: Foo&lt;Bar&lt;Baz&lt;T::Value&gt;&gt;&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也就是说，我们要寻找的形如<code>T::Value</code>的代码片段，可能嵌套在很深的地方，根据前面的经验，我们可能要写一个嵌套了几层if条件的递归函数来在整个语法树中遍历，有没有更优雅的写法呢，幸好<code>syn</code>库为我们提供了visit模式来访问语法树中你感兴趣的节点。</p>
+<p>默认情况下，Visit访问模式在<code>syn</code>库中是没有开启的，根据<code>syn</code>官方文档首页中的描述，我们需要在cargo.toml里添加<code>visit</code>这个特性后才可以使用。所以我们首先需要更新一下cargo.toml。</p>
+<p>Visit模式的使用说明可以参阅官方文档：<a target="_blank" rel="noopener" href="https://docs.rs/syn/1.0.64/syn/visit/index.html">https://docs.rs/syn/1.0.64/syn/visit/index.html</a></p>
+<p>Visit模式的核心原理是，其定义了一个名为<code>Visit</code>的Trait，这个Trait中包含了上百个类型的语法树节点各自对应的回调函数，当其遍历语法树时，每遍历到一个类型的语法树节点，就会调用相应的回调函数。在第七关中，由于我们只希望筛选出所有<code>syn::TypePath</code>类型的节点，所以我们只需要实现这个节点对应的回调函数，然后在其中判断当前节点是否满足上述要求即可。大家可以看一下官方文档给出的实例，这里我就直接给出相关代码实现：</p>
+<p>首先是Visitor的定义：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> syn::visit::&#123;<span class="keyword">self</span>, Visit&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义一个用于实现`Visit` Trait的结构体，结构体中定义了一些字段，用于存储筛选条件以及筛选结果</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">TypePathVisitor</span></span> &#123;</span><br><span class="line">    generic_type_names: <span class="built_in">Vec</span>&lt;<span class="built_in">String</span>&gt;,  <span class="comment">// 这个是筛选条件，里面记录了所有的泛型参数的名字，例如`T`,`U`等</span></span><br><span class="line">    associated_types: HashMap&lt;<span class="built_in">String</span>, <span class="built_in">Vec</span>&lt;syn::TypePath&gt;&gt;,  <span class="comment">// 这里记录了所有满足条件的语法树节点</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span>&lt;<span class="symbol">&#x27;ast</span>&gt; Visit&lt;<span class="symbol">&#x27;ast</span>&gt; <span class="keyword">for</span> TypePathVisitor &#123;</span><br><span class="line">    <span class="comment">// visit_type_path 这个回调函数就是我们所关心的</span></span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">visit_type_path</span></span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, node: &amp;<span class="symbol">&#x27;ast</span> syn::TypePath) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> node.path.segments.len() &gt;= <span class="number">2</span> &#123;</span><br><span class="line">            <span class="keyword">let</span> generic_type_name = node.path.segments[<span class="number">0</span>].ident.to_string();</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">self</span>.generic_type_names.contains(&amp;generic_type_name) &#123;</span><br><span class="line">                <span class="comment">// 如果满足上面的两个筛选条件，那么就把结果存起来</span></span><br><span class="line">                <span class="keyword">self</span>.associated_types.entry(generic_type_name).or_insert(<span class="built_in">Vec</span>::new()).push(node.clone());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// Visit 模式要求在当前节点访问完成后，继续调用默认实现的visit方法，从而遍历到所有的</span></span><br><span class="line">        <span class="comment">// 必须调用这个函数，否则遍历到这个节点就不再往更深层走了</span></span><br><span class="line">        visit::visit_type_path(<span class="keyword">self</span>, node);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后是我们初始化Visitor然后执行遍历访问，最终返回筛选结果的函数:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_generic_associated_types</span></span>(st: &amp;syn::DeriveInput) -&gt; HashMap&lt;<span class="built_in">String</span>, <span class="built_in">Vec</span>&lt;syn::TypePath&gt;&gt; &#123;</span><br><span class="line">    <span class="comment">// 首先构建筛选条件</span></span><br><span class="line">    <span class="keyword">let</span> origin_generic_param_names: <span class="built_in">Vec</span>&lt;<span class="built_in">String</span>&gt; = st.generics.params.iter().filter_map(|f| &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> syn::GenericParam::Type(ty) = f &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">Some</span>(ty.ident.to_string())</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">None</span></span><br><span class="line">    &#125;).collect();</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> visitor = TypePathVisitor &#123;</span><br><span class="line">        generic_type_names: origin_generic_param_names,  <span class="comment">// 用筛选条件初始化Visitor</span></span><br><span class="line">        associated_types: HashMap::new(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 以st语法树节点为起点，开始Visit整个st节点的子节点</span></span><br><span class="line">    visitor.visit_derive_input(st);</span><br><span class="line">    <span class="keyword">return</span> visitor.associated_types;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>例如对于下面这样的关联类型和结构体：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">trait</span> <span class="title">TraitA</span></span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">type</span> <span class="title">Value1</span></span>;</span><br><span class="line">    <span class="class"><span class="keyword">type</span> <span class="title">Value2</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">trait</span> <span class="title">TraitB</span></span> &#123;</span><br><span class="line">    <span class="class"><span class="keyword">type</span> <span class="title">Value3</span></span>;</span><br><span class="line">    <span class="class"><span class="keyword">type</span> <span class="title">Value4</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="class"><span class="keyword">struct</span> <span class="title">GeekKindergarten</span></span>&lt;T: TraitA, U: TraitB&gt; &#123;</span><br><span class="line">    blog: T::Value1,</span><br><span class="line">    ideawand: PhantomData&lt;U::Value3&gt;,</span><br><span class="line">    com: Foo&lt;Bar&lt;Baz&lt;T::Value2&gt;&gt;&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>则我们上面函数将会返回这样一个结构，之所以用了一个字典，是为了后续检索方便，而字典的值又是一个列表的原因是，一个Trait里面可能有多个关联类型：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="string">&quot;T&quot;</span>: [T::Value1, T::Value2],</span><br><span class="line">    <span class="string">&quot;U&quot;</span>: [U::Value3],</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>筛选出所有的关联类型后，我们再更新一下<code>impl</code>块的生成代码，与之前不同的是，对于关联类型的限定，只能放在where子句中，代码如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// &lt;此处省略没有修改的代码&gt; ..........</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这一行是第七关新加的，调用函数找到关联类型信息</span></span><br><span class="line">    <span class="keyword">let</span> associated_types_map = get_generic_associated_types(st);</span><br><span class="line">    <span class="keyword">for</span> <span class="keyword">mut</span> g <span class="keyword">in</span> generics_param_to_modify.params.iter_mut() &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> syn::GenericParam::Type(t) = g &#123;</span><br><span class="line">            <span class="keyword">let</span> type_param_name = t.ident.to_string();        </span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> phantomdata_type_param_names.contains(&amp;type_param_name) &amp;&amp; !field_type_names.contains(&amp;type_param_name)&#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 下面这3行是本次新加的，如果是关联类型，就不要对泛型参数`T`本身再添加约束了,除非`T`本身也被直接使用了</span></span><br><span class="line">            <span class="keyword">if</span> associated_types_map.contains_key(&amp;type_param_name) &amp;&amp; !field_type_names.contains(&amp;type_param_name)&#123;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            t.bounds.push(parse_quote!(std::fmt::<span class="built_in">Debug</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 以下6行是第七关新加的，关联类型的约束要放到where子句里</span></span><br><span class="line">    generics_param_to_modify.make_where_clause();</span><br><span class="line">    <span class="keyword">for</span> (_, associated_types) <span class="keyword">in</span> associated_types_map &#123;</span><br><span class="line">        <span class="keyword">for</span> associated_type <span class="keyword">in</span> associated_types &#123;</span><br><span class="line">            generics_param_to_modify.where_clause.as_mut().unwrap().predicates.push(parse_quote!(#associated_type:std::fmt::<span class="built_in">Debug</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// &lt;此处省略没有修改的代码&gt; ..........</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第八关"><a href="#第八关" class="headerlink" title="第八关"></a>第八关</h3><p>第八关视频版：</p>
+<iframe src="//player.bilibili.com/player.html?aid=418595127&bvid=BV1vV41147ES&cid=351646164&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+<p>这一关要实现的是之前提到的“逃生出口“(escape hatch)，由于前面介绍过的Rust过程宏展开机制的缺陷，在一些边界情况下我们无法正确推断出泛型的Trait限定，这时候，我们就需要提供一个人为干预的后门。本关分为两部分，一部分是必答题，提供一个全局的干预方式，还有一个是选做题，精确到对每个字段进行控制。因为这篇文章已经很长了，所以我们就只做必答题，选做题留给大家自己去实现了。</p>
+<p>首先是要解析一个全局的属性标签，属性标签我们已经解析过很多次了，这次就直接给大家代码了：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_struct_escape_hatch</span></span>(st: &amp;syn::DeriveInput) -&gt; <span class="built_in">Option</span>&lt;<span class="built_in">String</span>&gt; &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(inert_attr) = st.attrs.last() &#123;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Ok</span>(syn::Meta::List(syn::MetaList &#123; nested, .. &#125;)) = inert_attr.parse_meta() &#123;</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(syn::NestedMeta::Meta(syn::Meta::NameValue(path_value))) = nested.last() &#123;</span><br><span class="line">                <span class="keyword">if</span> path_value.path.is_ident(<span class="string">&quot;bound&quot;</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="keyword">let</span> syn::Lit::Str(<span class="keyword">ref</span> lit) = path_value.lit &#123;</span><br><span class="line">                        <span class="keyword">return</span> <span class="literal">Some</span>(lit.value());</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="literal">None</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后，我们拿到了用户输入的干预指令，其实就是一小段Rust的代码，我们要把这一小段Rust代码解析为语法树的节点后插入到where子句对应的节点中。解析用户的输入可以使用<code>syn::parse_str()</code>这个函数来实现。好了，直接上代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">generate_debug_trait</span></span>(st: &amp;syn::DeriveInput) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">   </span><br><span class="line">    <span class="comment">// &lt;此处省略没有修改的代码&gt; ..........</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 判定是否设置了限定条件干预，如果设定了，则不进行推断，直接使用用户给出的限定条件放到where子句中</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>(hatch) = get_struct_escape_hatch(st) &#123;</span><br><span class="line">        generics_param_to_modify.make_where_clause();</span><br><span class="line">        generics_param_to_modify</span><br><span class="line">                    .where_clause</span><br><span class="line">                    .as_mut()</span><br><span class="line">                    .unwrap()</span><br><span class="line">                    .predicates</span><br><span class="line">                    .push(syn::parse_str(hatch.as_str()).unwrap());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 原来位于此处的代码，全部移动到else分支里面，其他不变，省略 ..........</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> (impl_generics, type_generics, where_clause) = generics_param_to_modify.split_for_impl();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// &lt;此处省略没有修改的代码&gt; ..........</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>最后，需要承认的一点是，上面写的这些代码肯定是不严谨的，或者说是漏洞百出的。一方面是这只是为了通过测试用例，并没有充分考虑测试用例没有覆盖到的场景；另一方面，大家也应该充分认识到，Rust的过程宏就是一个复杂的“字符串拼接”过程，他没有类型校验，我们通过字符串匹配来关联一些“类型”，因此你完全可以通过构造一些冲突的命名来迷惑我们的代码。这就是Rust的过程宏，充满了Trick。</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/" title="Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目">http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Rust-%E8%BF%87%E7%A8%8B%E5%AE%8F-proc-macro-proc-macro-workshop/" rel="tag"># Rust,过程宏,proc-macro,proc_macro_workshop</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/" rel="next" title="Rust过程宏系列教程(2)--实现proc-macro-workshop项目之Builder题目">
+                  <i class="fa fa-chevron-left"></i> Rust过程宏系列教程(2)--实现proc-macro-workshop项目之Builder题目
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3"><span class="nav-number">1.</span> <span class="nav-text">第一关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E5%85%B3"><span class="nav-number">2.</span> <span class="nav-text">第二关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E5%85%B3"><span class="nav-number">3.</span> <span class="nav-text">第三关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="nav-number">4.</span> <span class="nav-text">第四关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3"><span class="nav-number">5.</span> <span class="nav-text">第五关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%85%AD%E5%85%B3"><span class="nav-number">6.</span> <span class="nav-text">第六关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%83%E5%85%B3"><span class="nav-number">7.</span> <span class="nav-text">第七关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="nav-number">8.</span> <span class="nav-text">第八关</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
