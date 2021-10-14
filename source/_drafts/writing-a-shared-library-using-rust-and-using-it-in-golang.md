@@ -41,6 +41,12 @@ tags: rust, golang, shared library
   * 错误处理
 * 性能测试：用Rust重写Go模块，真的会更快吗？
 
+### 目标听众
+* 对C语言有大致了解，大学C语言基础就够了
+* 熟悉Go、Python、Java这类具有GC的语言，但对C这样需要手工管理内存的语言不熟悉的同学
+* 了解Rust，并希望将Rust与其他语言配合使用的同学
+* 熟悉Go语言，但不了解cgo使用方法的同学
+* 如果你已经熟练掌握的Rust、C/C++、Go，那么这个分享可能过于简单，建议直接Clone Databend的代码，开始为Databend贡献代码~逃~~
 
 ### Rust在开发二进制库上的优势
 
@@ -232,7 +238,7 @@ func SimpleRustFuncCalledFromGo() {
   * `-lrust`表示要搜索一个叫做`rust`的库文件，按照\*nix的规范，实际上就是查找一个叫做`librust.so`的文件
 * `#include "ffi_demo.h"`这一行就是一段标准的C语言代码，指示C语言编译器引用`ffi_demo.h`文件中编写的代码。
 
-> 广告时间：如果大家对\*nix系统下动态库的查找方式感兴趣，可以阅读笔者的另一篇文章：《一文读懂Linux下动态链接库版本管理及查找加载方式》
+> 广告时间：如果大家对\*nix系统下动态库的查找方式感兴趣，可以阅读笔者的另一篇文章：[《一文读懂Linux下动态链接库版本管理及查找加载方式》](https://blog.ideawand.com/2020/02/15/how-does-linux-shared-library-versioning-works/)
 
 所有在`import "C"`这一行上面注释中的C语言代码里定义的函数、结构体等，都会在编译时被认为是在`C`这个模块中定义的，因此在这个`main.go`文件中接下来的地方，我们就可以用`C.xxxx`的形式，来在go语言中访问C语言里面定义的一些内容。
 
@@ -242,7 +248,7 @@ func SimpleRustFuncCalledFromGo() {
 * 再下面的一行，通过`C.simple_rust_func_called_from_go`的形式，表示我们要通过cgo来调用一个外部C库中名为`simple_rust_func_called_from_go`的函数：
   * 之所以我们能通过`C`这个模块来访问`simple_rust_func_called_from_go`,是因为我们在代码第7行加载了`ffi_demo.h`,而`simple_rust_func_called_from_go`定义在`ffi_demo.h`中。
   * 在编译链接时，链接器需要在多个指定的外部候选库中寻找需要链接的函数，由于我们在第5行告诉链接器要添加一个名为`librust.so`的文件作为可能要被链接的候选，而这个库文件的符号表中恰好暴露了一个名为`simple_rust_func_called_from_go`的函数，于是链接器就知道当要调用这个函数的时候，要把PC指针跳转到`librust.so`这个动态库内部对应的地址上。
-  * `librust.so`之所以会暴露`simple_rust_func_called_from_go`这个符号，是因为我们再写rust代码的时候添加了`#[no_mangle]`标签
+  * `librust.so`之所以会暴露`simple_rust_func_called_from_go`这个符号，是因为我们在写rust代码的时候添加了`#[no_mangle]`标签
 * 这个函数调用执行完以后，其返回被存到了ret这个变量中，这个变量的类型是`C.ulong`,为了将`C.ulong`与go的内置int类型进行比较，我们需要再做一次类型转换。
   * 这里可以稍微注意一下，我们在`ffi_demo.h`中定义了函数的返回值类型是C语言中的`uintptr_t`，这个类型对应到cgo中变为了`C.ulong`类型。在跨越FFI边界的时候，类型神马的已经完全不存在了。数据也好，指针也罢，无非就是一串特定的二进制比特序列而已，类型系统告诉编译器如何处理使用这一段比特序列。
   * 至于为什么`ffi_demo.h`文件中定义的`uintptr_t`会变为cgo中的`C.ulong`，这个大家也没必要死记硬背，我们可以借助编译器的错误提示信息来获取到底是什么类型。比如以后你遇到了一个不知道是什么类型的东西，那就人为制造一个类型不匹配，编译器会给出响应的提示。例如，我们可以把上面的`if int(ret) != arg1 + arg2 + arg3 {`这一行改为`if ret != arg1 + arg2 + arg3 {`,编译器就会提示无法将`C._Ctype_ulong`和`int`做比较，这时候我们就知道ret对应的类型实际上是`C.ulong`了
@@ -266,7 +272,247 @@ func SimpleRustFuncCalledFromGo() {
 > 预防针
 > 在接下来的内容中，会遇到一些非常规的做法，这里之所以要介绍这些非常规的做法，目的不是为了鼓励大家在代码中去这么使用，而是给大家展示各种各样的情况，让大家了解到无论上层接口再怎么变，使用方法再怎么稀奇古怪，其底层核心不变的就是内存的分配与释放。借助unsafe rust，大家可以获得像C/C++一样对内存的完全掌控能力。实际使用中FFI边界上的情况非常灵活多变，但只要内存管理能搞清楚，其他的事情都不是大问题。
 
+#### 了解库函数的核心功能逻辑
+这一部分的代码我们切换到项目的`example_2`分支，然后打开`rust/src/my_app.rs`文件，可以看到我们定义了以下四个新的函数：
+```rust
+pub fn my_app_receive_string_and_return_string(s: String) -> String {}
 
+pub fn my_app_receive_str_and_return_string(s: &str) -> String {}
+
+pub fn my_app_receive_str_and_return_str(s: &str) -> &str {}
+
+pub unsafe fn my_app_receive_string_and_return_str<'a>(s: String) -> (&'a str, *const u8, usize, usize) {}
+```
+这四个函数分别列举了输入参数和返回值取`String`和`&str`两种类型时所有的排列组合情况，而它们的功能都是一致的：
+* 当输入字符串的长度小于15个byte的时候，返回完整的字符串，而超过15个byte的时候返回前15个byte
+通过对`String`和`&str`的排列组合，我们要强化大家对Rust中字符串相关的内存分配情况的理解，知道在对字符串做处理时什么时候会发生内存分配和拷贝，我们依次来看：
+
+##### 接收String，返回String
+```rust
+pub fn my_app_receive_string_and_return_string(s: String) -> String {
+	if s.len() > 15 {
+		// this path has new memory alloc on heap
+		s[0..15].to_string()
+	} else {
+		// this path doesn't have new memory alloc on heap
+		s
+	}
+}
+```
+上述代码，根据字符串长度不同，可能发生一次堆内存分配，也可能不发生堆内存分配。如果发生了堆内存分配，则可以用下图来表示，长度为19的字符串，经过截断后，`to_string()`调用会把前15个字节复制出来，这时发生了一次堆内存分配，函数返回后，长度为19的字符串的字符串头（栈内存）和字符串内容(堆内存）都被释放，返回的是新的字符串头，指向新的堆内存。
+
+```
+                    old:
+                   ┌───┬───┬───┐
+                   │ptr│cap│len│
+                   ├───┼───┼───┤
+                   │   │ 19│ 19│
+                   └─┬─┴───┴───┘
+  new:               │
+┌───┬───┬───┐        │
+│ptr│cap│len│        │
+├───┼───┼───┤      ┌─┴┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│   │ 15│ 15│      │0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │F │X │Y │Z │
+└─┬─┴───┴───┘      └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+  │
+  │                ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+  └───────────────►│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │
+                   └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+```
+如果没有发生堆内存分配，则函数返回前后的情况如下：堆内存被复用，入参对应的字符串头（栈内存）被释放，而返回一个新的字符串头（栈内存）。
+```
+                      old:
+                     ┌───┬───┬───┐
+ new:                │ptr│cap│len│
+┌───┬───┬───┐        ├───┼───┼───┤
+│ptr│cap│len│        │   │ 15│ 15│
+├───┼───┼───┤        └─┬─┴───┴───┘
+│   │ 15│ 15│          │
+└─┬─┴───┴───┘          │
+  │                    ▼
+  │                  ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+  └─────────────────►│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │
+                     └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+```
+> 出于篇幅的限制，后面不能每个case都画图来说明。在继续后面的介绍之前，大家一定要理解这个字符串在内存中的表示形式，并且在看到后面的代码时，能想想出对应的内存布局。
+
+
+##### 接收&str，返回String
+```rust
+pub fn my_app_receive_str_and_return_string(s: &str) -> String {
+	// both path alloc new memory
+	if s.len() > 15 {
+		s[0..15].to_string()
+	} else {
+		s.to_string()
+	}
+}
+```
+上述代码中两条路径都有涉及到内存分配。
+画个图帮大家回忆一下`&str`和`String`的区别，底层的堆内存由`String`持有，`&str`是一个胖指针，只能临时指向其中的某段地址，因此，图中`&str`对应变量的生命周期不能超过`String`的存活时间。
+```
+ String:        &str:
+┌───┬───┬───┐  ┌───┬───┐
+│ptr│cap│len│  │ptr│len│
+├───┼───┼───┤  ├───┼───┤
+│   │ 15│ 15│  │   │ 3 │
+└─┬─┴───┴───┘  └─┬─┴───┘
+  │              │
+  │              │
+  ▼              ▼
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+```
+
+##### 接收&str，返回&str
+下面两条路径都没有涉及到资源分配
+```rust
+pub fn my_app_receive_str_and_return_str(s: &str) -> &str {
+	// neither path alloc new memory
+	if s.len() > 15 {
+		&s[0..15]
+	} else {
+		s
+	}
+}
+```
+
+##### 接收String，返回&str
+这个函数通过Unsafe实现了安全Rust所绝对不允许的事情，即凭空返回一个堆内存的引用。再次提醒，这只是一个示例，为了帮助大家加深对Rust手动内存管理的理解，自己写代码的时候不要写这种容易被打的代码。这个函数两条路径也都没有进行堆内存分配。
+```rust
+pub unsafe fn my_app_receive_string_and_return_str<'a>(s: String) -> (&'a str, *const u8, usize, usize) {
+	// this function is only used as an example to show that we can use unsafe 
+	// rust to turn an owned type to a reference, you should not write such code
+	// in production code. It's a very ugly api design.
+
+
+	// neither path alloc new memory
+	let my_slice = if s.len() > 15 {
+		&*(&s[0..15] as &str as *const str)
+	} else {
+		&*(&s as &str as *const str)
+	};
+
+	// you can replace the following two lines using s.into_raw_parts()
+	// s.into_raw_parts() internally use ManuallyDrop too
+	// I use ManuallyDrop explicit here to show you how memory is managed
+	let s = ManuallyDrop::new(s);	
+	(my_slice, s.as_ptr(), s.len(), s.capacity())
+}
+```
+安全的Rust之所以不允许在函数中返回一个Srting的引用，是因为在函数返回时，String会被drop，对应的堆内存被回收，导致引用到被回收的堆内存空间，而上面的代码中，通过ManuallyDrop的包装，我们使得String不会在函数返回时被drop，这样String所持有的堆内存就被“遗忘”了，于是我们就可以放心的引用这块堆内存了。之所以“遗忘”要打引号，是因为我们不能真的遗忘它，否则就是内存泄漏，我们得留一个线索，在必要的时候能够释放掉这块内存，而这个线索就是函数返回值的第2、3、4个参数，通过指针、容量、实际占用长度这三个参数，我们就可以重新在栈内存上构建出String头部的结构体，从而将“遗忘”的String找回来。
+
+
+
+到此为止，我们完成了对`my_app.rs`的分析，也就是了解了我们所编写的库要做的本质功能是什么，接下来，我们开始包装FFI接口。
+
+#### 包装字符串传递的FFI接口
+打开`rust/src/ffi.rs`，我们可以看到新增了几个接口函数的定义，其中每一个函数我都写了详细的英文注释在里面，大家可以选择直接看代码中的注释，或者对照我的博客阅读中文的讲解，新增的函数如下：
+```rust
+#[no_mangle]
+pub fn receive_str_and_return_string(s: *const c_char) -> *const c_char{}
+
+#[no_mangle]
+pub fn receive_string_and_return_string(s: *const c_char) -> *const c_char{}
+
+#[no_mangle]
+pub fn receive_str_and_return_str(s: *const c_char) -> *const c_char{}
+
+#[no_mangle]
+pub fn receive_string_and_return_str(s: *const c_char, new_ptr: *mut *const c_char, c_origin_ptr: *mut *const c_char, len: *mut usize, cap: *mut usize){}
+
+#[no_mangle]
+pub unsafe fn free_string_alloc_by_rust_by_raw_parts(s: *mut c_char, len: usize, cap: usize){}
+
+#[no_mangle]
+pub unsafe fn free_cstring_alloc_by_rust(s: *mut c_char){}
+
+#[no_mangle]
+pub fn receive_str_and_return_str_no_copy(s: *const c_char, new_ptr: *mut *const c_char, len: *mut usize){}
+```
+
+我们先来浏览一下前三个接口函数的定义，可以发现，虽然在`my_app.rs`中，我们定义的字符串参数和返回值有`String`和`&str`的各种组合，但到了FFI接口上，统统变成了`*const c_char`，这就是因为C语言中的字符串定义很简单：一个以Null结尾的字节数组，如下所示。
+```
+┌────────────────────┐              ┌────────────────────┐
+│s1="0123456789A"    │              │s3="CDEF"           │
+└┬───────────────────┘              └─┬──────────────────┘
+ │                                    │
+ │          ┌────────────────────┐    │         ┌───────┐
+ │          │s2="456789A"        │    │         │s4=""  │
+ │          └┬───────────────────┘    │         └┬──────┘
+ │           │                        │          │
+ │           │                        │          │
+ ▼           ▼                        ▼          ▼
+┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐
+│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │\0│C │D │E │F │\0│Y │Z │
+└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘
+```
+对比一下Rust的`String`、`&str`和C语言中`char*`的区别：
+* `String`头占3个字长，`&str`胖指针占2个字长，`char*`指针占1个字长
+* `String`和`&str`里面都有长度记录，可以O(1)复杂度获取长度，而`char*`要从头开始数，是O(N)复杂度
+* `String`和`&str`所指向的字节序列一定是满足UTF-8编码的字符串（Rust规范），而`char*`里面存储的可以是任何字符编码（UTF-8、GBK、ASCII等等），甚至可以是非字符编码，比如一段任意的二进制数据，只要中间没有Null字节出现即可。
+* `String`和`&str`可以在中间出现Null字节，但是`char*`中间不可以，一旦出现就代表着字符串到这里结束了。
+
+可以看到，Rust和C规范中对于字符串的定义有着很大的差异，而Rust看中确定性，要把一切不确定因素消灭在萌芽阶段，因此，在FFI边界上，我们需要通过一系列手段来保证C语言世界的`char*`可以安全的转换为Rust认可的字符串，为了实现这个目标，Rust为我们提供了两个数据类型：`CString`和`CStr`:
+* `CString`对应的是`String`，用来表示具有堆内存所有权的字符串，但内容是满足C字符串标准的，也就是说内容不一定是UTF-8编码的，且一定没有Null。
+  * `CString`通常用来在Rust一侧分配堆内存后，把Rust生成的字符串传递给外部系统使用，堆内存所有权在Rust手里，后续要由Rust来释放。
+* `CStr`对应的就是`str`，他同样是一个DST类型，因此通常以`&CStr`的形式出现，表示对一段内存地址的引用，其内部存储的数据也不一定是UTF-8编码的，也一定在中间没有Null。
+  * `CStr`通常表示外部传入的字符串，字符串对应的内存空间所有权在外部系统，Rust的代码只能临时借用，而不是拥有。
+
+有了这些理论储备以后，我们可以开始看第一个FFI封装函数了：
+
+##### receive_str_and_return_string:
+```rust
+#[no_mangle]
+pub fn receive_str_and_return_string(s: *const c_char) -> *const c_char {
+    let cstr = {
+        // 永远要记得先检查传入的指针是不是空指针
+        assert!(!s.is_null());
+        // 下面这一行内部实现会遍历s，寻找第一个Null出现的位置，说白了就是做计数，数出来字符串的长度
+        // &CStr 相比于 *const c_char而言，内部直接记录了长度信息
+        // 由于我们要读裸指针，所以需要一个unsafe块
+        unsafe{CStr::from_ptr(s)}
+    };
+
+    // 下面这一行会再一次遍历底层的字节序列来检查一下这个字节序列是否满足UTF-8编码，如果检查通过，这个
+    // 函数会返回一个&str类型的指针，同样指向原来的地址。这一步相当于做了一个认证，把`&CStr`转换为`&str`
+    // 就可以告诉类型系统：这块内存满足我们Rust对字符串的要求，可以在Safe Rust代码里放心使用了。
+    // 这个操作会复用底层的字节数组，不会发生内存分配和数据拷贝。
+    // 由于`&str`是一个引用，它引用的是外部系统（例如Golang）所持有的内存，所以，外部系统必须有责任保证这
+    // 块内存不会在使用中被释放
+    let rstr = cstr.to_str().expect("not valid utf-8 string");
+
+    // 上面的两行代码没有做内存分配，但是却从头到尾遍历了两次字符串。如果这个FFI接口在你的Hot Path上，那么
+    // 你需要认真考虑一下性能开销的影响。
+
+    // 现在，我们就可以在Safe Rust的世界来使用外部的字符串了
+    let ret = my_app::my_app_receive_str_and_return_string(rstr);
+
+    // 现在，我们得到了一个`String`，这也就意味着上面的函数调用过程中发生了Rust这一侧的内存分配。
+    // 我们将要返回给调用者一个指针，但返回的数据必须遵循C的字符串规范才能够穿越FFI的边界，也就是我们
+    // 要返回一个裸指针，裸指针本身没有字符串的长度信息，并且指向一块以Null结尾的内存区域。
+    // 而我们知道，Rust的String不一定能保证字符串结尾的后面一定有一个Null存在。
+    // 这时我们就要借助`CString`这个数据类型了，不幸的是，这里又会引入额外的开销：
+    // * 首先，它会再次检查整个底层字节数组是否在中间包含Null，因此它会再次遍历字符串。
+    // * 其次，它将尝试将 Null字节追加到底层数组的后面，这一步是否会有额外开销取决于底层的缓冲区
+    //   是否还有空闲空间，也就是String的len是否小于cap。如果有空间，那么追加一个Null字节几乎
+    //   没有什么开销，但如果没有空间，那么就要进行扩容操作，这会导致一次内存分配以及一次数据拷贝
+    let c_ret = CString::new(ret).expect("null byte in the middle");
+
+    // 终于到了这里，我们可以通过into_raw()的方法返回一个指向堆内存的指针了。这个方法会消耗掉
+    // c_ret，让编译器暂时“忘掉”这块堆内存。
+    // 但是，这块内存迟早要有人来释放，应该怎么释放呢？我们后面再介绍。
+    c_ret.into_raw()
+
+    // 重要提示：
+    // 看完上面的代码，你必须要掌握的一个核心点：
+    // * 这个ffi包装函数的入参所对应的内存是由调用者拥有的（比如Golang），因此也必须由外部系统
+    //   来决定何时释放
+    // * 返回值是由Rust申请的，那么将来也一定是由Rust来执行释放
+}
+
+```
 
 大家看完上面这一顿操作以后，可能会对FFI接口的效率失去信心……我就是想传递一个字符串，怎么有这么多额外的开销啊……。
 
@@ -276,3 +522,41 @@ func SimpleRustFuncCalledFromGo() {
 * 通过调整API接口设计，将频繁的调用转化为少量批次调用，以减小开销
 * 避免在Hot Path上使用转换开销大的接口
 关于提升性能，我们会在文章后后面进一步讨论，通过做性能测试的方法，来对比不同方案的性能提升。
+
+
+#### 在Golang中调用
+我们打开`golang/main.go`文件，并且来看一下`PassStringBySinglePointer`这个函数，这个函数中定义了一个匿名函数来执行核心的调用逻辑，我们来看一下这个核心函数：
+```golang
+	testProc := func(f int, x, y string) {
+		goStr := x
+
+    // Memory Alloc in OS allocator And String Copy
+		// cStr is not managed by go GC
+		cStr := C.CString(goStr)
+		defer C.free(unsafe.Pointer(cStr))
+	
+		var cStrRet *C.char
+		switch f{
+		case 1:
+			cStrRet = C.receive_str_and_return_string(cStr)
+		case 2:
+			cStrRet = C.receive_string_and_return_string(cStr)
+		case 3:
+			cStrRet = C.receive_str_and_return_str(cStr)
+		}
+		
+    // Memory Alloc in Go runtime And String Copy
+    // goStrRet is managed by go GC
+		goStrRet := C.GoString(cStrRet) 
+		C.free_cstring_alloc_by_rust(cStrRet)
+
+		if goStrRet != y {
+			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))	
+		}
+	}
+```
+
+上面代码有几个要点：
+* `C.CString()` 和 `C.GoString()`两个内置函数分别用于实现C和Go字符串的相互装换，这里的原理和Rust的原理类似，就不再展开讲了，需要注意的是，这两个函数调用都会导致内存分配和内存拷贝。因为Go是有垃圾回收的，GoString所对应的内存地址是在Go Runtime的内存分配器管辖范围里的，而cgo中为了实现CFFI的调用，需要使用操作系统的内存分配器，Go语言中这两个内存分配器对内存管理的方式不一样，其内存地址区间也不一样，因此需要内存分配与拷贝。
+* `C.free()`调用的是操作系统默认内存分配器的free方法，用来释放掉Go语言通过操作系统内存分配器分配的内存。这部分内存不受Go语言垃圾回收的管理，因此需要手动释放，否则就会内存泄漏。
+* Rust函数调用完成后，Rust返回了一个指向Rust分配的内存的指针，这部分内存必须由Rust来释放，因此需要再调用一下Rust库暴露出来的释放接口。
