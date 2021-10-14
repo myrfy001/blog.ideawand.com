@@ -53,20 +53,20 @@
 
   <meta property="og:type" content="website">
 <meta property="og:title" content="IdeaWand">
-<meta property="og:url" content="http://blog.ideawand.com/tags/golang-go-GC-%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:url" content="http://blog.ideawand.com/page/3/index.html">
 <meta property="og:site_name" content="IdeaWand">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="Myrfy">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://blog.ideawand.com/tags/golang-go-GC-%E5%AE%9E%E6%88%98/">
+<link rel="canonical" href="http://blog.ideawand.com/page/3/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome: false,
+    isHome: true,
     isPost: false,
     isPage: false,
     isArchive: false
@@ -74,7 +74,7 @@
 </script>
 
 <script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  <title>标签: golang go GC 实战 | IdeaWand</title>
+  <title>IdeaWand</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
     <script>
@@ -193,49 +193,86 @@
           <div class="content">
             
 
+  <div class="posts-expand">
+        
   
   
-  
-  <div class="post-block">
-    <div class="posts-collapse">
-      <div class="collection-title">
-        <h1 class="collection-header">golang go GC 实战
-          <small>标签</small>
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2015/07/04/raspberrypi-driver-develope-study-note-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2015/07/04/raspberrypi-driver-develope-study-note-1/" class="post-title-link" itemprop="url">树莓派驱动学习笔记(1)</a>
         </h1>
-      </div>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2015-07-04 13:22:17" itemprop="dateCreated datePublished" datetime="2015-07-04T13:22:17+08:00">2015-07-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-06-15 13:32:10" itemprop="dateModified" datetime="2017-06-15T13:32:10+08:00">2017-06-15</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
 
       
-    <div class="collection-year">
-      <h1 class="collection-header">2020</h1>
+          <p>以下内容来自阅读<a target="_blank" rel="noopener" href="http://elinux.org/RPi_Software">http://elinux.org/RPi_Software</a>的总结</p>
+<p>树莓派的启动：</p>
+<p><strong><em>在上电后，竟然不是CPU首先开始工作。第一个开始工作的是GPU上的一块RISC电路</em></strong></p>
+<hr>
+<p>First stage bootloader：从SD卡读取Second stage bootloader</p>
+<p>Second stage bootloader：(bootcode.bin)读取GPU固件，启动GPU</p>
+<p>GPU firmware (start.elf)：在这个固件中，GPU来启动CPU。</p>
+<p>User code：最后…………CPU开始执行的用户程序</p>
+<p>以上文件在firmware/boot/目录下，其中_cd表示cutdown,是裁剪版；_x是测试版</p>
+
+      
     </div>
 
-  <article itemscope itemtype="http://schema.org/Article">
-    <header class="post-header">
-
-      <div class="post-meta">
-        <time itemprop="dateCreated"
-              datetime="2020-08-01T22:32:29+08:00"
-              content="2020-08-01">
-          08-01
-        </time>
-      </div>
-
-      <h2 class="post-title">
-          <a class="post-title-link" href="/2020/08/01/go-gc-tuning-practice-1/" itemprop="url">
-            <span itemprop="name">Golang GC调优实战系列之一</span>
-          </a>
-      </h2>
-
-    </header>
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
   </article>
+  
+  
+  
 
-    </div>
   </div>
-  
-  
-  
 
   
+  <nav class="pagination">
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="上一页"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+  </nav>
 
 
 

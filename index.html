@@ -198,6 +198,94 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/" class="post-title-link" itemprop="url">实战：使用rust开发动态链接库并在Golang中使用</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-01 22:35:57" itemprop="dateCreated datePublished" datetime="2021-10-01T22:35:57+08:00">2021-10-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-10-14 14:47:21" itemprop="dateModified" datetime="2021-10-14T14:47:21+08:00">2021-10-14</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <blockquote>
+<p>本篇文章是受Databend团队邀请，作为《Rust培养提高计划》公开课程的讲稿而书写的。</p>
+</blockquote>
+<blockquote>
+<p>课程相关录像可以在Databend的Bilibili账号【Databend】找到<br>讲师本人的微信公众号是：【极客幼稚园】<br>讲师本人的个人博客是: <a href="http://blog.ideawand.com">http://blog.ideawand.com</a><br>讲师本人的B站账号是: 【爆米花胡了】（注意胡是胡萝卜的胡） <a target="_blank" rel="noopener" href="https://space.bilibili.com/500416539">https://space.bilibili.com/500416539</a></p>
+</blockquote>
+<h3 id="分享背景："><a href="#分享背景：" class="headerlink" title="分享背景："></a>分享背景：</h3><p>在我所加入的各种Rust讨论群中，大家经常问的一个直击灵魂的问题就是：你们在生产环境中用Rust了吗？</p>
+<p>的确，现在掌握Rust的人还相对较少，很多学习Rust的同学可能是出于自己的兴趣爱好，实际并无法在工作中有机会实际使用。我本人也是在两年前接触的Rust，中间一直断断续续地学习，但大部分停留在看书、看教程、看文档、看别人吐槽的阶段，自己写过的代码也都是不超过几百行的小Demo。虽然后来在B站做过一系列《Rust过程宏实战系列教程》，那也是自己学习Rust的副产品，纸上谈兵，和实际工作没有任何关系。直到三个月前，我才下定决心要在生产环境中实战一把。</p>
+<p>本次分享希望可以给大家提供一个思路，通过替换系统中最小模块的方式，逐步用Rust来“蚕食”现有系统，实现逐步替换，并逐步积累在生产环境中使用Rust的经验。</p>
+<p>通过本次分享，我希望可以：</p>
+<ul>
+<li>减弱大家在生产环境中引入Rust的恐惧感，如果你还在犹豫、观望，不妨get your hands dirty first, 然后大家就可以放开了去搞了。</li>
+<li>了解Rust为什么比一些常用的语言（如Golang、Java等）更适合开发通用二进制库</li>
+<li>了解一下Rust开发C-FFI库的方法，并介绍一些个人实际使用中遇到的问题（也可能是我太菜）</li>
+<li>了解一下Golang中Cgo的使用</li>
+<li>有很多朋友在纠结Golang和Rust选哪个，通过本次分享，加深对两个语言的了解，为大家做选择多一些参考</li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -847,83 +935,11 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2019/11/11/pypy-simple-introduction/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Myrfy">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="IdeaWand">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2019/11/11/pypy-simple-introduction/" class="post-title-link" itemprop="url">pypy简要介绍(附Python代码加速对比实验)</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2019-11-11 23:36:09" itemprop="dateCreated datePublished" datetime="2019-11-11T23:36:09+08:00">2019-11-11</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-03-06 21:34:39" itemprop="dateModified" datetime="2020-03-06T21:34:39+08:00">2020-03-06</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>一个用Python实现的Python解释器？真的这么简单吗？</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2019/11/11/pypy-simple-introduction/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="下一页"></i></a>
   </nav>
 
 
@@ -967,12 +983,12 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">18</span>
+        <span class="site-state-item-count">19</span>
         <span class="site-state-item-name">标签</span>
       </div>
   </nav>

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="本篇文章是受Databend团队邀请，作为《Rust培养提高计划》公开课程的讲稿而书写的。   课程相关录像可以在Databend的Bilibili账号【Databend】找到讲师本人的微信公众号是：【极客幼稚园】讲师本人的个人博客是: http:&#x2F;&#x2F;blog.ideawand.com讲师本人的B站账号是: 【爆米花胡了】（注意胡是胡萝卜的胡） https:&#x2F;&#x2F;space.bilibili.co">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实战：使用rust开发动态链接库并在Golang中使用">
+<meta property="og:url" content="http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="本篇文章是受Databend团队邀请，作为《Rust培养提高计划》公开课程的讲稿而书写的。   课程相关录像可以在Databend的Bilibili账号【Databend】找到讲师本人的微信公众号是：【极客幼稚园】讲师本人的个人博客是: http:&#x2F;&#x2F;blog.ideawand.com讲师本人的B站账号是: 【爆米花胡了】（注意胡是胡萝卜的胡） https:&#x2F;&#x2F;space.bilibili.co">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-10-01T14:35:57.000Z">
+<meta property="article:modified_time" content="2021-10-14T06:47:21.511Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="rust, golang, shared library">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>实战：使用rust开发动态链接库并在Golang中使用 | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          实战：使用rust开发动态链接库并在Golang中使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-01 22:35:57" itemprop="dateCreated datePublished" datetime="2021-10-01T22:35:57+08:00">2021-10-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-10-14 14:47:21" itemprop="dateModified" datetime="2021-10-14T14:47:21+08:00">2021-10-14</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>本篇文章是受Databend团队邀请，作为《Rust培养提高计划》公开课程的讲稿而书写的。</p>
+</blockquote>
+<blockquote>
+<p>课程相关录像可以在Databend的Bilibili账号【Databend】找到<br>讲师本人的微信公众号是：【极客幼稚园】<br>讲师本人的个人博客是: <a href="http://blog.ideawand.com">http://blog.ideawand.com</a><br>讲师本人的B站账号是: 【爆米花胡了】（注意胡是胡萝卜的胡） <a target="_blank" rel="noopener" href="https://space.bilibili.com/500416539">https://space.bilibili.com/500416539</a></p>
+</blockquote>
+<h3 id="分享背景："><a href="#分享背景：" class="headerlink" title="分享背景："></a>分享背景：</h3><p>在我所加入的各种Rust讨论群中，大家经常问的一个直击灵魂的问题就是：你们在生产环境中用Rust了吗？</p>
+<p>的确，现在掌握Rust的人还相对较少，很多学习Rust的同学可能是出于自己的兴趣爱好，实际并无法在工作中有机会实际使用。我本人也是在两年前接触的Rust，中间一直断断续续地学习，但大部分停留在看书、看教程、看文档、看别人吐槽的阶段，自己写过的代码也都是不超过几百行的小Demo。虽然后来在B站做过一系列《Rust过程宏实战系列教程》，那也是自己学习Rust的副产品，纸上谈兵，和实际工作没有任何关系。直到三个月前，我才下定决心要在生产环境中实战一把。</p>
+<p>本次分享希望可以给大家提供一个思路，通过替换系统中最小模块的方式，逐步用Rust来“蚕食”现有系统，实现逐步替换，并逐步积累在生产环境中使用Rust的经验。</p>
+<p>通过本次分享，我希望可以：</p>
+<ul>
+<li>减弱大家在生产环境中引入Rust的恐惧感，如果你还在犹豫、观望，不妨get your hands dirty first, 然后大家就可以放开了去搞了。</li>
+<li>了解Rust为什么比一些常用的语言（如Golang、Java等）更适合开发通用二进制库</li>
+<li>了解一下Rust开发C-FFI库的方法，并介绍一些个人实际使用中遇到的问题（也可能是我太菜）</li>
+<li>了解一下Golang中Cgo的使用</li>
+<li>有很多朋友在纠结Golang和Rust选哪个，通过本次分享，加深对两个语言的了解，为大家做选择多一些参考</li>
+</ul>
+<span id="more"></span>
+
+<h3 id="分享目录"><a href="#分享目录" class="headerlink" title="分享目录"></a>分享目录</h3><ul>
+<li>Get hands dirty<ul>
+<li>Rust在开发二进制库上的优势</li>
+<li>为什么选择Golang作为调用示例</li>
+<li>配置一个Rust项目，使之能够编译出满足C-FFI的动态链接库</li>
+<li>开发一个Go项目，调用Rust编写的库</li>
+</ul>
+</li>
+<li>Case By Case，介绍常见的应用场景<ul>
+<li>字符串的传递</li>
+<li>结构体以及函数方法</li>
+<li>回调函数的使用</li>
+<li>FFI接口处的并发安全问题</li>
+<li>错误处理</li>
+</ul>
+</li>
+<li>性能测试：用Rust重写Go模块，真的会更快吗？</li>
+</ul>
+<h3 id="目标听众"><a href="#目标听众" class="headerlink" title="目标听众"></a>目标听众</h3><ul>
+<li>对C语言有大致了解，大学C语言基础就够了</li>
+<li>熟悉Go、Python、Java这类具有GC的语言，但对C这样需要手工管理内存的语言不熟悉的同学</li>
+<li>了解Rust，并希望将Rust与其他语言配合使用的同学</li>
+<li>熟悉Go语言，但不了解cgo使用方法的同学</li>
+<li>如果你已经熟练掌握的Rust、C/C++、Go，那么这个分享可能过于简单，建议直接Clone Databend的代码，开始为Databend贡献代码<del>逃</del></li>
+</ul>
+<h3 id="Rust在开发二进制库上的优势"><a href="#Rust在开发二进制库上的优势" class="headerlink" title="Rust在开发二进制库上的优势"></a>Rust在开发二进制库上的优势</h3><p>我们知道，如果两个不同的编程语言希望互相调用对方编写的函数，那么两种语言必须达成很多共识，包括但不限于：</p>
+<ul>
+<li>各种数据结构在内存中是如何布局存储的</li>
+<li>函数调用时，参数如何传递，返回值如何传递（例如，是用寄存器来传递，还是用栈来传递？）</li>
+<li>去哪里申请内存空间（使用的内存分配器是什么？），申请使用的内存空间，何时释放，由谁来释放（有没有GC？）？</li>
+</ul>
+<p>如果每一种编程语言都有一套自己分配管理内存、调用函数的规则，那么两种不同编程语言所开发的程序之间如果想进行相互调用，那么难度就会非常大。如果有<code>N</code>种编程语言，那么互相调用的可能组合就是 <code>N * (N-1)</code>。为了解决这个问题，最好的方法就是找一个公认的标准，大家都来向这个标准靠拢。而出于历史原因，C语言在计算机领域的地位目前是不可撼动的，因此绝大多数编程语言都会尽力提供一些方式，使得自己能够通过C语言的标准来和其他语言互相调用。想对这里深入的同学可以去深入了解一下<code>ABI</code>和<code>FFI</code>这两个概念，这里暂不展开。</p>
+<p>那么我们来看下一个问题，大家都来兼容C语言定义的标准，事情就这么简单吗？显然不是，毕竟C语言已经很老了，如果各种新生语言都拘泥于C语言的规范，那怎么能有创新呢？</p>
+<p>于是就出现了这样一种局面：由于不同的编程语言在具体实现上千差万别，有各自的特性，大家只在基础的功能上兼容C语言，而各种高级特性往往就不能直接满足C语言的标准。因此不同的语言对C语言所定制的函数调用规范的支持程度也不一样，这就造成了有一些语言之间互相调用很容易，开销也很低，而另外一些语言之间的相互调用会很困难，或者说效率很低。（大家可以回想一下那句名言：没有什么问题是加一层中间件解决不了的，如果有，那就加两层。如果两种编程语言在设计上差异过大，那么势必要在相互调用时进行一些中间的转换工作，而其代价就是互相调用的效率变低。）</p>
+<p>我们常见的开发语言，通常可以分为两大类：</p>
+<ul>
+<li>A类：是没有虚拟机、运行时，需要开发者自己管理内存的语言，例如C、C++、Rust等。</li>
+<li>B类：是具有虚拟机、具有运行时等协助管理内存的组件的语言，例如Java、Golang、Python、PHP等。</li>
+</ul>
+<p>通常，上述A类语言，都能够完美简洁的支持C语言的调用规范，而B类中的语言，通常是部分支持，或者说其对C调用规范的支持需要引入额外的开销。上面说了这么多理论的东西，我们来看一个实际的例子：</p>
+<p>我们以Python和C语言交互为例，Python本身是一种脚本语言，CPython是C语言开发的Python解释器，接下来的例子我们都以CPython为例进行说明。大家如果学习过Python，可能都会听说Python是一门胶水语言，可以非常方便的使用C语言开发的库，但是，要知道这层胶水也是有代价的。例如我们想在Python中调用一个现成的C语言开发的动态库，我们会写下面的代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> ctypes <span class="keyword">import</span> cdll, c_char, c_char_p</span><br><span class="line"></span><br><span class="line">libc = cdll.LoadLibrary(<span class="string">&#x27;libc.so.6&#x27;</span>)</span><br><span class="line">strchr = libc.strchr</span><br><span class="line">strchr.argtypes = [c_char_p, c_char]</span><br><span class="line">strchr.restype = c_char_p</span><br><span class="line"></span><br><span class="line">substr = strchr(<span class="string">&#x27;abcdef&#x27;</span>, <span class="string">&#x27;d&#x27;</span>)</span><br><span class="line"><span class="keyword">if</span> substr:</span><br><span class="line">    <span class="built_in">print</span>(substr)</span><br></pre></td></tr></table></figure>
+<p>其中，第5、6两行分别指定了C编写的函数库中某个函数的入参类型和返回值类型，我们可以想象到，在第8行调用这个函数的时候，<code>ctypes</code>这个库，会执行下列操作：</p>
+<ul>
+<li>根据第5行指定的入参类型，把两个Python字符串对象转换为C语言的<code>char *</code>和<code>char</code>类型，对于<code>char *</code>类型，需要确保其指向的字符串是以NULL结尾的。</li>
+<li>根据转换后的参数调用C函数库</li>
+<li>根据第6行定义的返回值类型，将C函数返回的一个字节的<code>char</code>类型结果，重新转换为换一个<code>str</code>类型的Python对象</li>
+</ul>
+<p>上面的例子呢，是从Python来调用C，那么反过来，如果我们想从C来调用Python计算一个<code>1+1</code>等于几的问题，又会是什么样子的呢？我们知道，Python脚本的运行是需要Python解释器来实现的，因此，哪怕是执行最简单的一个加法计算，我们也要在C语言的代码中，先编写初始化CPython解释器的代码，初始化一个完整的CPython解释器，然后再在这个解释器中运行Python的脚本，当然在运行脚本之前，一定还会涉及到把C语言的基础数据类型int转换为Python的int类型对象，最后再把存储计算结果的Python对象转换为C语言的基本数据类型。</p>
+<p>类似的，Golang在编译时可以通过添加<code>-buildmode=c-shared</code>来将一个go写的项目编译成符合CFFI的库文件，但我们可以想一下C语言调用Go编写的库会是什么样子的：Go自己的Runtime（任务调度器、对操作系统IO的封装、内存分配器等等）得打包到库里面，否则没法调度协程、没办法分配内存、没办法做IO，除此之外还有其他很多问题。</p>
+<p>而对于Rust开发的库文件呢？由于Rust几乎没有Runtime，内存管理可以和操作系统默认保持一致，系统级编程语言可以直接和系统调用打交道没有额外开销，因此我们可以写出小而美的库文件。</p>
+<p>通过上面的例子加深理解以后，我们就可以引出一些结论：</p>
+<ul>
+<li>A类中的语言相互调用，往往是最原生、最高效的。</li>
+<li>B类中的语言相互调用，往往伴随着巨大的额外开销，甚至开销过大以至于失去折腾这些跨语言调用的价值。</li>
+<li>每种语言都可能处于调用者和被调用者两种角色，而一门语言扮演两种角色时，其支持程度可能是不一样的：<ul>
+<li>B类语言通常都支持调用A类语言开发的库函数，而且开销相对较小，因为B类语言通常比较新，为了适配老生态，他们都会去主动靠拢支持与C语言开发的库的调用。</li>
+<li>A类语言如果想调用B类语言开发的函数，就要看B语言的诚意，因为A类语言是前辈，它们对新的语言特性、实现方式一无所知，后辈们如果希望得到前辈的重用，那就要自己提供出满足前辈价值观的接口。</li>
+<li>通常，B类调用A类会容易实现一些（只需要做类型转换），而A类调用B类则会困难一些（需要初始化B类语言的运行时、解释器等）。多数语言对B类调A类的支持会优于A类调B类。</li>
+</ul>
+</li>
+</ul>
+<p>那么，回到这一小节的核心问题：Rust在开发二进制库上的优势是什么？通过上述的分析，如果你希望自己开发的二进制库能够有最好的兼容性，能够被更多的语言来调用，那么最好选择用A类语言来开发，而A类语言中，大部分都是古董级别的语言。Rust是为数不多的【属于A类】的【新一代】开发语言，所以，我很看好它~</p>
+<h3 id="为什么选择Golang作为调用示例"><a href="#为什么选择Golang作为调用示例" class="headerlink" title="为什么选择Golang作为调用示例"></a>为什么选择Golang作为调用示例</h3><ul>
+<li>Golang 目前应用非常广泛，熟悉Golang的小伙伴们也比较多，这样可能会有更多的受众。</li>
+<li>最近使用Rust或Go开发的云原生项目增长非常快，因为这两种语言的应用场景高度重合，所以研究一下二者的融合就很有意思。</li>
+<li>Golang 具有自己的运行时、自己的栈结构、自己的内存分配器，因此相比较于Python这类胶水语言，Golang调用CFFI函数库更有难度，我们喜欢做一些有挑战的事情。</li>
+<li>正因为其略微复杂，我们才可以更好的思考一些问题，更好的领会跨语言调用的核心思想。</li>
+</ul>
+<h3 id="配置一个Rust项目，使之能够编译出满足C-ABI的动态链接库"><a href="#配置一个Rust项目，使之能够编译出满足C-ABI的动态链接库" class="headerlink" title="配置一个Rust项目，使之能够编译出满足C-ABI的动态链接库"></a>配置一个Rust项目，使之能够编译出满足C-ABI的动态链接库</h3><p>由于这是一个视频直播分享的讲稿，为了能够快速给大家进行演示，我事先准备好了各个环节需要使用的代码，大家可以先克隆<code>https://github.com/myrfy001/rust_golang_ffi_demo</code>这个GitHub仓库，并切换到<code>example_1</code>这个分支上，来查看第一个示例的代码：</p>
+<p>这里呢，我们可以看到顶层有<code>rust</code>和<code>golang</code>这两个文件夹，里面分别存储了示例中所使用到的rust工程以及Golang工程，我们先看<code>rust</code>文件夹下的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── Cargo.lock</span><br><span class="line">├── Cargo.toml</span><br><span class="line">└── src</span><br><span class="line">    ├── ffi.rs</span><br><span class="line">    ├── lib.rs</span><br><span class="line">    └── my_app.rs</span><br></pre></td></tr></table></figure>
+<p>首先，这个文件夹结构是通过<code>cargo new --lib rust</code>命令建立的初始架构，然后在src目录下自行新建了<code>ffi.rs</code>和<code>my_app.rs</code>两个文件。</p>
+<p>先来查看一下<code>Cargo.toml</code>文件，其中以下的两行是我们自己修改加入的：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[lib]</span></span><br><span class="line"><span class="attr">crate-type</span> = [<span class="string">&quot;cdylib&quot;</span>]</span><br></pre></td></tr></table></figure>
+<p>这里的<code>crate-type = [&quot;cdylib&quot;]</code>指示我们的这个crate要编译输出一个符合C语言调用规范的动态库文件，注意这里是<code>cdylib</code>，不是<code>dylib</code>，如果配置为<code>dylib</code>，则输出是符合rust调用规范的动态库，只能在rust语言编写的项目之间互相调用，不能跨到其他语言上使用。</p>
+<p>再来介绍一下src目录下的结构：</p>
+<ul>
+<li><code>my_app.rs</code>代表的是我们编写普通Rust代码的地方，我们开发的主要Rust逻辑都写在这个文件中。这只是一个案例，在真实项目中，<code>my_app.rs</code>对应的可能是一个包含数百个源代码文件的庞大的Rust项目。</li>
+<li><code>ffi.rs</code>是我们的FFI边界，在这个文件中，我们要把Rust提供的各种高级特性适配到经典的C-FFI形式的函数上。</li>
+<li><code>lib.rs</code>是我们整个库的入口，里面只有两行<code>mod</code>声明语句，用于引入<code>my_app.rs</code>和<code>ffi.rs</code></li>
+</ul>
+<p>接下来，我们开始编写我们的第一个最简单的库函数，打开<code>my_app.rs</code>，可以看到以下代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_simple_rust_func_called_from_go</span></span>(arg1: <span class="built_in">u8</span>, arg2: <span class="built_in">u16</span>, arg3: <span class="built_in">u32</span>) -&gt; <span class="built_in">usize</span> &#123;</span><br><span class="line">	arg1 <span class="keyword">as</span> <span class="built_in">usize</span> + arg2 <span class="keyword">as</span> <span class="built_in">usize</span> + arg3 <span class="keyword">as</span> <span class="built_in">usize</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码非常简单，它是一个普通的Rust函数，将3个入参相加后返回，因为这是一个最简单的示例，所以入参选择了3个不同的基本数据类型。</p>
+<p>为了将这个函数通过C-FFI暴露给其他程序，我们打开<code>ffi.rs</code>，可以看到以下内容：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> crate::my_app;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">simple_rust_func_called_from_go</span></span>(arg1: <span class="built_in">u8</span>, arg2: <span class="built_in">u16</span>, arg3: <span class="built_in">u32</span>) -&gt; <span class="built_in">usize</span> &#123;</span><br><span class="line">    my_app::my_app_simple_rust_func_called_from_go(arg1, arg2, arg3) <span class="keyword">as</span> <span class="built_in">usize</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因为入参和返回值都是基本数据类型，所以这一层包装看起来有点多余，但是先别急，后面的例子就会看到ffi这一层包装的作用了。<br>另外一个很重要的点就是<code>#[no_mangle]</code>这个属性标签，它告诉Rust编译器不要在输出的符号表中对这个函数的函数名做混淆，因为在跨语言的函数调用中，知道被调用函数的名字是非常重要的，否则链接器就无法在符号表中对应到这个函数的入口地址。<br>默认情况下，Rust编译器认为我们定义的函数都是由Rust程序调用的，这时编译器默认对函数名进行了混淆，为什么要混淆的原因大家可以参考：<a target="_blank" rel="noopener" href="https://internals.rust-lang.org/t/why-rust-has-name-mangling/12503">https://internals.rust-lang.org/t/why-rust-has-name-mangling/12503</a> 以及 <a target="_blank" rel="noopener" href="https://rust-lang.github.io/rfcs/2603-rust-symbol-name-mangling-v0.html。">https://rust-lang.github.io/rfcs/2603-rust-symbol-name-mangling-v0.html。</a></p>
+<p>虽然外部看起来函数名混淆之后变得人类难以理解，但rust编译器自己心里还是非常清楚这些对应关系的。但是，如果这个函数要被其他语言调用，其他语言在编译链接的时候可不知道rust编译器是怎么混淆的，其他语言的链接器只能拿着函数名去符号表里找，如果混淆了，肯定对不上，因此，在开发ffi接口时，必须告诉编译器，不能对这个函数的名字做混淆。</p>
+<p>以上就是我们所编写的第一个Rust侧的项目代码，执行<code>cargo build</code>后，我们会在<code>target/debug/</code>目录下看到名为<code>librust.so</code>或<code>librust.dylib</code>的文件，因为我演示的系统是Mac OsX系统，所以我这里得到的是<code>librust.dylib</code>这个文件。这个文件名的<code>lib</code>前缀是*nix操作系统上库文件的固定前缀，而<code>rust</code>后缀是因为我们在<code>Cargo.toml</code>中定义的<code>name = &quot;rust&quot;</code>。</p>
+<h3 id="开发一个Go项目，调用Rust编写的库"><a href="#开发一个Go项目，调用Rust编写的库" class="headerlink" title="开发一个Go项目，调用Rust编写的库"></a>开发一个Go项目，调用Rust编写的库</h3><blockquote>
+<p>本篇文章虽然是介绍在Go中调用Rust编写的函数库，但其中以C-FFI为界，在Golang视角中，其看到的只是一个符合C-FFI标准的函数库，本篇文章介绍的与cgo有关的知识点，可以应用在其他任何语言所开发的符合C-FFI标准的软件库上，不仅限于Rust开发的软件库。</p>
+</blockquote>
+<p>还是在代码库<code>example_1</code>这个分支上，这次我们进入<code>golang</code>这个目录，可以看到其中有4个文件：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">.</span><br><span class="line">├── ffi_demo.h</span><br><span class="line">├── go.mod</span><br><span class="line">├── main.go</span><br><span class="line">└── main_test.go</span><br></pre></td></tr></table></figure>
+<p>其中，<code>go.mod</code>是通过<code>go mod init</code>创建出来的，无需多说，<code>main.go</code>是我们的核心文件，同时我们在<code>main_test.go</code>中编写测试用例。这些都是一个Golang项目的常规操作，接下来我们重点看一下<code>ffi_demo.h</code>这个文件。</p>
+<p>在Golang中调用符合C-FFI标准的函数库，我们就要借助cgo，从名字上就可以看出来我们需要一些和C语言有关的东西，这里的<code>ffi_demo.h</code>是一个C语言的头文件，如果您对C语言完全不了解，那么可能需要去自己补充一下相关的知识，不过，为了能够继续看完这个教程，你可以先把头文件理解为一个包含了函数签名的文件，通过这个文件，我们就能够知道函数叫什么名字，有多少个参数，每个参数是什么类型的，以及返回值是什么，有了这些东西，编译器就可以按照C-ABI的调用规范生成调用的机器指令了。</p>
+<p>下面我们可以看一下这个<code>ffi_demo.h</code>的内容：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;stdint.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">uintptr_t</span> <span class="title">simple_rust_func_called_from_go</span><span class="params">(<span class="keyword">uint8_t</span> arg1, <span class="keyword">uint16_t</span> arg2, <span class="keyword">uint32_t</span> arg3)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>为了简洁明了，这个头文件是我手写的，写的并不是很规范，对于一个大项目，自己手写头文件比较坑，可以使用<code>cbindgen</code>这个工具来自动生成，有兴趣的同学可以自己去学习一下。</p>
+</blockquote>
+<p>这个文件中，第一行引入了<code>stdint.h</code>这个文件，这一步主要是为了引入<code>uintptr_t</code>等等这些类型的定义，rust中的数值类型对应到C语言数据类型的对应关系，大家可以参照cbindgen工具给出的映射表，参见：<a target="_blank" rel="noopener" href="https://github.com/eqrion/cbindgen/blob/master/docs.md">https://github.com/eqrion/cbindgen/blob/master/docs.md</a></p>
+<p>文件的第二行，按照C语言的语法：</p>
+<ul>
+<li>首先标明函数的返回值类型是一个与处理器位宽一致的数据类型。</li>
+<li>接下来是函数名，这个函数名必须与rust中添加了<code>#[no_mangle]</code>标签的函数名一直，因为在链接器链接的过程中，通过符号表查找函数地址的时候，就要靠这个名字</li>
+<li>后面括号中依次写出了每一个参数的类型，这个类型也一定是和rust中声明的函数签名一致的，只不过它是用C语言的语法来书写的。</li>
+</ul>
+<p>然后说一下关于这个<code>ffi_demo.h</code>文件存放位置的问题，如果是一个正规的开源库项目，这个头文件应该是随着rust项目发布的，各种不同的语言在使用这个rust开发的库时，都可以引用这个头文件，所以它不应该出现在我们golang这个文件夹下面，而是应该放在类似<code>/usr/local/include</code>这类目录下，但是这为了演示方便，我们把它放在了<code>golang</code>这个目录里。</p>
+<p>关于<code>ffi_demo.h</code>这个文件，先介绍这些就够了，我们回到我们的主角：<code>main.go</code></p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">#cgo CFLAGS: -I.</span></span><br><span class="line"><span class="comment">#cgo LDFLAGS: -L../rust/target/debug -lrust</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">#include &quot;ffi_demo.h&quot;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;C&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">SimpleRustFuncCalledFromGo</span><span class="params">()</span></span> &#123;</span><br><span class="line">	arg1 := <span class="number">123</span></span><br><span class="line">	arg2 := <span class="number">1234</span></span><br><span class="line">	arg3 := <span class="number">1234567</span></span><br><span class="line"></span><br><span class="line">	cArg1 := C.uint8_t(arg1)</span><br><span class="line">	cArg2 := C.uint16_t(arg2);</span><br><span class="line">	cArg3 := C.uint32_t(arg3);</span><br><span class="line">	ret := C.simple_rust_func_called_from_go(cArg1, cArg2, cArg3)</span><br><span class="line">	<span class="keyword">if</span> <span class="keyword">int</span>(ret) != arg1 + arg2 + arg3 &#123;</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;SimpleRustFuncCalledFromGo Error&quot;</span>)	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述第9行<code>import &quot;C&quot;</code>这一行的出现，标明了这个go文件需要使用cgo，紧接在这一行上面的注释内的内容，会被cgo处理。<strong>注意第9行的<code>import &quot;C&quot;</code>和它上面的注释之间不能有空行。</strong></p>
+<p>再来看一下上面注释中被cgo处理的内容：</p>
+<ul>
+<li><code>#cgo CFLAGS: -I.</code> 这一行表示告诉C【编译器】，增加一个搜寻头文件的路径，这里的<code>-I.</code>中的<code>.</code>表示当前路径，而后面我们在启动测试程序是，就是将<code>golang</code>这个目录作为当前工作目录，我们的<code>ffi_demo.h</code>这个文件也就放在工作目录中，这样编译器就能在当前目录下搜索到<code>ffi_demo.h</code>了。</li>
+<li><code>#cgo LDFLAGS: -L../rust/target/debug -lrust</code> 这一行告诉C【链接器】两件事：<ul>
+<li><code>-L../rust/target/debug</code>表示要增加一个库文件的搜索路径</li>
+<li><code>-lrust</code>表示要搜索一个叫做<code>rust</code>的库文件，按照*nix的规范，实际上就是查找一个叫做<code>librust.so</code>的文件</li>
+</ul>
+</li>
+<li><code>#include &quot;ffi_demo.h&quot;</code>这一行就是一段标准的C语言代码，指示C语言编译器引用<code>ffi_demo.h</code>文件中编写的代码。</li>
+</ul>
+<blockquote>
+<p>广告时间：如果大家对*nix系统下动态库的查找方式感兴趣，可以阅读笔者的另一篇文章：<a href="https://blog.ideawand.com/2020/02/15/how-does-linux-shared-library-versioning-works/">《一文读懂Linux下动态链接库版本管理及查找加载方式》</a></p>
+</blockquote>
+<p>所有在<code>import &quot;C&quot;</code>这一行上面注释中的C语言代码里定义的函数、结构体等，都会在编译时被认为是在<code>C</code>这个模块中定义的，因此在这个<code>main.go</code>文件中接下来的地方，我们就可以用<code>C.xxxx</code>的形式，来在go语言中访问C语言里面定义的一些内容。</p>
+<p>接下来的12~24行定义了一个名为<code>SimpleRustFuncCalledFromGo</code>的Go函数，其中：</p>
+<ul>
+<li>前三行定义了3个go变量，其类型都是int类型</li>
+<li>接下来三行，我们从这三个go变量创建了3个调用C库时需要使用的变量，之所以这样做，是因为<code>arg1</code>、<code>arg2</code>、<code>arg3</code>这三个变量在go中默认都是int类型的，也就是说其所占用的内存空间都是与处理器位宽一致的，而我们在<code>ffi_demo.h</code>中定义的三个参数，分别只占用1、2和4个字节，因此我们需要做一下类型的转换，得到了<code>cArg1</code>、<code>cArg2</code>、<code>cArg3</code>这三个变量，其类型分别是<code>C.uint8_t</code>、<code>C.uint16_t</code>、<code>C.uint32_t</code>。</li>
+<li>再下面的一行，通过<code>C.simple_rust_func_called_from_go</code>的形式，表示我们要通过cgo来调用一个外部C库中名为<code>simple_rust_func_called_from_go</code>的函数：<ul>
+<li>之所以我们能通过<code>C</code>这个模块来访问<code>simple_rust_func_called_from_go</code>,是因为我们在代码第7行加载了<code>ffi_demo.h</code>,而<code>simple_rust_func_called_from_go</code>定义在<code>ffi_demo.h</code>中。</li>
+<li>在编译链接时，链接器需要在多个指定的外部候选库中寻找需要链接的函数，由于我们在第5行告诉链接器要添加一个名为<code>librust.so</code>的文件作为可能要被链接的候选，而这个库文件的符号表中恰好暴露了一个名为<code>simple_rust_func_called_from_go</code>的函数，于是链接器就知道当要调用这个函数的时候，要把PC指针跳转到<code>librust.so</code>这个动态库内部对应的地址上。</li>
+<li><code>librust.so</code>之所以会暴露<code>simple_rust_func_called_from_go</code>这个符号，是因为我们在写rust代码的时候添加了<code>#[no_mangle]</code>标签</li>
+</ul>
+</li>
+<li>这个函数调用执行完以后，其返回被存到了ret这个变量中，这个变量的类型是<code>C.ulong</code>,为了将<code>C.ulong</code>与go的内置int类型进行比较，我们需要再做一次类型转换。<ul>
+<li>这里可以稍微注意一下，我们在<code>ffi_demo.h</code>中定义了函数的返回值类型是C语言中的<code>uintptr_t</code>，这个类型对应到cgo中变为了<code>C.ulong</code>类型。在跨越FFI边界的时候，类型神马的已经完全不存在了。数据也好，指针也罢，无非就是一串特定的二进制比特序列而已，类型系统告诉编译器如何处理使用这一段比特序列。</li>
+<li>至于为什么<code>ffi_demo.h</code>文件中定义的<code>uintptr_t</code>会变为cgo中的<code>C.ulong</code>，这个大家也没必要死记硬背，我们可以借助编译器的错误提示信息来获取到底是什么类型。比如以后你遇到了一个不知道是什么类型的东西，那就人为制造一个类型不匹配，编译器会给出响应的提示。例如，我们可以把上面的<code>if int(ret) != arg1 + arg2 + arg3 &#123;</code>这一行改为<code>if ret != arg1 + arg2 + arg3 &#123;</code>,编译器就会提示无法将<code>C._Ctype_ulong</code>和<code>int</code>做比较，这时候我们就知道ret对应的类型实际上是<code>C.ulong</code>了</li>
+</ul>
+</li>
+</ul>
+<p>以上，我们捋顺了go调用简单C函数的流程</p>
+<p>看到这里，你可能会说，何必多此一举呢？我在go里面，直接把<code>arg1</code>、<code>arg2</code>、<code>arg3</code>这三个参数定义成<code>uint8</code>、<code>uint16</code>和<code>uint32</code>不就行了嘛。但这样也是不行的：</p>
+<blockquote>
+<p><strong>通过cgo调用c函数时，参数都要使用<code>C</code>这个模块内部提供的类型。而返回值也一定是<code>C</code>模块内定义的某种类型</strong></p>
+</blockquote>
+<p><code>C.uchar</code>、<code>C.short</code>、<code>C.int</code>这些类型，都是cgo内置的类型。之所以要有这样的限制，大家可以回忆一下本文开头在介绍跨语言调用时，提到过为了减少不同语言之间调用的组合爆炸问题，大家都公认把C语言的调用规范作为跨语言调用的标准，那么，我们在跨语言调用的时候，就只能用C语言知道的那些东西。</p>
+<p><code>C</code>这个虚拟的模块所起到的作用，其中一个就是从类型系统的层面上，限制你能使用的类型。例如C语言根本不知道Golang里面的Channel和闭包是什么东西，因此你就不可能在<code>C</code>这个模块中找到和Channel、闭包等有关的东西。从这一点，也希望大家可以慢慢体会“跨语言调用可能会有一些性能开销”这件事，当然，这个例子里面遇到的转换应该是最简单廉价的一种转换，后面我们会看到更复杂、开销更大的转换。</p>
+<p>现在，我们运行<code>main_test.go</code>里面的测试用例，应该可以看到测试用例顺利执行。</p>
+<h3 id="字符串的传递"><a href="#字符串的传递" class="headerlink" title="字符串的传递"></a>字符串的传递</h3><p>本小节将提升一些难度，为大家介绍跨语言传递字符串的方法。之所以难度会有提升，是因为相比上一关所有变量都是栈分配而言，本小节的字符串类型涉及到了堆内存的使用。而在使用堆内存的时候，必须处理好谁申请，谁释放的问题；除此之外，另一个头疼的问题就是C语言中的字符串规定以Null结尾，字符串本身就是一个指针，不包含长度信息，而Rust中的String也好，&amp;str也好，都使用了额外的空间保存字符串长度，而真正的字符串在内存中不能保证是以Null结尾的，这就会引入额外的转换操作。</p>
+<blockquote>
+<p>预防针<br>在接下来的内容中，会遇到一些非常规的做法，这里之所以要介绍这些非常规的做法，目的不是为了鼓励大家在代码中去这么使用，而是给大家展示各种各样的情况，让大家了解到无论上层接口再怎么变，使用方法再怎么稀奇古怪，其底层核心不变的就是内存的分配与释放。借助unsafe rust，大家可以获得像C/C++一样对内存的完全掌控能力。实际使用中FFI边界上的情况非常灵活多变，但只要内存管理能搞清楚，其他的事情都不是大问题。</p>
+</blockquote>
+<h4 id="了解库函数的核心功能逻辑"><a href="#了解库函数的核心功能逻辑" class="headerlink" title="了解库函数的核心功能逻辑"></a>了解库函数的核心功能逻辑</h4><p>这一部分的代码我们切换到项目的<code>example_2</code>分支，然后打开<code>rust/src/my_app.rs</code>文件，可以看到我们定义了以下四个新的函数：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_string_and_return_string</span></span>(s: <span class="built_in">String</span>) -&gt; <span class="built_in">String</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_str_and_return_string</span></span>(s: &amp;<span class="built_in">str</span>) -&gt; <span class="built_in">String</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_str_and_return_str</span></span>(s: &amp;<span class="built_in">str</span>) -&gt; &amp;<span class="built_in">str</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_string_and_return_str</span></span>&lt;<span class="symbol">&#x27;a</span>&gt;(s: <span class="built_in">String</span>) -&gt; (&amp;<span class="symbol">&#x27;a</span> <span class="built_in">str</span>, *<span class="keyword">const</span> <span class="built_in">u8</span>, <span class="built_in">usize</span>, <span class="built_in">usize</span>) &#123;&#125;</span><br></pre></td></tr></table></figure>
+<p>这四个函数分别列举了输入参数和返回值取<code>String</code>和<code>&amp;str</code>两种类型时所有的排列组合情况，而它们的功能都是一致的：</p>
+<ul>
+<li>当输入字符串的长度小于15个byte的时候，返回完整的字符串，而超过15个byte的时候返回前15个byte<br>通过对<code>String</code>和<code>&amp;str</code>的排列组合，我们要强化大家对Rust中字符串相关的内存分配情况的理解，知道在对字符串做处理时什么时候会发生内存分配和拷贝，我们依次来看：</li>
+</ul>
+<h5 id="接收String，返回String"><a href="#接收String，返回String" class="headerlink" title="接收String，返回String"></a>接收String，返回String</h5><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_string_and_return_string</span></span>(s: <span class="built_in">String</span>) -&gt; <span class="built_in">String</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> s.len() &gt; <span class="number">15</span> &#123;</span><br><span class="line">		<span class="comment">// this path has new memory alloc on heap</span></span><br><span class="line">		s[<span class="number">0</span>..<span class="number">15</span>].to_string()</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="comment">// this path doesn&#x27;t have new memory alloc on heap</span></span><br><span class="line">		s</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述代码，根据字符串长度不同，可能发生一次堆内存分配，也可能不发生堆内存分配。如果发生了堆内存分配，则可以用下图来表示，长度为19的字符串，经过截断后，<code>to_string()</code>调用会把前15个字节复制出来，这时发生了一次堆内存分配，函数返回后，长度为19的字符串的字符串头（栈内存）和字符串内容(堆内存）都被释放，返回的是新的字符串头，指向新的堆内存。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">                    old:</span><br><span class="line">                   ┌───┬───┬───┐</span><br><span class="line">                   │ptr│cap│len│</span><br><span class="line">                   ├───┼───┼───┤</span><br><span class="line">                   │   │ 19│ 19│</span><br><span class="line">                   └─┬─┴───┴───┘</span><br><span class="line">  new:               │</span><br><span class="line">┌───┬───┬───┐        │</span><br><span class="line">│ptr│cap│len│        │</span><br><span class="line">├───┼───┼───┤      ┌─┴┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐</span><br><span class="line">│   │ 15│ 15│      │0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │F │X │Y │Z │</span><br><span class="line">└─┬─┴───┴───┘      └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘</span><br><span class="line">  │</span><br><span class="line">  │                ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐</span><br><span class="line">  └───────────────►│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │</span><br><span class="line">                   └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘</span><br></pre></td></tr></table></figure>
+<p>如果没有发生堆内存分配，则函数返回前后的情况如下：堆内存被复用，入参对应的字符串头（栈内存）被释放，而返回一个新的字符串头（栈内存）。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">                      old:</span><br><span class="line">                     ┌───┬───┬───┐</span><br><span class="line"> new:                │ptr│cap│len│</span><br><span class="line">┌───┬───┬───┐        ├───┼───┼───┤</span><br><span class="line">│ptr│cap│len│        │   │ 15│ 15│</span><br><span class="line">├───┼───┼───┤        └─┬─┴───┴───┘</span><br><span class="line">│   │ 15│ 15│          │</span><br><span class="line">└─┬─┴───┴───┘          │</span><br><span class="line">  │                    ▼</span><br><span class="line">  │                  ┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐</span><br><span class="line">  └─────────────────►│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │</span><br><span class="line">                     └──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>出于篇幅的限制，后面不能每个case都画图来说明。在继续后面的介绍之前，大家一定要理解这个字符串在内存中的表示形式，并且在看到后面的代码时，能想想出对应的内存布局。</p>
+</blockquote>
+<h5 id="接收-amp-str，返回String"><a href="#接收-amp-str，返回String" class="headerlink" title="接收&amp;str，返回String"></a>接收&amp;str，返回String</h5><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_str_and_return_string</span></span>(s: &amp;<span class="built_in">str</span>) -&gt; <span class="built_in">String</span> &#123;</span><br><span class="line">	<span class="comment">// both path alloc new memory</span></span><br><span class="line">	<span class="keyword">if</span> s.len() &gt; <span class="number">15</span> &#123;</span><br><span class="line">		s[<span class="number">0</span>..<span class="number">15</span>].to_string()</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		s.to_string()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上述代码中两条路径都有涉及到内存分配。<br>画个图帮大家回忆一下<code>&amp;str</code>和<code>String</code>的区别，底层的堆内存由<code>String</code>持有，<code>&amp;str</code>是一个胖指针，只能临时指向其中的某段地址，因此，图中<code>&amp;str</code>对应变量的生命周期不能超过<code>String</code>的存活时间。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"> String:        &amp;str:</span><br><span class="line">┌───┬───┬───┐  ┌───┬───┐</span><br><span class="line">│ptr│cap│len│  │ptr│len│</span><br><span class="line">├───┼───┼───┤  ├───┼───┤</span><br><span class="line">│   │ 15│ 15│  │   │ 3 │</span><br><span class="line">└─┬─┴───┴───┘  └─┬─┴───┘</span><br><span class="line">  │              │</span><br><span class="line">  │              │</span><br><span class="line">  ▼              ▼</span><br><span class="line">┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐</span><br><span class="line">│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │B │C │D │E │</span><br><span class="line">└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘</span><br></pre></td></tr></table></figure>
+
+<h5 id="接收-amp-str，返回-amp-str"><a href="#接收-amp-str，返回-amp-str" class="headerlink" title="接收&amp;str，返回&amp;str"></a>接收&amp;str，返回&amp;str</h5><p>下面两条路径都没有涉及到资源分配</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_str_and_return_str</span></span>(s: &amp;<span class="built_in">str</span>) -&gt; &amp;<span class="built_in">str</span> &#123;</span><br><span class="line">	<span class="comment">// neither path alloc new memory</span></span><br><span class="line">	<span class="keyword">if</span> s.len() &gt; <span class="number">15</span> &#123;</span><br><span class="line">		&amp;s[<span class="number">0</span>..<span class="number">15</span>]</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		s</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="接收String，返回-amp-str"><a href="#接收String，返回-amp-str" class="headerlink" title="接收String，返回&amp;str"></a>接收String，返回&amp;str</h5><p>这个函数通过Unsafe实现了安全Rust所绝对不允许的事情，即凭空返回一个堆内存的引用。再次提醒，这只是一个示例，为了帮助大家加深对Rust手动内存管理的理解，自己写代码的时候不要写这种容易被打的代码。这个函数两条路径也都没有进行堆内存分配。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">my_app_receive_string_and_return_str</span></span>&lt;<span class="symbol">&#x27;a</span>&gt;(s: <span class="built_in">String</span>) -&gt; (&amp;<span class="symbol">&#x27;a</span> <span class="built_in">str</span>, *<span class="keyword">const</span> <span class="built_in">u8</span>, <span class="built_in">usize</span>, <span class="built_in">usize</span>) &#123;</span><br><span class="line">	<span class="comment">// this function is only used as an example to show that we can use unsafe </span></span><br><span class="line">	<span class="comment">// rust to turn an owned type to a reference, you should not write such code</span></span><br><span class="line">	<span class="comment">// in production code. It&#x27;s a very ugly api design.</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="comment">// neither path alloc new memory</span></span><br><span class="line">	<span class="keyword">let</span> my_slice = <span class="keyword">if</span> s.len() &gt; <span class="number">15</span> &#123;</span><br><span class="line">		&amp;*(&amp;s[<span class="number">0</span>..<span class="number">15</span>] <span class="keyword">as</span> &amp;<span class="built_in">str</span> <span class="keyword">as</span> *<span class="keyword">const</span> <span class="built_in">str</span>)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		&amp;*(&amp;s <span class="keyword">as</span> &amp;<span class="built_in">str</span> <span class="keyword">as</span> *<span class="keyword">const</span> <span class="built_in">str</span>)</span><br><span class="line">	&#125;;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// you can replace the following two lines using s.into_raw_parts()</span></span><br><span class="line">	<span class="comment">// s.into_raw_parts() internally use ManuallyDrop too</span></span><br><span class="line">	<span class="comment">// I use ManuallyDrop explicit here to show you how memory is managed</span></span><br><span class="line">  <span class="comment">// The reason why we need to return the ptr, len and cap is that we need them</span></span><br><span class="line">	<span class="comment">// to rebuild the String header, we need to rebuild the string header to </span></span><br><span class="line">	<span class="comment">// free memory.</span></span><br><span class="line">	<span class="keyword">let</span> s = ManuallyDrop::new(s);	</span><br><span class="line">	(my_slice, s.as_ptr(), s.len(), s.capacity())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>安全的Rust之所以不允许在函数中返回一个Srting的引用，是因为在函数返回时，String会被drop，对应的堆内存被回收，导致引用到被回收的堆内存空间，而上面的代码中，通过ManuallyDrop的包装，我们使得String不会在函数返回时被drop，这样String所持有的堆内存就被“遗忘”了，于是我们就可以放心的引用这块堆内存了。之所以“遗忘”要打引号，是因为我们不能真的遗忘它，否则就是内存泄漏，我们得留一个线索，在必要的时候能够释放掉这块内存，而这个线索就是函数返回值的第2、3、4个参数，通过指针、容量、实际占用长度这三个参数，我们就可以重新在栈内存上构建出String头部的结构体，从而将“遗忘”的String找回来。</p>
+<p>到此为止，我们完成了对<code>my_app.rs</code>的分析，也就是了解了我们所编写的库要做的本质功能是什么，接下来，我们开始包装FFI接口。</p>
+<h4 id="包装字符串传递的FFI接口"><a href="#包装字符串传递的FFI接口" class="headerlink" title="包装字符串传递的FFI接口"></a>包装字符串传递的FFI接口</h4><p>打开<code>rust/src/ffi.rs</code>，我们可以看到新增了几个接口函数的定义，其中每一个函数我都写了详细的英文注释在里面，大家可以选择直接看代码中的注释，或者对照我的博客阅读中文的讲解，新增的函数如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_string</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_string_and_return_string</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_str</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_string_and_return_str</span></span>(s: *<span class="keyword">const</span> c_char, new_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, c_origin_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, len: *<span class="keyword">mut</span> <span class="built_in">usize</span>, cap: *<span class="keyword">mut</span> <span class="built_in">usize</span>)&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">free_string_alloc_by_rust_by_raw_parts</span></span>(s: *<span class="keyword">mut</span> c_char, len: <span class="built_in">usize</span>, cap: <span class="built_in">usize</span>)&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">free_cstring_alloc_by_rust</span></span>(s: *<span class="keyword">mut</span> c_char)&#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_str_no_copy</span></span>(s: *<span class="keyword">const</span> c_char, new_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, len: *<span class="keyword">mut</span> <span class="built_in">usize</span>)&#123;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们先来浏览一下前三个接口函数的定义，可以发现，虽然在<code>my_app.rs</code>中，我们定义的字符串参数和返回值有<code>String</code>和<code>&amp;str</code>的各种组合，但到了FFI接口上，统统变成了<code>*const c_char</code>，这就是因为C语言中的字符串定义很简单：一个以Null结尾的字节数组，如下所示。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">┌────────────────────┐              ┌────────────────────┐</span><br><span class="line">│s1&#x3D;&quot;0123456789A&quot;    │              │s3&#x3D;&quot;CDEF&quot;           │</span><br><span class="line">└┬───────────────────┘              └─┬──────────────────┘</span><br><span class="line"> │                                    │</span><br><span class="line"> │          ┌────────────────────┐    │         ┌───────┐</span><br><span class="line"> │          │s2&#x3D;&quot;456789A&quot;        │    │         │s4&#x3D;&quot;&quot;  │</span><br><span class="line"> │          └┬───────────────────┘    │         └┬──────┘</span><br><span class="line"> │           │                        │          │</span><br><span class="line"> │           │                        │          │</span><br><span class="line"> ▼           ▼                        ▼          ▼</span><br><span class="line">┌──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┬──┐</span><br><span class="line">│0 │1 │2 │3 │4 │5 │6 │7 │8 │9 │A │\0│C │D │E │F │\0│Y │Z │</span><br><span class="line">└──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┴──┘</span><br></pre></td></tr></table></figure>
+<p>对比一下Rust的<code>String</code>、<code>&amp;str</code>和C语言中<code>char*</code>的区别：</p>
+<ul>
+<li><code>String</code>头占3个字长，<code>&amp;str</code>胖指针占2个字长，<code>char*</code>指针占1个字长</li>
+<li><code>String</code>和<code>&amp;str</code>里面都有长度记录，可以O(1)复杂度获取长度，而<code>char*</code>要从头开始数，是O(N)复杂度</li>
+<li><code>String</code>和<code>&amp;str</code>所指向的字节序列一定是满足UTF-8编码的字符串（Rust规范），而<code>char*</code>里面存储的可以是任何字符编码（UTF-8、GBK、ASCII等等），甚至可以是非字符编码，比如一段任意的二进制数据，只要中间没有Null字节出现即可。</li>
+<li><code>String</code>和<code>&amp;str</code>可以在中间出现Null字节，但是<code>char*</code>中间不可以，一旦出现就代表着字符串到这里结束了。</li>
+</ul>
+<p>可以看到，Rust和C规范中对于字符串的定义有着很大的差异，而Rust看中确定性，要把一切不确定因素消灭在萌芽阶段，因此，在FFI边界上，我们需要通过一系列手段来保证C语言世界的<code>char*</code>可以安全的转换为Rust认可的字符串，为了实现这个目标，Rust为我们提供了两个数据类型：<code>CString</code>和<code>CStr</code>:</p>
+<ul>
+<li><code>CString</code>对应的是<code>String</code>，用来表示具有堆内存所有权的字符串，但内容是满足C字符串标准的，也就是说内容不一定是UTF-8编码的，且一定没有Null。<ul>
+<li><code>CString</code>通常用来在Rust一侧分配堆内存后，把Rust生成的字符串传递给外部系统使用，堆内存所有权在Rust手里，后续要由Rust来释放。</li>
+</ul>
+</li>
+<li><code>CStr</code>对应的就是<code>str</code>，他同样是一个DST类型，因此通常以<code>&amp;CStr</code>的形式出现，表示对一段内存地址的引用，其内部存储的数据也不一定是UTF-8编码的，也一定在中间没有Null。<ul>
+<li><code>CStr</code>通常表示外部传入的字符串，字符串对应的内存空间所有权在外部系统，Rust的代码只能临时借用，而不是拥有。</li>
+</ul>
+</li>
+</ul>
+<p>有了这些理论储备以后，我们可以开始看第一个FFI封装函数了：</p>
+<h5 id="receive-str-and-return-string"><a href="#receive-str-and-return-string" class="headerlink" title="receive_str_and_return_string:"></a>receive_str_and_return_string:</h5><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_string</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char &#123;</span><br><span class="line">    <span class="keyword">let</span> cstr = &#123;</span><br><span class="line">        <span class="comment">// 永远要记得先检查传入的指针是不是空指针</span></span><br><span class="line">        <span class="built_in">assert!</span>(!s.is_null());</span><br><span class="line">        <span class="comment">// 下面这一行内部实现会遍历s，寻找第一个Null出现的位置，说白了就是做计数，数出来字符串的长度</span></span><br><span class="line">        <span class="comment">// &amp;CStr 相比于 *const c_char而言，内部直接记录了长度信息</span></span><br><span class="line">        <span class="comment">// 由于我们要读裸指针，所以需要一个unsafe块</span></span><br><span class="line">        <span class="keyword">unsafe</span>&#123;CStr::from_ptr(s)&#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这一行会再一次遍历底层的字节序列来检查一下这个字节序列是否满足UTF-8编码，如果检查通过，这个</span></span><br><span class="line">    <span class="comment">// 函数会返回一个&amp;str类型的指针，同样指向原来的地址。这一步相当于做了一个认证，把`&amp;CStr`转换为`&amp;str`</span></span><br><span class="line">    <span class="comment">// 就可以告诉类型系统：这块内存满足我们Rust对字符串的要求，可以在Safe Rust代码里放心使用了。</span></span><br><span class="line">    <span class="comment">// 这个操作会复用底层的字节数组，不会发生内存分配和数据拷贝。</span></span><br><span class="line">    <span class="comment">// 由于`&amp;str`是一个引用，它引用的是外部系统（例如Golang）所持有的内存，所以，外部系统必须有责任保证这</span></span><br><span class="line">    <span class="comment">// 块内存不会在使用中被释放</span></span><br><span class="line">    <span class="keyword">let</span> rstr = cstr.to_str().expect(<span class="string">&quot;not valid utf-8 string&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 上面的两行代码没有做内存分配，但是却从头到尾遍历了两次字符串。如果这个FFI接口在你的Hot Path上，那么</span></span><br><span class="line">    <span class="comment">// 你需要认真考虑一下性能开销的影响。</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 现在，我们就可以在Safe Rust的世界来使用外部的字符串了</span></span><br><span class="line">    <span class="keyword">let</span> ret = my_app::my_app_receive_str_and_return_string(rstr);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 现在，我们得到了一个`String`，这也就意味着上面的函数调用过程中发生了Rust这一侧的内存分配。</span></span><br><span class="line">    <span class="comment">// 我们将要返回给调用者一个指针，但返回的数据必须遵循C的字符串规范才能够穿越FFI的边界，也就是我们</span></span><br><span class="line">    <span class="comment">// 要返回一个裸指针，裸指针本身没有字符串的长度信息，并且指向一块以Null结尾的内存区域。</span></span><br><span class="line">    <span class="comment">// 而我们知道，Rust的String不一定能保证字符串结尾的后面一定有一个Null存在。</span></span><br><span class="line">    <span class="comment">// 这时我们就要借助`CString`这个数据类型了，不幸的是，这里又会引入额外的开销：</span></span><br><span class="line">    <span class="comment">// * 首先，它会再次检查整个底层字节数组是否在中间包含Null，因此它会再次遍历字符串。</span></span><br><span class="line">    <span class="comment">// * 其次，它将尝试将 Null字节追加到底层数组的后面，这一步是否会有额外开销取决于底层的缓冲区</span></span><br><span class="line">    <span class="comment">//   是否还有空闲空间，也就是String的len是否小于cap。如果有空间，那么追加一个Null字节几乎</span></span><br><span class="line">    <span class="comment">//   没有什么开销，但如果没有空间，那么就要进行扩容操作，这会导致一次内存分配以及一次数据拷贝</span></span><br><span class="line">    <span class="keyword">let</span> c_ret = CString::new(ret).expect(<span class="string">&quot;null byte in the middle&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 终于到了这里，我们可以通过into_raw()的方法返回一个指向堆内存的指针了。这个方法会消耗掉</span></span><br><span class="line">    <span class="comment">// c_ret，让编译器暂时“忘掉”这块堆内存。</span></span><br><span class="line">    <span class="comment">// 但是，这块内存迟早要有人来释放，应该怎么释放呢？我们后面再介绍。</span></span><br><span class="line">    c_ret.into_raw()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 重要提示：</span></span><br><span class="line">    <span class="comment">// 看完上面的代码，你必须要掌握的一个核心点：</span></span><br><span class="line">    <span class="comment">// * 这个ffi包装函数的入参所对应的内存是由调用者拥有的（比如Golang），因此也必须由外部系统</span></span><br><span class="line">    <span class="comment">//   来决定何时释放</span></span><br><span class="line">    <span class="comment">// * 返回值是由Rust申请的，那么将来也一定是由Rust来执行释放</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>大家看完上面这一顿操作以后，可能会对FFI接口的效率失去信心……我就是想传递一个字符串，怎么有这么多额外的开销啊……。</p>
+<p>对于这个问题，大家先不要慌，上面给大家展示的流程可以说是最安全的一个流程，这些额外开销换来的是更高的安全性，为了优化，我们有几个方向可以尝试：</p>
+<ul>
+<li>通过人为的约定，减少一些不必要的检查</li>
+<li>通过调整API接口的设计，显式传递字符串长度</li>
+<li>通过调整API接口设计，将频繁的调用转化为少量批次调用，以减小开销</li>
+<li>避免在Hot Path上使用转换开销大的接口<br>关于提升性能，我们会在文章后后面进一步讨论，通过做性能测试的方法，来对比不同方案的性能提升。</li>
+</ul>
+<p>接下来还有两个函数，我们也依次来看一下他们在内存使用上有什么差异。为了缩短篇幅，相同的注释内容就被删除了。</p>
+<h5 id="receive-string-and-return-string"><a href="#receive-string-and-return-string" class="headerlink" title="receive_string_and_return_string:"></a>receive_string_and_return_string:</h5><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_string_and_return_string</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char &#123;</span><br><span class="line">    <span class="keyword">let</span> cstr = &#123;</span><br><span class="line">        <span class="built_in">assert!</span>(!s.is_null());</span><br><span class="line">        <span class="keyword">unsafe</span>&#123;CStr::from_ptr(s)&#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// to_str() 会遍历一次String来检查是否满足UTF-8，to_string() 会分配一次内存并且做一次拷贝。所以下面这行代码总计会有两次长度为N的遍历以及一次内存分配</span></span><br><span class="line">    <span class="keyword">let</span> r_string = cstr.to_str().expect(<span class="string">&quot;not valid utf-8 string&quot;</span>).to_string();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这一行调用，根据传入的字符串长度，可能进行内存分配，也可能不进行分配。</span></span><br><span class="line">    <span class="keyword">let</span> ret = my_app::my_app_receive_string_and_return_string(r_string);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> c_ret = CString::new(ret).expect(<span class="string">&quot;null byte in the middle&quot;</span>);</span><br><span class="line">    c_ret.into_raw()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 重要提示：</span></span><br><span class="line">    <span class="comment">// 和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的</span></span><br><span class="line">    <span class="comment">// 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放</span></span><br><span class="line">    <span class="comment">// r_string 和 ret 都是临时变量, 最终返回的字符指针指向的堆内存地址是c_ret变量持有的，</span></span><br><span class="line">    <span class="comment">// r_string 和 ret 所分配的堆内存都会在函数返回时被回收。</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="receive-str-and-return-str"><a href="#receive-str-and-return-str" class="headerlink" title="receive_str_and_return_str"></a>receive_str_and_return_str</h4><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_str</span></span>(s: *<span class="keyword">const</span> c_char) -&gt; *<span class="keyword">const</span> c_char &#123;    </span><br><span class="line">    <span class="keyword">let</span> cstr = &#123;</span><br><span class="line">        <span class="built_in">assert!</span>(!s.is_null());</span><br><span class="line">        <span class="keyword">unsafe</span>&#123;CStr::from_ptr(s)&#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> rstr = cstr.to_str().expect(<span class="string">&quot;not valid utf-8 string&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 下面这个函数调用并不会进行内存分配，从Rust角度来看，&amp;str是要复用底层的字符缓冲区，</span></span><br><span class="line">    <span class="comment">// 这样看起来貌似很好，没啥问题</span></span><br><span class="line">    <span class="keyword">let</span> ret = my_app::my_app_receive_str_and_return_str(rstr);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 但是，问题来了，如果上面的函数调用返回的是一个长字符串的子切片，那么这个子切片就不会是以Null结尾的了，</span></span><br><span class="line">    <span class="comment">// 因为&amp;str是一个Rust概念里的胖指针，里面存了长度，所以这对Rust不是个问题。但在FFI的边界上，我们要</span></span><br><span class="line">    <span class="comment">// 使用C语言规范来交流，所以这就成了一个大问题。因此，我们还是需要再创建一个CString，于是又引入了</span></span><br><span class="line">    <span class="comment">// 内存分配和拷贝。</span></span><br><span class="line">    <span class="keyword">let</span> c_ret = CString::new(ret).expect(<span class="string">&quot;null byte in the middle&quot;</span>);</span><br><span class="line">    c_ret.into_raw()</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 重要提示：</span></span><br><span class="line">    <span class="comment">// 这是一个用来演示Rust在FFI边界上处理字符串引用所引入的开销的例子。在纯Rust中，</span></span><br><span class="line">    <span class="comment">// `my_app::my_app_receive_str_and_return_str(str)`这个函数的参数和返回值都是引用</span></span><br><span class="line">    <span class="comment">// 类型，所以我们可以避免数据的复制。</span></span><br><span class="line">    <span class="comment">// 但是在FFI的边界上，根据FFI包装函数实现方式的不同，返回值可能可以复用内存，避免拷贝，</span></span><br><span class="line">    <span class="comment">// 也可能需要重新分配内存并拷贝。</span></span><br><span class="line">    <span class="comment">// 在我们当前的这个例子的实现中，我们就无法避免拷贝。如果你想避免拷贝，那么就要重新设计FFI</span></span><br><span class="line">    <span class="comment">// 接口的API样式。（我们会在后面的例子中给出例子）</span></span><br><span class="line">    <span class="comment">// 作为这个函数库的作者，你有责任编写一个清晰的使用手册来告诉用户，输入数据与输出数据的内存</span></span><br><span class="line">    <span class="comment">// 是怎样被使用的。</span></span><br><span class="line">    <span class="comment">// 最后，和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的</span></span><br><span class="line">    <span class="comment">// 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="receive-string-and-return-str"><a href="#receive-string-and-return-str" class="headerlink" title="receive_string_and_return_str"></a>receive_string_and_return_str</h4><p>！！！预警！！！这个API的设计非常丑陋，这里只是一个实例，千万不要在生产环境中写这样的代码！</p>
+<p>这个接口中使用了二阶指针作为参数，这样做的目的是通过这些参数实现返回多个结果。在C语言的调用规范中，<br>是不允许一个函数有多个返回值的，为了返回多个结果，我们有两种方式：</p>
+<ul>
+<li>定义一个结构体来保存多个返回值的内容，然后返回指向这个结构体的指针</li>
+<li>通过传入指针来修改调用者的内存数据，从而将要返回的值写入到调用者给定的变量中<br>这里我们的二阶指针就是使用了第二种方法。</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_string_and_return_str</span></span>(s: *<span class="keyword">const</span> c_char, new_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, c_origin_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, len: *<span class="keyword">mut</span> <span class="built_in">usize</span>, cap: *<span class="keyword">mut</span> <span class="built_in">usize</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> cstr = &#123;</span><br><span class="line">        <span class="built_in">assert!</span>(!s.is_null());</span><br><span class="line">        <span class="keyword">unsafe</span>&#123;CStr::from_ptr(s)&#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> r_string = cstr.to_str().expect(<span class="string">&quot;not valid utf-8 string&quot;</span>).to_string();</span><br><span class="line"></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">let</span> (ret, t_c_origin_ptr, t_len, t_cap) = <span class="keyword">unsafe</span>&#123;my_app::my_app_receive_string_and_return_str(r_string)&#125;;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> c_ret = CString::new(ret).expect(<span class="string">&quot;null byte in the middle&quot;</span>);</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        *new_ptr = c_ret.into_raw();</span><br><span class="line">        *c_origin_ptr = t_c_origin_ptr <span class="keyword">as</span> *<span class="keyword">const</span> <span class="built_in">i8</span>;</span><br><span class="line">        *len = t_len;</span><br><span class="line">        *cap = t_cap;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 重要提示：</span></span><br><span class="line">    <span class="comment">// 和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的</span></span><br><span class="line">    <span class="comment">// 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放</span></span><br><span class="line">    <span class="comment">// ret是一个临时变量</span></span><br><span class="line">    <span class="comment">// ret 和 t_c_origin_ptr 都指向r_string申请到的堆内存</span></span><br><span class="line">    <span class="comment">// 由于在`my_app::my_app_receive_string_and_return_str()`这个函数内部，我们也让编译器忘掉了r_string申请</span></span><br><span class="line">    <span class="comment">// 的堆内存，所以在函数返回时，r_string申请的内存不会被释放，c_origin_ptr所指向的内存就还是有效可用的内存</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="内存释放的相关函数"><a href="#内存释放的相关函数" class="headerlink" title="内存释放的相关函数"></a>内存释放的相关函数</h4><p>在介绍前面几个函数的时候，我们都遗留了一个小问题，就是返回给外部系统的字符串，都是通过CString在堆内存分配后，通过调用<code>into_raw()</code>让编译器不要自动回收内存，因此为了防止内存泄漏，那就必须要提供一个手段，让调用者可以告诉Rust什么时候可以回收这段内存。因此我们提供了下面两个方法。这两个方法的核心工作都是根据之前留下的线索，重建一个Rust对象来引用之前被“遗忘”的堆内存，之后随着函数调用的返回，这个重建的对象在被销毁的过程中就会顺带释放之前申请的堆内存</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">free_string_alloc_by_rust_by_raw_parts</span></span>(s: *<span class="keyword">mut</span> c_char, len: <span class="built_in">usize</span>, cap: <span class="built_in">usize</span>) &#123;</span><br><span class="line">	<span class="built_in">String</span>::from_raw_parts(s <span class="keyword">as</span> *<span class="keyword">mut</span> <span class="built_in">u8</span>, len, cap);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">unsafe</span> <span class="function"><span class="keyword">fn</span> <span class="title">free_cstring_alloc_by_rust</span></span>(s: *<span class="keyword">mut</span> c_char) &#123;</span><br><span class="line">  <span class="comment">// 这个方法会再次遍历指针所指向的内存，直到找到Null，从而计算出字符串的长度</span></span><br><span class="line">	CString::from_raw(s);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="一个零拷贝的FFI接口示例"><a href="#一个零拷贝的FFI接口示例" class="headerlink" title="一个零拷贝的FFI接口示例"></a>一个零拷贝的FFI接口示例</h4><p>前面介绍的4个字符串传递，都涉及到了大量的内存分配和数据拷贝，而其中<code>my_app::my_app_receive_str_and_return_str()</code>这个函数本身设计的意图是避免数据拷贝的，为了在FFI接口上实现这个功能，我们需要定义一套新的API来传递字符串，其核心原理很简单，就是要增加一个返回值来表示字符串的长度，这样就避免了通过遍历Null来计算长度，也避免了截断字符串尾部没有Null的问题。代码如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">receive_str_and_return_str_no_copy</span></span>(s: *<span class="keyword">const</span> c_char, new_ptr: *<span class="keyword">mut</span> *<span class="keyword">const</span> c_char, len: *<span class="keyword">mut</span> <span class="built_in">usize</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> cstr = &#123;</span><br><span class="line">        <span class="built_in">assert!</span>(!s.is_null());</span><br><span class="line">        <span class="keyword">unsafe</span>&#123;CStr::from_ptr(s)&#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> rstr = cstr.to_str().expect(<span class="string">&quot;not valid utf-8 string&quot;</span>);</span><br><span class="line">    <span class="keyword">let</span> ret = my_app::my_app_receive_str_and_return_str(rstr);</span><br><span class="line">    <span class="keyword">let</span> c_ret = ret.as_ptr();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        *new_ptr = c_ret <span class="keyword">as</span> *<span class="keyword">const</span> <span class="built_in">i8</span>;</span><br><span class="line">        *len = ret.len();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 重要提示：</span></span><br><span class="line">    <span class="comment">// 在这段代码中没有出现任何`to_owned()` 或 `to_string()`，因此这个API接口不会申请任何新的堆内存</span></span><br><span class="line">    <span class="comment">// 我们显示返回了字符串的长度，这样就解决了截取字符串末尾没有Null的问题。</span></span><br><span class="line">    <span class="comment">// 返回的指针所指向的内存，是外部系统分配的内存空间，不是Rust分配的！！！</span></span><br><span class="line">    <span class="comment">// 如果你设计了一个这样的API接口，那么你应该在说明文档中清楚地写出来，返回的内存指针是指向了调用者提供的内存</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>课后作业：这里我们只是把返回数据的长度进行了额外的存储，但是传入的字符串仍然需要遍历才可以获得其长度。请尝试修改API接口，从而避免对输入字符串的遍历。</p>
+<h4 id="在Golang中调用"><a href="#在Golang中调用" class="headerlink" title="在Golang中调用"></a>在Golang中调用</h4><p>首先我们要更新一下头文件，打开<code>golang/ffi_demo.h</code>，我们会发现增加了对应的rust暴露出来的函数定义，有一些函数是我们会用到，暂时大家不用理会，新的头文件如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;stdint.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">uintptr_t</span> <span class="title">simple_rust_func_called_from_go</span><span class="params">(<span class="keyword">uint8_t</span> arg1, <span class="keyword">uint16_t</span> arg2, <span class="keyword">uint32_t</span> arg3)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">char</span>* <span class="title">receive_str_and_return_string</span><span class="params">(<span class="keyword">char</span>*)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">char</span>* <span class="title">receive_string_and_return_string</span><span class="params">(<span class="keyword">char</span>*)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">char</span>* <span class="title">receive_str_and_return_str</span><span class="params">(<span class="keyword">char</span>*)</span></span>;</span><br><span class="line"><span class="comment">// the follow line is a very ugly api design, only used as example, never use in real code.</span></span><br><span class="line"><span class="function"><span class="keyword">char</span>* <span class="title">receive_string_and_return_str</span><span class="params">(<span class="keyword">char</span>*, <span class="keyword">char</span>**, <span class="keyword">char</span>**, <span class="keyword">uintptr_t</span>*, <span class="keyword">uintptr_t</span>*)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">free_string_alloc_by_rust_by_raw_parts</span><span class="params">(<span class="keyword">char</span>*, <span class="keyword">uintptr_t</span>, <span class="keyword">uintptr_t</span>)</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">free_cstring_alloc_by_rust</span><span class="params">(<span class="keyword">char</span>*)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">receive_str_and_return_str_no_copy</span><span class="params">(<span class="keyword">char</span>*, <span class="keyword">char</span>**, <span class="keyword">uintptr_t</span>*)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，对于rust中<code>*const c_char</code>这样的原始指针类型，映射到C语言中变为了<code>char*</code>类型，其他的大家看一看就好，没有什么复杂的地方。</p>
+<p>接下来我们打开<code>golang/main.go</code>文件，第一处修改是在<code>import &quot;C&quot;</code>的上方增加了<code>#include &quot;stdlib.h&quot;</code>这一行。之所以要引入<code>stdlib.h</code>，是为了后续可以调用<code>C.free()</code>来执行内存释放，后面我们会详细介绍。</p>
+<p>接下来看一下<code>PassStringBySinglePointer()</code>这个函数，这个函数中定义了一个匿名函数来执行核心的调用逻辑，我们来看一下这个核心匿名函数：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">testProc := <span class="function"><span class="keyword">func</span><span class="params">(f <span class="keyword">int</span>, x, y <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	goStr := x</span><br><span class="line"></span><br><span class="line">   <span class="comment">// Memory Alloc in OS allocator And String Copy</span></span><br><span class="line">	<span class="comment">// cStr is not managed by go GC</span></span><br><span class="line">	cStr := C.CString(goStr)</span><br><span class="line">	<span class="keyword">defer</span> C.free(unsafe.Pointer(cStr))</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> cStrRet *C.char</span><br><span class="line">	<span class="keyword">switch</span> f&#123;</span><br><span class="line">	<span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">		cStrRet = C.receive_str_and_return_string(cStr)</span><br><span class="line">	<span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">		cStrRet = C.receive_string_and_return_string(cStr)</span><br><span class="line">	<span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">		cStrRet = C.receive_str_and_return_str(cStr)</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">   <span class="comment">// Memory Alloc in Go runtime And String Copy</span></span><br><span class="line">   <span class="comment">// goStrRet is managed by go GC</span></span><br><span class="line">	goStrRet := C.GoString(cStrRet) </span><br><span class="line">	C.free_cstring_alloc_by_rust(cStrRet)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> goStrRet != y &#123;</span><br><span class="line">		<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error, expected %s, got %s&quot;</span>, y, goStrRet))	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码有几个要点：</p>
+<ul>
+<li>由于函数签名相同，我们用这一个函数来测试三个Rust暴露出来的函数，通过第一个参数来选择调用哪个rust函数。</li>
+<li><code>C.CString()</code> 和 <code>C.GoString()</code>两个内置函数分别用于实现C和Go字符串的相互转换，这里的原理和Rust的原理类似，就不再展开讲了，需要注意的是，这两个函数调用都会导致内存分配和内存拷贝。<ul>
+<li>因为Go是有垃圾回收的，GoString所对应的内存地址是在Go Runtime的内存分配器管辖范围里的，而cgo中为了实现CFFI的调用，需要使用操作系统的内存分配器，Go语言中这两个内存分配器对内存管理的方式不一样，其内存地址区间也不一样，因此需要内存分配与拷贝。</li>
+</ul>
+</li>
+<li><code>C.free()</code>调用的是操作系统默认内存分配器的free方法，用来释放掉Go语言通过操作系统内存分配器分配的内存。这部分内存不受Go语言垃圾回收的管理，因此需要手动释放，否则就会内存泄漏。</li>
+<li>Rust函数调用完成后，Rust返回了一个指向Rust分配的内存的指针，这部分内存必须由Rust来释放，因此需要再调用一下Rust库暴露出来的释放接口。</li>
+</ul>
+<p>最后，我们就可以通过下面的调用来验证效果了,可以看到，如果超过15个字节的部分，会被截断，而小于15个字节的话，会被原封不动的返回：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">testProc(<span class="number">1</span>, <span class="string">&quot;极客幼稚园是一个不错的微信公众号&quot;</span>, <span class="string">&quot;极客幼稚园&quot;</span>)</span><br><span class="line">testProc(<span class="number">1</span>, <span class="string">&quot;Datafuse Lab&quot;</span>, <span class="string">&quot;Datafuse Lab&quot;</span>)</span><br><span class="line"></span><br><span class="line">testProc(<span class="number">2</span>, <span class="string">&quot;极客幼稚园是一个不错的微信公众号&quot;</span>, <span class="string">&quot;极客幼稚园&quot;</span>)</span><br><span class="line">testProc(<span class="number">2</span>, <span class="string">&quot;Datafuse Lab&quot;</span>, <span class="string">&quot;Datafuse Lab&quot;</span>)</span><br><span class="line"></span><br><span class="line">testProc(<span class="number">3</span>, <span class="string">&quot;极客幼稚园是一个不错的微信公众号&quot;</span>, <span class="string">&quot;极客幼稚园&quot;</span>)</span><br><span class="line">testProc(<span class="number">3</span>, <span class="string">&quot;Datafuse Lab&quot;</span>, <span class="string">&quot;Datafuse Lab&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>接下来，我们要看一下另一种函数签名的接口API如何使用，代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">testProc := <span class="function"><span class="keyword">func</span><span class="params">(x, y <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	goStr := x</span><br><span class="line">	cStr := C.CString(goStr)  <span class="comment">// Memory Alloc And String Copy</span></span><br><span class="line">	<span class="keyword">defer</span> C.free(unsafe.Pointer(cStr))</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> cStrRet *C.char</span><br><span class="line">	<span class="keyword">var</span> cRawStr *C.char</span><br><span class="line">	retCap := C.ulong(<span class="number">0</span>)</span><br><span class="line">	retLen := C.ulong(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">	C.receive_string_and_return_str(cStr, &amp;cStrRet, &amp;cRawStr, &amp;retLen, &amp;retCap)</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	goStrRet := C.GoString(cStrRet)  <span class="comment">// Memory Alloc And String Copy</span></span><br><span class="line">	C.free_string_alloc_by_rust_by_raw_parts(cStrRet, retLen, retCap)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> goStrRet != y &#123;</span><br><span class="line">		<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error, expected %s, got %s&quot;</span>, y, goStrRet))	</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到，在这个版本的调用中，我们首先在Go这一侧分配了<code>cStrRet</code>、<code>cRawStr</code>、<code>retCap</code>、<code>retLen</code>这四个变量，并通过指针的方式将其传递给Rust，Rust通过指针可以直接修改在Go中分配的这些内存中数据的数据，相当于实现了多返回值的效果。</p>
+<p>最后，我们来看一下号称零拷贝的Rust FFI接口是如何使用的，代码如下：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">testProc := <span class="function"><span class="keyword">func</span><span class="params">(x, y <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">		goStr := x</span><br><span class="line">		cStr := C.CString(goStr)  <span class="comment">// Memory Alloc And String Copy</span></span><br><span class="line">		<span class="keyword">defer</span> C.free(unsafe.Pointer(cStr))</span><br><span class="line">	</span><br><span class="line">		<span class="keyword">var</span> cStrRet *C.char</span><br><span class="line">		retLen := C.ulong(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">		C.receive_str_and_return_str_no_copy(cStr, &amp;cStrRet, &amp;retLen)</span><br><span class="line">		</span><br><span class="line">		goStrRet := C.GoString(cStrRet)  <span class="comment">// Memory Alloc And String Copy</span></span><br><span class="line">    <span class="comment">// 注意：不同于前面的Go代码，我们在创建完GoString以后，不能在这里调用Rust提供的内存释放接口了</span></span><br><span class="line">    <span class="comment">// 因为cStrRet所指向的内存就是上面cStr所分配的内存，这段内存会被上面的defer语句在函数返回时释放</span></span><br><span class="line">    <span class="comment">// 如果我们在这里释放，就会导致内存的二次释放问题。</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 因为是复用的同一块内存，所以重构出来的Go字符串会和输入的字符串一模一样。因为我们并不能向字符串中间插入Null</span></span><br><span class="line">		<span class="keyword">if</span> goStrRet != x &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error, expected %s, got %s&quot;</span>, x, goStrRet))	</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 但是，通过Rust函数返回的长度信息，我们截取出来我们要的数据</span></span><br><span class="line">		goStrRetWithLengthLimit := goStrRet[:retLen]</span><br><span class="line">		<span class="keyword">if</span> goStrRetWithLengthLimit != y &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error, expected %s, got %s&quot;</span>, y, goStrRetWithLengthLimit))	</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// 我们的演示案例中，由于没有修改字符串的起始位置，只是调整了它的结尾，所以API返回新的字符串指针其实是有些多余的，使用原始的传入字符串</span></span><br><span class="line">    <span class="comment">// 当然也可以打到效果，毕竟我们只需要知道一个长度而已。但是如果这个函数的功能是从字符串的中间截取一段出来的话，那么返回一个子字符串的起</span></span><br><span class="line">    <span class="comment">// 始指针就很重要了。</span></span><br><span class="line">		<span class="keyword">if</span> goStr[:retLen] != y &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error, expected %s, got %s&quot;</span>, y, goStrRetWithLengthLimit))	</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>可以看到，虽然这几个测试，输入一样，返回值也一样，但其内部的实现方式、对内存的使用方式，有着极大的差异，因此，讲到这里，大家或许会觉得我说的比较啰嗦，但是能够彻底理解他们之间的差异，是进行FFI开发必备的能力。如果大家还有不是很清楚的地方，一定要搞明白。</p>
+<p>虽然上面给大家展示了几种不同的内存使用以及参数传递的方式，但是这并不是所有的排列组合，也不一定是最优雅的API接口设计。作为课后作业，大家可以思考一下，传递字符串的API接口还可以怎么设计，能够更加高效、更加简洁？</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/" title="实战：使用rust开发动态链接库并在Golang中使用">http://blog.ideawand.com/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/rust-golang-shared-library/" rel="tag"># rust, golang, shared library</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/" rel="next" title="Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目">
+                  <i class="fa fa-chevron-left"></i> Rust过程宏系列教程(3)--实现proc_macro_workshop项目之debug题目
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E4%BA%AB%E8%83%8C%E6%99%AF%EF%BC%9A"><span class="nav-number">1.</span> <span class="nav-text">分享背景：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E4%BA%AB%E7%9B%AE%E5%BD%95"><span class="nav-number">2.</span> <span class="nav-text">分享目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87%E5%90%AC%E4%BC%97"><span class="nav-number">3.</span> <span class="nav-text">目标听众</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Rust%E5%9C%A8%E5%BC%80%E5%8F%91%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%BA%93%E4%B8%8A%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="nav-number">4.</span> <span class="nav-text">Rust在开发二进制库上的优势</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9Golang%E4%BD%9C%E4%B8%BA%E8%B0%83%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="nav-number">5.</span> <span class="nav-text">为什么选择Golang作为调用示例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AE%E4%B8%80%E4%B8%AARust%E9%A1%B9%E7%9B%AE%EF%BC%8C%E4%BD%BF%E4%B9%8B%E8%83%BD%E5%A4%9F%E7%BC%96%E8%AF%91%E5%87%BA%E6%BB%A1%E8%B6%B3C-ABI%E7%9A%84%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">6.</span> <span class="nav-text">配置一个Rust项目，使之能够编译出满足C-ABI的动态链接库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E5%8F%91%E4%B8%80%E4%B8%AAGo%E9%A1%B9%E7%9B%AE%EF%BC%8C%E8%B0%83%E7%94%A8Rust%E7%BC%96%E5%86%99%E7%9A%84%E5%BA%93"><span class="nav-number">7.</span> <span class="nav-text">开发一个Go项目，调用Rust编写的库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E4%BC%A0%E9%80%92"><span class="nav-number">8.</span> <span class="nav-text">字符串的传递</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BA%86%E8%A7%A3%E5%BA%93%E5%87%BD%E6%95%B0%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%E9%80%BB%E8%BE%91"><span class="nav-number">8.1.</span> <span class="nav-text">了解库函数的核心功能逻辑</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6String%EF%BC%8C%E8%BF%94%E5%9B%9EString"><span class="nav-number">8.1.1.</span> <span class="nav-text">接收String，返回String</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6-amp-str%EF%BC%8C%E8%BF%94%E5%9B%9EString"><span class="nav-number">8.1.2.</span> <span class="nav-text">接收&amp;str，返回String</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6-amp-str%EF%BC%8C%E8%BF%94%E5%9B%9E-amp-str"><span class="nav-number">8.1.3.</span> <span class="nav-text">接收&amp;str，返回&amp;str</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8E%A5%E6%94%B6String%EF%BC%8C%E8%BF%94%E5%9B%9E-amp-str"><span class="nav-number">8.1.4.</span> <span class="nav-text">接收String，返回&amp;str</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8C%85%E8%A3%85%E5%AD%97%E7%AC%A6%E4%B8%B2%E4%BC%A0%E9%80%92%E7%9A%84FFI%E6%8E%A5%E5%8F%A3"><span class="nav-number">8.2.</span> <span class="nav-text">包装字符串传递的FFI接口</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#receive-str-and-return-string"><span class="nav-number">8.2.1.</span> <span class="nav-text">receive_str_and_return_string:</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#receive-string-and-return-string"><span class="nav-number">8.2.2.</span> <span class="nav-text">receive_string_and_return_string:</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#receive-str-and-return-str"><span class="nav-number">8.3.</span> <span class="nav-text">receive_str_and_return_str</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#receive-string-and-return-str"><span class="nav-number">8.4.</span> <span class="nav-text">receive_string_and_return_str</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E9%87%8A%E6%94%BE%E7%9A%84%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0"><span class="nav-number">8.5.</span> <span class="nav-text">内存释放的相关函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E9%9B%B6%E6%8B%B7%E8%B4%9D%E7%9A%84FFI%E6%8E%A5%E5%8F%A3%E7%A4%BA%E4%BE%8B"><span class="nav-number">8.6.</span> <span class="nav-text">一个零拷贝的FFI接口示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8Golang%E4%B8%AD%E8%B0%83%E7%94%A8"><span class="nav-number">8.7.</span> <span class="nav-text">在Golang中调用</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
