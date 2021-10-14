@@ -6,7 +6,7 @@ tags: rust, golang, shared library
 
 > 本篇文章是受Databend团队邀请，作为《Rust培养提高计划》公开课程的讲稿而书写的。
 
-> 课程相关录像可以在Databend的Bilibili账号找到<TODO>
+> 课程相关录像可以在Databend的Bilibili账号【Databend】找到
 > 讲师本人的微信公众号是：【极客幼稚园】
 > 讲师本人的个人博客是: http://blog.ideawand.com
 > 讲师本人的B站账号是: 【爆米花胡了】（注意胡是胡萝卜的胡） https://space.bilibili.com/500416539
@@ -397,6 +397,9 @@ pub unsafe fn my_app_receive_string_and_return_str<'a>(s: String) -> (&'a str, *
 	// you can replace the following two lines using s.into_raw_parts()
 	// s.into_raw_parts() internally use ManuallyDrop too
 	// I use ManuallyDrop explicit here to show you how memory is managed
+  // The reason why we need to return the ptr, len and cap is that we need them
+	// to rebuild the String header, we need to rebuild the string header to 
+	// free memory.
 	let s = ManuallyDrop::new(s);	
 	(my_slice, s.as_ptr(), s.len(), s.capacity())
 }
@@ -523,9 +526,180 @@ pub fn receive_str_and_return_string(s: *const c_char) -> *const c_char {
 * 避免在Hot Path上使用转换开销大的接口
 关于提升性能，我们会在文章后后面进一步讨论，通过做性能测试的方法，来对比不同方案的性能提升。
 
+接下来还有两个函数，我们也依次来看一下他们在内存使用上有什么差异。为了缩短篇幅，相同的注释内容就被删除了。
+##### receive_string_and_return_string:
+```rust
+#[no_mangle]
+pub fn receive_string_and_return_string(s: *const c_char) -> *const c_char {
+    let cstr = {
+        assert!(!s.is_null());
+        unsafe{CStr::from_ptr(s)}
+    };
+
+    // to_str() 会遍历一次String来检查是否满足UTF-8，to_string() 会分配一次内存并且做一次拷贝。所以下面这行代码总计会有两次长度为N的遍历以及一次内存分配
+    let r_string = cstr.to_str().expect("not valid utf-8 string").to_string();
+
+    // 下面这一行调用，根据传入的字符串长度，可能进行内存分配，也可能不进行分配。
+    let ret = my_app::my_app_receive_string_and_return_string(r_string);
+
+    let c_ret = CString::new(ret).expect("null byte in the middle");
+    c_ret.into_raw()
+    
+    // 重要提示：
+    // 和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的
+    // 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放
+    // r_string 和 ret 都是临时变量, 最终返回的字符指针指向的堆内存地址是c_ret变量持有的，
+    // r_string 和 ret 所分配的堆内存都会在函数返回时被回收。
+}
+```
+
+#### receive_str_and_return_str
+```rust
+#[no_mangle]
+pub fn receive_str_and_return_str(s: *const c_char) -> *const c_char {    
+    let cstr = {
+        assert!(!s.is_null());
+        unsafe{CStr::from_ptr(s)}
+    };
+
+    let rstr = cstr.to_str().expect("not valid utf-8 string");
+
+    // 下面这个函数调用并不会进行内存分配，从Rust角度来看，&str是要复用底层的字符缓冲区，
+    // 这样看起来貌似很好，没啥问题
+    let ret = my_app::my_app_receive_str_and_return_str(rstr);
+
+    // 但是，问题来了，如果上面的函数调用返回的是一个长字符串的子切片，那么这个子切片就不会是以Null结尾的了，
+    // 因为&str是一个Rust概念里的胖指针，里面存了长度，所以这对Rust不是个问题。但在FFI的边界上，我们要
+    // 使用C语言规范来交流，所以这就成了一个大问题。因此，我们还是需要再创建一个CString，于是又引入了
+    // 内存分配和拷贝。
+    let c_ret = CString::new(ret).expect("null byte in the middle");
+    c_ret.into_raw()
+
+    // 重要提示：
+    // 这是一个用来演示Rust在FFI边界上处理字符串引用所引入的开销的例子。在纯Rust中，
+    // `my_app::my_app_receive_str_and_return_str(str)`这个函数的参数和返回值都是引用
+    // 类型，所以我们可以避免数据的复制。
+    // 但是在FFI的边界上，根据FFI包装函数实现方式的不同，返回值可能可以复用内存，避免拷贝，
+    // 也可能需要重新分配内存并拷贝。
+    // 在我们当前的这个例子的实现中，我们就无法避免拷贝。如果你想避免拷贝，那么就要重新设计FFI
+    // 接口的API样式。（我们会在后面的例子中给出例子）
+    // 作为这个函数库的作者，你有责任编写一个清晰的使用手册来告诉用户，输入数据与输出数据的内存
+    // 是怎样被使用的。
+    // 最后，和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的
+    // 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放
+}
+```
+
+#### receive_string_and_return_str
+！！！预警！！！这个API的设计非常丑陋，这里只是一个实例，千万不要在生产环境中写这样的代码！
+
+这个接口中使用了二阶指针作为参数，这样做的目的是通过这些参数实现返回多个结果。在C语言的调用规范中，
+是不允许一个函数有多个返回值的，为了返回多个结果，我们有两种方式：
+* 定义一个结构体来保存多个返回值的内容，然后返回指向这个结构体的指针
+* 通过传入指针来修改调用者的内存数据，从而将要返回的值写入到调用者给定的变量中
+这里我们的二阶指针就是使用了第二种方法。
+
+```rust
+#[no_mangle]
+pub fn receive_string_and_return_str(s: *const c_char, new_ptr: *mut *const c_char, c_origin_ptr: *mut *const c_char, len: *mut usize, cap: *mut usize) {
+    let cstr = {
+        assert!(!s.is_null());
+        unsafe{CStr::from_ptr(s)}
+    };
+
+    let r_string = cstr.to_str().expect("not valid utf-8 string").to_string();
+
+    
+    let (ret, t_c_origin_ptr, t_len, t_cap) = unsafe{my_app::my_app_receive_string_and_return_str(r_string)};
+
+
+    let c_ret = CString::new(ret).expect("null byte in the middle");
+    unsafe {
+        *new_ptr = c_ret.into_raw();
+        *c_origin_ptr = t_c_origin_ptr as *const i8;
+        *len = t_len;
+        *cap = t_cap;
+    }
+
+    // 重要提示：
+    // 和上一个函数一样，输入数据的内存是被Golang持有的，返回值是被Rust持有的
+    // 返回的指针指向c_ret申请的的堆内存，该段内存因为into_raw()方法，暂时被编译器忘掉，函数返回时不会被释放
+    // ret是一个临时变量
+    // ret 和 t_c_origin_ptr 都指向r_string申请到的堆内存
+    // 由于在`my_app::my_app_receive_string_and_return_str()`这个函数内部，我们也让编译器忘掉了r_string申请
+    // 的堆内存，所以在函数返回时，r_string申请的内存不会被释放，c_origin_ptr所指向的内存就还是有效可用的内存
+}
+```
+
+#### 内存释放的相关函数
+在介绍前面几个函数的时候，我们都遗留了一个小问题，就是返回给外部系统的字符串，都是通过CString在堆内存分配后，通过调用`into_raw()`让编译器不要自动回收内存，因此为了防止内存泄漏，那就必须要提供一个手段，让调用者可以告诉Rust什么时候可以回收这段内存。因此我们提供了下面两个方法。这两个方法的核心工作都是根据之前留下的线索，重建一个Rust对象来引用之前被“遗忘”的堆内存，之后随着函数调用的返回，这个重建的对象在被销毁的过程中就会顺带释放之前申请的堆内存
+```rust
+#[no_mangle]
+pub unsafe fn free_string_alloc_by_rust_by_raw_parts(s: *mut c_char, len: usize, cap: usize) {
+	String::from_raw_parts(s as *mut u8, len, cap);
+}
+
+#[no_mangle]
+pub unsafe fn free_cstring_alloc_by_rust(s: *mut c_char) {
+  // 这个方法会再次遍历指针所指向的内存，直到找到Null，从而计算出字符串的长度
+	CString::from_raw(s);
+}
+```
+
+#### 一个零拷贝的FFI接口示例
+前面介绍的4个字符串传递，都涉及到了大量的内存分配和数据拷贝，而其中`my_app::my_app_receive_str_and_return_str()`这个函数本身设计的意图是避免数据拷贝的，为了在FFI接口上实现这个功能，我们需要定义一套新的API来传递字符串，其核心原理很简单，就是要增加一个返回值来表示字符串的长度，这样就避免了通过遍历Null来计算长度，也避免了截断字符串尾部没有Null的问题。代码如下：
+```rust
+#[no_mangle]
+pub fn receive_str_and_return_str_no_copy(s: *const c_char, new_ptr: *mut *const c_char, len: *mut usize) {
+    let cstr = {
+        assert!(!s.is_null());
+        unsafe{CStr::from_ptr(s)}
+    };
+
+    let rstr = cstr.to_str().expect("not valid utf-8 string");
+    let ret = my_app::my_app_receive_str_and_return_str(rstr);
+    let c_ret = ret.as_ptr();
+
+    unsafe {
+        *new_ptr = c_ret as *const i8;
+        *len = ret.len();
+    }
+
+    // 重要提示：
+    // 在这段代码中没有出现任何`to_owned()` 或 `to_string()`，因此这个API接口不会申请任何新的堆内存
+    // 我们显示返回了字符串的长度，这样就解决了截取字符串末尾没有Null的问题。
+    // 返回的指针所指向的内存，是外部系统分配的内存空间，不是Rust分配的！！！
+    // 如果你设计了一个这样的API接口，那么你应该在说明文档中清楚地写出来，返回的内存指针是指向了调用者提供的内存
+}
+```
+
+课后作业：这里我们只是把返回数据的长度进行了额外的存储，但是传入的字符串仍然需要遍历才可以获得其长度。请尝试修改API接口，从而避免对输入字符串的遍历。
+
 
 #### 在Golang中调用
-我们打开`golang/main.go`文件，并且来看一下`PassStringBySinglePointer`这个函数，这个函数中定义了一个匿名函数来执行核心的调用逻辑，我们来看一下这个核心函数：
+首先我们要更新一下头文件，打开`golang/ffi_demo.h`，我们会发现增加了对应的rust暴露出来的函数定义，有一些函数是我们会用到，暂时大家不用理会，新的头文件如下：
+```c
+#include "stdint.h"
+
+uintptr_t simple_rust_func_called_from_go(uint8_t arg1, uint16_t arg2, uint32_t arg3);
+
+char* receive_str_and_return_string(char*);
+char* receive_string_and_return_string(char*);
+char* receive_str_and_return_str(char*);
+// the follow line is a very ugly api design, only used as example, never use in real code.
+char* receive_string_and_return_str(char*, char**, char**, uintptr_t*, uintptr_t*);
+
+void free_string_alloc_by_rust_by_raw_parts(char*, uintptr_t, uintptr_t);
+void free_cstring_alloc_by_rust(char*);
+
+void receive_str_and_return_str_no_copy(char*, char**, uintptr_t*);
+```
+
+可以看到，对于rust中`*const c_char`这样的原始指针类型，映射到C语言中变为了`char*`类型，其他的大家看一看就好，没有什么复杂的地方。
+
+接下来我们打开`golang/main.go`文件，第一处修改是在`import "C"`的上方增加了`#include "stdlib.h"`这一行。之所以要引入`stdlib.h`，是为了后续可以调用`C.free()`来执行内存释放，后面我们会详细介绍。
+
+接下来看一下`PassStringBySinglePointer()`这个函数，这个函数中定义了一个匿名函数来执行核心的调用逻辑，我们来看一下这个核心匿名函数：
 ```golang
 	testProc := func(f int, x, y string) {
 		goStr := x
@@ -557,6 +731,87 @@ pub fn receive_str_and_return_string(s: *const c_char) -> *const c_char {
 ```
 
 上面代码有几个要点：
-* `C.CString()` 和 `C.GoString()`两个内置函数分别用于实现C和Go字符串的相互装换，这里的原理和Rust的原理类似，就不再展开讲了，需要注意的是，这两个函数调用都会导致内存分配和内存拷贝。因为Go是有垃圾回收的，GoString所对应的内存地址是在Go Runtime的内存分配器管辖范围里的，而cgo中为了实现CFFI的调用，需要使用操作系统的内存分配器，Go语言中这两个内存分配器对内存管理的方式不一样，其内存地址区间也不一样，因此需要内存分配与拷贝。
+* 由于函数签名相同，我们用这一个函数来测试三个Rust暴露出来的函数，通过第一个参数来选择调用哪个rust函数。
+* `C.CString()` 和 `C.GoString()`两个内置函数分别用于实现C和Go字符串的相互转换，这里的原理和Rust的原理类似，就不再展开讲了，需要注意的是，这两个函数调用都会导致内存分配和内存拷贝。
+  * 因为Go是有垃圾回收的，GoString所对应的内存地址是在Go Runtime的内存分配器管辖范围里的，而cgo中为了实现CFFI的调用，需要使用操作系统的内存分配器，Go语言中这两个内存分配器对内存管理的方式不一样，其内存地址区间也不一样，因此需要内存分配与拷贝。
 * `C.free()`调用的是操作系统默认内存分配器的free方法，用来释放掉Go语言通过操作系统内存分配器分配的内存。这部分内存不受Go语言垃圾回收的管理，因此需要手动释放，否则就会内存泄漏。
 * Rust函数调用完成后，Rust返回了一个指向Rust分配的内存的指针，这部分内存必须由Rust来释放，因此需要再调用一下Rust库暴露出来的释放接口。
+
+最后，我们就可以通过下面的调用来验证效果了,可以看到，如果超过15个字节的部分，会被截断，而小于15个字节的话，会被原封不动的返回：
+```golang
+	testProc(1, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+	testProc(1, "Datafuse Lab", "Datafuse Lab")
+
+	testProc(2, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+	testProc(2, "Datafuse Lab", "Datafuse Lab")
+
+	testProc(3, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+	testProc(3, "Datafuse Lab", "Datafuse Lab")
+```
+
+接下来，我们要看一下另一种函数签名的接口API如何使用，代码如下：
+```go
+	testProc := func(x, y string) {
+		goStr := x
+		cStr := C.CString(goStr)  // Memory Alloc And String Copy
+		defer C.free(unsafe.Pointer(cStr))
+	
+		var cStrRet *C.char
+		var cRawStr *C.char
+		retCap := C.ulong(0)
+		retLen := C.ulong(0)
+
+		C.receive_string_and_return_str(cStr, &cStrRet, &cRawStr, &retLen, &retCap)
+		
+		
+		goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
+		C.free_string_alloc_by_rust_by_raw_parts(cStrRet, retLen, retCap)
+
+		if goStrRet != y {
+			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))	
+		}
+	}
+```
+可以看到，在这个版本的调用中，我们首先在Go这一侧分配了`cStrRet`、`cRawStr`、`retCap`、`retLen`这四个变量，并通过指针的方式将其传递给Rust，Rust通过指针可以直接修改在Go中分配的这些内存中数据的数据，相当于实现了多返回值的效果。
+
+最后，我们来看一下号称零拷贝的Rust FFI接口是如何使用的，代码如下：
+```go
+testProc := func(x, y string) {
+		goStr := x
+		cStr := C.CString(goStr)  // Memory Alloc And String Copy
+		defer C.free(unsafe.Pointer(cStr))
+	
+		var cStrRet *C.char
+		retLen := C.ulong(0)
+
+		C.receive_str_and_return_str_no_copy(cStr, &cStrRet, &retLen)
+		
+		goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
+    // 注意：不同于前面的Go代码，我们在创建完GoString以后，不能在这里调用Rust提供的内存释放接口了
+    // 因为cStrRet所指向的内存就是上面cStr所分配的内存，这段内存会被上面的defer语句在函数返回时释放
+    // 如果我们在这里释放，就会导致内存的二次释放问题。
+
+    // 因为是复用的同一块内存，所以重构出来的Go字符串会和输入的字符串一模一样。因为我们并不能向字符串中间插入Null
+		if goStrRet != x {
+			panic(fmt.Sprintf("Error, expected %s, got %s", x, goStrRet))	
+		}
+
+    // 但是，通过Rust函数返回的长度信息，我们截取出来我们要的数据
+		goStrRetWithLengthLimit := goStrRet[:retLen]
+		if goStrRetWithLengthLimit != y {
+			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))	
+		}
+
+		// 我们的演示案例中，由于没有修改字符串的起始位置，只是调整了它的结尾，所以API返回新的字符串指针其实是有些多余的，使用原始的传入字符串
+    // 当然也可以打到效果，毕竟我们只需要知道一个长度而已。但是如果这个函数的功能是从字符串的中间截取一段出来的话，那么返回一个子字符串的起
+    // 始指针就很重要了。
+		if goStr[:retLen] != y {
+			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))	
+		}
+	}
+```
+
+
+可以看到，虽然这几个测试，输入一样，返回值也一样，但其内部的实现方式、对内存的使用方式，有着极大的差异，因此，讲到这里，大家或许会觉得我说的比较啰嗦，但是能够彻底理解他们之间的差异，是进行FFI开发必备的能力。如果大家还有不是很清楚的地方，一定要搞明白。
+
+虽然上面给大家展示了几种不同的内存使用以及参数传递的方式，但是这并不是所有的排列组合，也不一定是最优雅的API接口设计。作为课后作业，大家可以思考一下，传递字符串的API接口还可以怎么设计，能够更加高效、更加简洁？
