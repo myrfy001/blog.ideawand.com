@@ -46,7 +46,7 @@ tags: rust, golang, shared library
 * 熟悉Go、Python、Java这类具有GC的语言，但对C这样需要手工管理内存的语言不熟悉的同学
 * 了解Rust，并希望将Rust与其他语言配合使用的同学
 * 熟悉Go语言，但不了解cgo使用方法的同学
-* 如果你已经熟练掌握的Rust、C/C++、Go，那么这个分享可能过于简单，建议直接Clone Databend的代码，开始为Databend贡献代码~逃~~
+* 如果你已经熟练掌握的Rust、C/C++、Go，那么这个分享可能过于简单，建议直接Clone Databend的代码，开始为Databend贡献代码\~逃\~\~
 
 ### Rust在开发二进制库上的优势
 
@@ -106,7 +106,7 @@ if substr:
 
 ### 为什么选择Golang作为调用示例
 * Golang 目前应用非常广泛，熟悉Golang的小伙伴们也比较多，这样可能会有更多的受众。
-* 最近使用Rust或Go开发的云原生项目增长非常快，因为这两种语言的应用场景高度重合，所以研究一下二者的融合就很有意思。
+* 最近使用Rust或Go开发的云原生项目增长非常快，因为这两种语言的应用场景在云原生方面有重合，所以研究一下二者的融合就很有意思。
 * Golang 具有自己的运行时、自己的栈结构、自己的内存分配器，因此相比较于Python这类胶水语言，Golang调用CFFI函数库更有难度，我们喜欢做一些有挑战的事情。
 * 正因为其略微复杂，我们才可以更好的思考一些问题，更好的领会跨语言调用的核心思想。
 
@@ -142,7 +142,7 @@ crate-type = ["cdylib"]
 接下来，我们开始编写我们的第一个最简单的库函数，打开`my_app.rs`，可以看到以下代码：
 ```rust
 pub fn my_app_simple_rust_func_called_from_go(arg1: u8, arg2: u16, arg3: u32) -> usize {
-	arg1 as usize + arg2 as usize + arg3 as usize
+  arg1 as usize + arg2 as usize + arg3 as usize
 }
 ```
 这段代码非常简单，它是一个普通的Rust函数，将3个入参相加后返回，因为这是一个最简单的示例，所以入参选择了3个不同的基本数据类型。
@@ -215,17 +215,17 @@ import "C"
 
 
 func SimpleRustFuncCalledFromGo() {
-	arg1 := 123
-	arg2 := 1234
-	arg3 := 1234567
+  arg1 := 123
+  arg2 := 1234
+  arg3 := 1234567
 
-	cArg1 := C.uint8_t(arg1)
-	cArg2 := C.uint16_t(arg2);
-	cArg3 := C.uint32_t(arg3);
-	ret := C.simple_rust_func_called_from_go(cArg1, cArg2, cArg3)
-	if int(ret) != arg1 + arg2 + arg3 {
-		panic("SimpleRustFuncCalledFromGo Error")	
-	}
+  cArg1 := C.uint8_t(arg1)
+  cArg2 := C.uint16_t(arg2);
+  cArg3 := C.uint32_t(arg3);
+  ret := C.simple_rust_func_called_from_go(cArg1, cArg2, cArg3)
+  if int(ret) != arg1 + arg2 + arg3 {
+    panic("SimpleRustFuncCalledFromGo Error")  
+  }
 }
 ```
 
@@ -285,18 +285,19 @@ pub unsafe fn my_app_receive_string_and_return_str<'a>(s: String) -> (&'a str, *
 ```
 这四个函数分别列举了输入参数和返回值取`String`和`&str`两种类型时所有的排列组合情况，而它们的功能都是一致的：
 * 当输入字符串的长度小于15个byte的时候，返回完整的字符串，而超过15个byte的时候返回前15个byte
+
 通过对`String`和`&str`的排列组合，我们要强化大家对Rust中字符串相关的内存分配情况的理解，知道在对字符串做处理时什么时候会发生内存分配和拷贝，我们依次来看：
 
 ##### 接收String，返回String
 ```rust
 pub fn my_app_receive_string_and_return_string(s: String) -> String {
-	if s.len() > 15 {
-		// this path has new memory alloc on heap
-		s[0..15].to_string()
-	} else {
-		// this path doesn't have new memory alloc on heap
-		s
-	}
+  if s.len() > 15 {
+    // this path has new memory alloc on heap
+    s[0..15].to_string()
+  } else {
+    // this path doesn't have new memory alloc on heap
+    s
+  }
 }
 ```
 上述代码，根据字符串长度不同，可能发生一次堆内存分配，也可能不发生堆内存分配。如果发生了堆内存分配，则可以用下图来表示，长度为19的字符串，经过截断后，`to_string()`调用会把前15个字节复制出来，这时发生了一次堆内存分配，函数返回后，长度为19的字符串的字符串头（栈内存）和字符串内容(堆内存）都被释放，返回的是新的字符串头，指向新的堆内存。
@@ -340,12 +341,12 @@ pub fn my_app_receive_string_and_return_string(s: String) -> String {
 ##### 接收&str，返回String
 ```rust
 pub fn my_app_receive_str_and_return_string(s: &str) -> String {
-	// both path alloc new memory
-	if s.len() > 15 {
-		s[0..15].to_string()
-	} else {
-		s.to_string()
-	}
+  // both path alloc new memory
+  if s.len() > 15 {
+    s[0..15].to_string()
+  } else {
+    s.to_string()
+  }
 }
 ```
 上述代码中两条路径都有涉及到内存分配。
@@ -369,12 +370,12 @@ pub fn my_app_receive_str_and_return_string(s: &str) -> String {
 下面两条路径都没有涉及到资源分配
 ```rust
 pub fn my_app_receive_str_and_return_str(s: &str) -> &str {
-	// neither path alloc new memory
-	if s.len() > 15 {
-		&s[0..15]
-	} else {
-		s
-	}
+  // neither path alloc new memory
+  if s.len() > 15 {
+    &s[0..15]
+  } else {
+    s
+  }
 }
 ```
 
@@ -382,26 +383,26 @@ pub fn my_app_receive_str_and_return_str(s: &str) -> &str {
 这个函数通过Unsafe实现了安全Rust所绝对不允许的事情，即凭空返回一个堆内存的引用。再次提醒，这只是一个示例，为了帮助大家加深对Rust手动内存管理的理解，自己写代码的时候不要写这种容易被打的代码。这个函数两条路径也都没有进行堆内存分配。
 ```rust
 pub unsafe fn my_app_receive_string_and_return_str<'a>(s: String) -> (&'a str, *const u8, usize, usize) {
-	// this function is only used as an example to show that we can use unsafe 
-	// rust to turn an owned type to a reference, you should not write such code
-	// in production code. It's a very ugly api design.
+  // this function is only used as an example to show that we can use unsafe 
+  // rust to turn an owned type to a reference, you should not write such code
+  // in production code. It's a very ugly api design.
 
 
-	// neither path alloc new memory
-	let my_slice = if s.len() > 15 {
-		&*(&s[0..15] as &str as *const str)
-	} else {
-		&*(&s as &str as *const str)
-	};
+  // neither path alloc new memory
+  let my_slice = if s.len() > 15 {
+    &*(&s[0..15] as &str as *const str)
+  } else {
+    &*(&s as &str as *const str)
+  };
 
-	// you can replace the following two lines using s.into_raw_parts()
-	// s.into_raw_parts() internally use ManuallyDrop too
-	// I use ManuallyDrop explicit here to show you how memory is managed
+  // you can replace the following two lines using s.into_raw_parts()
+  // s.into_raw_parts() internally use ManuallyDrop too
+  // I use ManuallyDrop explicit here to show you how memory is managed
   // The reason why we need to return the ptr, len and cap is that we need them
-	// to rebuild the String header, we need to rebuild the string header to 
-	// free memory.
-	let s = ManuallyDrop::new(s);	
-	(my_slice, s.as_ptr(), s.len(), s.capacity())
+  // to rebuild the String header, we need to rebuild the string header to 
+  // free memory.
+  let s = ManuallyDrop::new(s);  
+  (my_slice, s.as_ptr(), s.len(), s.capacity())
 }
 ```
 安全的Rust之所以不允许在函数中返回一个Srting的引用，是因为在函数返回时，String会被drop，对应的堆内存被回收，导致引用到被回收的堆内存空间，而上面的代码中，通过ManuallyDrop的包装，我们使得String不会在函数返回时被drop，这样String所持有的堆内存就被“遗忘”了，于是我们就可以放心的引用这块堆内存了。之所以“遗忘”要打引号，是因为我们不能真的遗忘它，否则就是内存泄漏，我们得留一个线索，在必要的时候能够释放掉这块内存，而这个线索就是函数返回值的第2、3、4个参数，通过指针、容量、实际占用长度这三个参数，我们就可以重新在栈内存上构建出String头部的结构体，从而将“遗忘”的String找回来。
@@ -636,13 +637,13 @@ pub fn receive_string_and_return_str(s: *const c_char, new_ptr: *mut *const c_ch
 ```rust
 #[no_mangle]
 pub unsafe fn free_string_alloc_by_rust_by_raw_parts(s: *mut c_char, len: usize, cap: usize) {
-	String::from_raw_parts(s as *mut u8, len, cap);
+  String::from_raw_parts(s as *mut u8, len, cap);
 }
 
 #[no_mangle]
 pub unsafe fn free_cstring_alloc_by_rust(s: *mut c_char) {
   // 这个方法会再次遍历指针所指向的内存，直到找到Null，从而计算出字符串的长度
-	CString::from_raw(s);
+  CString::from_raw(s);
 }
 ```
 
@@ -701,33 +702,33 @@ void receive_str_and_return_str_no_copy(char*, char**, uintptr_t*);
 
 接下来看一下`PassStringBySinglePointer()`这个函数，这个函数中定义了一个匿名函数来执行核心的调用逻辑，我们来看一下这个核心匿名函数：
 ```golang
-	testProc := func(f int, x, y string) {
-		goStr := x
+  testProc := func(f int, x, y string) {
+    goStr := x
 
     // Memory Alloc in OS allocator And String Copy
-		// cStr is not managed by go GC
-		cStr := C.CString(goStr)
-		defer C.free(unsafe.Pointer(cStr))
-	
-		var cStrRet *C.char
-		switch f{
-		case 1:
-			cStrRet = C.receive_str_and_return_string(cStr)
-		case 2:
-			cStrRet = C.receive_string_and_return_string(cStr)
-		case 3:
-			cStrRet = C.receive_str_and_return_str(cStr)
-		}
-		
+    // cStr is not managed by go GC
+    cStr := C.CString(goStr)
+    defer C.free(unsafe.Pointer(cStr))
+  
+    var cStrRet *C.char
+    switch f{
+    case 1:
+      cStrRet = C.receive_str_and_return_string(cStr)
+    case 2:
+      cStrRet = C.receive_string_and_return_string(cStr)
+    case 3:
+      cStrRet = C.receive_str_and_return_str(cStr)
+    }
+    
     // Memory Alloc in Go runtime And String Copy
     // goStrRet is managed by go GC
-		goStrRet := C.GoString(cStrRet) 
-		C.free_cstring_alloc_by_rust(cStrRet)
+    goStrRet := C.GoString(cStrRet) 
+    C.free_cstring_alloc_by_rust(cStrRet)
 
-		if goStrRet != y {
-			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))	
-		}
-	}
+    if goStrRet != y {
+      panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))  
+    }
+  }
 ```
 
 上面代码有几个要点：
@@ -739,76 +740,76 @@ void receive_str_and_return_str_no_copy(char*, char**, uintptr_t*);
 
 最后，我们就可以通过下面的调用来验证效果了,可以看到，如果超过15个字节的部分，会被截断，而小于15个字节的话，会被原封不动的返回：
 ```golang
-	testProc(1, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
-	testProc(1, "Datafuse Lab", "Datafuse Lab")
+  testProc(1, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+  testProc(1, "Datafuse Lab", "Datafuse Lab")
 
-	testProc(2, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
-	testProc(2, "Datafuse Lab", "Datafuse Lab")
+  testProc(2, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+  testProc(2, "Datafuse Lab", "Datafuse Lab")
 
-	testProc(3, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
-	testProc(3, "Datafuse Lab", "Datafuse Lab")
+  testProc(3, "极客幼稚园是一个不错的微信公众号", "极客幼稚园")
+  testProc(3, "Datafuse Lab", "Datafuse Lab")
 ```
 
 接下来，我们要看一下另一种函数签名的接口API如何使用，代码如下：
 ```go
-	testProc := func(x, y string) {
-		goStr := x
-		cStr := C.CString(goStr)  // Memory Alloc And String Copy
-		defer C.free(unsafe.Pointer(cStr))
-	
-		var cStrRet *C.char
-		var cRawStr *C.char
-		retCap := C.ulong(0)
-		retLen := C.ulong(0)
+  testProc := func(x, y string) {
+    goStr := x
+    cStr := C.CString(goStr)  // Memory Alloc And String Copy
+    defer C.free(unsafe.Pointer(cStr))
+  
+    var cStrRet *C.char
+    var cRawStr *C.char
+    retCap := C.ulong(0)
+    retLen := C.ulong(0)
 
-		C.receive_string_and_return_str(cStr, &cStrRet, &cRawStr, &retLen, &retCap)
-		
-		
-		goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
-		C.free_string_alloc_by_rust_by_raw_parts(cStrRet, retLen, retCap)
+    C.receive_string_and_return_str(cStr, &cStrRet, &cRawStr, &retLen, &retCap)
+    
+    
+    goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
+    C.free_string_alloc_by_rust_by_raw_parts(cStrRet, retLen, retCap)
 
-		if goStrRet != y {
-			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))	
-		}
-	}
+    if goStrRet != y {
+      panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRet))  
+    }
+  }
 ```
 可以看到，在这个版本的调用中，我们首先在Go这一侧分配了`cStrRet`、`cRawStr`、`retCap`、`retLen`这四个变量，并通过指针的方式将其传递给Rust，Rust通过指针可以直接修改在Go中分配的这些内存中数据的数据，相当于实现了多返回值的效果。
 
 最后，我们来看一下号称零拷贝的Rust FFI接口是如何使用的，代码如下：
 ```go
 testProc := func(x, y string) {
-		goStr := x
-		cStr := C.CString(goStr)  // Memory Alloc And String Copy
-		defer C.free(unsafe.Pointer(cStr))
-	
-		var cStrRet *C.char
-		retLen := C.ulong(0)
+    goStr := x
+    cStr := C.CString(goStr)  // Memory Alloc And String Copy
+    defer C.free(unsafe.Pointer(cStr))
+  
+    var cStrRet *C.char
+    retLen := C.ulong(0)
 
-		C.receive_str_and_return_str_no_copy(cStr, &cStrRet, &retLen)
-		
-		goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
+    C.receive_str_and_return_str_no_copy(cStr, &cStrRet, &retLen)
+    
+    goStrRet := C.GoString(cStrRet)  // Memory Alloc And String Copy
     // 注意：不同于前面的Go代码，我们在创建完GoString以后，不能在这里调用Rust提供的内存释放接口了
     // 因为cStrRet所指向的内存就是上面cStr所分配的内存，这段内存会被上面的defer语句在函数返回时释放
     // 如果我们在这里释放，就会导致内存的二次释放问题。
 
     // 因为是复用的同一块内存，所以重构出来的Go字符串会和输入的字符串一模一样。因为我们并不能向字符串中间插入Null
-		if goStrRet != x {
-			panic(fmt.Sprintf("Error, expected %s, got %s", x, goStrRet))	
-		}
+    if goStrRet != x {
+      panic(fmt.Sprintf("Error, expected %s, got %s", x, goStrRet))  
+    }
 
     // 但是，通过Rust函数返回的长度信息，我们截取出来我们要的数据
-		goStrRetWithLengthLimit := goStrRet[:retLen]
-		if goStrRetWithLengthLimit != y {
-			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))	
-		}
+    goStrRetWithLengthLimit := goStrRet[:retLen]
+    if goStrRetWithLengthLimit != y {
+      panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))  
+    }
 
-		// 我们的演示案例中，由于没有修改字符串的起始位置，只是调整了它的结尾，所以API返回新的字符串指针其实是有些多余的，使用原始的传入字符串
+    // 我们的演示案例中，由于没有修改字符串的起始位置，只是调整了它的结尾，所以API返回新的字符串指针其实是有些多余的，使用原始的传入字符串
     // 当然也可以打到效果，毕竟我们只需要知道一个长度而已。但是如果这个函数的功能是从字符串的中间截取一段出来的话，那么返回一个子字符串的起
     // 始指针就很重要了。
-		if goStr[:retLen] != y {
-			panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))	
-		}
-	}
+    if goStr[:retLen] != y {
+      panic(fmt.Sprintf("Error, expected %s, got %s", y, goStrRetWithLengthLimit))  
+    }
+  }
 ```
 
 
