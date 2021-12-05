@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的debug题目。前两篇文章我们介绍的都是Rust过程宏中派生宏这个分支，这一次我们要介绍的是函数样式的过程宏。 好了，不废话了，准备好一台电脑，开始我们的第三个挑战任务seq">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目">
+<meta property="og:url" content="http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的debug题目。前两篇文章我们介绍的都是Rust过程宏中派生宏这个分支，这一次我们要介绍的是函数样式的过程宏。 好了，不废话了，准备好一台电脑，开始我们的第三个挑战任务seq">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://blog.ideawand.com/images/rust_procedural_macro/custom_syntax_parsing_related_structs.png">
+<meta property="og:image" content="http://blog.ideawand.com/images/rust_procedural_macro/tokenstream_and_tokentree.png">
+<meta property="og:image" content="http://blog.ideawand.com/images/rust_procedural_macro/custom_syntax_parsing_related_structs.png">
+<meta property="article:published_time" content="2021-10-17T03:10:22.000Z">
+<meta property="article:modified_time" content="2021-12-05T03:05:12.865Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="Rust,过程宏,proc-macro,proc_macro_workshop">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://blog.ideawand.com/images/rust_procedural_macro/custom_syntax_parsing_related_structs.png">
+
+<link rel="canonical" href="http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目 | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-10-17 11:10:22" itemprop="dateCreated datePublished" datetime="2021-10-17T11:10:22+08:00">2021-10-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-12-05 11:05:12" itemprop="dateModified" datetime="2021-12-05T11:05:12+08:00">2021-12-05</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本系列的上一篇文章中，我们实战了<code>proc_macro_workshop</code>项目的<code>debug</code>题目。前两篇文章我们介绍的都是Rust过程宏中派生宏这个分支，这一次我们要介绍的是函数样式的过程宏。</p>
+<p>好了，不废话了，准备好一台电脑，开始我们的第三个挑战任务<code>seq</code></p>
+<span id="more"></span>
+
+<h3 id="先是视频版本的教程，文字版本的在下面"><a href="#先是视频版本的教程，文字版本的在下面" class="headerlink" title="先是视频版本的教程，文字版本的在下面~"></a>先是视频版本的教程，文字版本的在下面~</h3><ul>
+<li><p>Rust过程宏开发实战系列(4-1) seq题目第1、2关【函数式过程宏+创建自定义语法树节点】</p>
+<iframe src="//player.bilibili.com/player.html?aid=461167740&bvid=BV1k5411K7rA&cid=354113518&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-2) seq题目第3关【随机访问TokenStream内的TokenTree节点】</p>
+<iframe src="//player.bilibili.com/player.html?aid=931370739&bvid=BV1LM4y1g7Ld&cid=359857396&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-3) seq题目第4关【使用TokenStream匹配特定模式的代码片段】</p>
+<iframe src="//player.bilibili.com/player.html?aid=973931556&bvid=BV1G44y1q788&cid=363363134&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-4) seq题目第5、6关【使用syn::buffer模块进行TokenStream的遍历】</p>
+<iframe src="//player.bilibili.com/player.html?aid=804003365&bvid=BV18y4y1K77j&cid=366051656&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-5) seq题目第7、8关【预读Token】</p>
+<iframe src="//player.bilibili.com/player.html?aid=249197641&bvid=BV13v411n7vE&cid=372030675&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-6) seq题目第9关【在宏中使用常量】</p>
+<iframe src="//player.bilibili.com/player.html?aid=721233808&bvid=BV1gQ4y1q7yN&cid=426715693&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(4-7) seq题目加餐【syn总结及syn包的其他使用方法】</p>
+<iframe src="//player.bilibili.com/player.html?aid=421157934&bvid=BV1S3411C7hk&cid=426719317&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+
+</li>
+</ul>
+<h3 id="文字版本"><a href="#文字版本" class="headerlink" title="文字版本"></a>文字版本</h3><p>首先打开<code>proc_macro_workshop</code>项目的<code>readme.md</code>文件，看一下<code>seq</code>这个项目要实现什么样的功能。根据其中的描述，这个题目的最终目标是实现一个可以重复输出指定格式代码的宏，根据某个模板重复输出内容，并且在每次重复过程中修改某些带有序号的地方，这种模式我们在Rust自带的<code>macro_rules!</code>宏和<code>quote</code>包的<code>quote!</code>宏中都使用过，这一关我们也要实现一个类似的功能了。</p>
+<p>与前两篇文章最大的不同点，有两个：</p>
+<ul>
+<li>这次我们要写的是函数样式的过程宏，不再是派生样式的了</li>
+<li>我们这次要打交道的主要是<code>TokenStream</code>，而不是语法树节点了。<ul>
+<li>我们要实现一种新的”自定义语言“，它扩展了Rust的标准语法。</li>
+<li>因为本关中我们要处理的内容，并不是标准的Rust语法，所以没有办法解析成<code>syn</code>包中提供的标准语法树节点。</li>
+<li>所以，我们要自己定义一个【新的语法树节点】来表达我们的自定义语法结构</li>
+<li>更严谨的来说，这一关是自定义语法和标准语法共存。因此我们既可以学到如何自定义一个全新的语法树节点，也可以学到如何在TokenStream的层面去操作标准Rust代码。</li>
+</ul>
+</li>
+</ul>
+<h3 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h3><p>我们首先来看一下<code>proc-macro-workshop</code>对<code>seq!</code>这个过程宏的功能简介，说的是我们要实现一个形如下面这样的过程宏,这个过程宏可以帮助我们在代码的指定位置自动生成<code>Cpu0</code>、<code>Cpu1</code>、<code>Cpu2</code>…<code>Cpu511</code>这样的总计512个字段，每个字段标识符中都有一部分数字序号会发生改变：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">seq!(N <span class="keyword">in</span> <span class="number">0</span>..<span class="number">512</span> &#123;</span><br><span class="line">    <span class="meta">#[derive(Copy, Clone, PartialEq, Debug)]</span></span><br><span class="line">    <span class="keyword">pub</span> <span class="class"><span class="keyword">enum</span> <span class="title">Processor</span></span> &#123;</span><br><span class="line">        #(</span><br><span class="line">            Cpu#N,</span><br><span class="line">        )*</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>在上面这段示例中，我们可以看出：</p>
+<ul>
+<li><code>seq!(......)</code>这个格式是我们函数式过程宏的边界，就像派生式过程宏是对它下面的结构体生效一样，函数式过程宏是对过程宏名字后面的括号里面的内容做处理。</li>
+<li><code>N in 0..512 &#123;.......&#125;</code> 这个写法，包含了占位符声明（这里定义了<code>N</code>作为模板中每次变化的占位符）、重复开始的N值、重复结束的N值，以及要展开的代码模板 这四个部分。<ul>
+<li><code>N in 0..512</code>并不是标准的Rust语法，虽然我们可以写<code>for N in 0..512&#123;&#125;</code>这样的循环代码，但如果去掉了其中的<code>for</code>关键字，只留下<code>N in 0..512</code>这就不是标准的Rust语法了，所以你在<code>syn</code>包里面找不到它对应的语法树节点。当你完成这道题目以后，你完全可以自己定义出这样的语法，比如：<code>N from 0 to 512 &#123;....&#125;</code>，只需要做很小的改动就可以实现</li>
+<li><code>N in 0..512 &#123;.......&#125;</code>这个写法中， <code>&#123;.........&#125;</code>内部是一种标准Rust语法和自定义语法混合在一起的状态，因此，我们在后续几关的挑战中，一个核心的工作就是要从TokenStream中找出这些自定义的语法来做处理，而那些符合Rust语法的地方，我们尽可能复用<code>syn</code>包提供的功能。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>划重点：学会如何处理这种混杂的代码，是这一道题目最有价值的地方。</p>
+</blockquote>
+<p>了解了整体的功能之后，我们来看一下第一关的题目要求：</p>
+<ul>
+<li>第一关要求我们解析<code>N in 0..512</code>这个片段，识别出其中的<code>syn::Ident</code>, <code>Token![in]</code>, <code>syn::LitInt</code>, <code>Token![..]</code>, <code>syn::LitInt</code> 这几个Token。</li>
+<li>提示我们，这道题目，如果不使用<code>syn</code>包也可以完成，但可能导致你需要写更多的代码，所以我们接下来的讲解还都是使用<code>syn</code>包的。</li>
+<li>接下来，作者给出了两个参考资源的链接，分别是：<ul>
+<li><code>syn</code>包中关于<code>parsing</code>功能的子模块说明：<a target="_blank" rel="noopener" href="https://docs.rs/syn/1.0/syn/parse/index.html">https://docs.rs/syn/1.0/syn/parse/index.html</a></li>
+<li>一个解析自定义语法树的示例项目：<a target="_blank" rel="noopener" href="https://github.com/dtolnay/syn/tree/master/examples/lazy-static">https://github.com/dtolnay/syn/tree/master/examples/lazy-static</a></li>
+</ul>
+</li>
+</ul>
+<p>上面两个参考资料大家一定要找时间自己看一下，不过可以先看完我的博客~好了，我们现在开始搭架子吧~~</p>
+<p>首先打开<code>seq/src/lib.rs</code>，我们可以看到下面的框架， 其中的<code>#[proc_macro]</code>表示我们要编写的是一个【函数式】的过程宏，而下面函数定义中的<code>seq</code>指定了过程宏的名字，这一点和派生式过程宏是不一样的。派生式过程宏的名字不是由函数体定义的。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">seq</span></span>(input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    <span class="keyword">let</span> _ = input;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">unimplemented!</span>()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的结构先不动，我们先来定义一个新的struct用来表示我们的自定义语法树节点:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">SeqParser</span></span> &#123;</span><br><span class="line">    variable_ident: syn::Ident,</span><br><span class="line">    start: <span class="built_in">isize</span>,</span><br><span class="line">    end: <span class="built_in">isize</span>,</span><br><span class="line">    body: proc_macro2::TokenStream,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们来整体审视一下这个结构，它的前几个字段分别对应了几个具体的自定义语法元素，而最后一个字段，因为我们不确定里面有什么东西，所以使用<code>TokenStream</code>来记录所有的剩余代码片段，留作以后解析使用。这样的结构我们在<code>syn</code>包提供的标准Rust语法树节点中也遇到过，你能想起来吗？下面我留了几行空白，大家可以先想一下，然后往下滑动可以看到答案</p>
+<ul>
+<li>===想想再往下翻===</li>
+<li>===想想再往下翻===</li>
+<li>===想想再往下翻===</li>
+<li>===想想再往下翻===</li>
+<li>===想想再往下翻===</li>
+<li>===想想再往下翻===</li>
+</ul>
+<p>在我们介绍Rust的属性元素对应的语法树节点时，我们提到过<code>syn</code>包提供的<code>Attribute</code>这个语法树节点（<a href="https://blog.ideawand.com/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/">详见Builder题目的第七关</a>）,这个节点和我们这次的自定义节点非常相似，也是由固定的语法元素字段和不确定的TokenStream组成的，大家在读完本篇文章以后，可以再回过头来体会一下<code>syn::Attribute</code>这个语法树节点的设计思想。</p>
+<p>定义好这个语法树节点以后，我们需要给它实现一个名为<code>syn::parse::Parse</code>的Trait，这个Trait中的<code>parse</code>方法读取<code>TokenStream</code>，看看其中的Token排列方式是否满足我们要求的语法模式，如果满足就将读取出的字段填充到自定义的语法树节点中。这个Trait的定义如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> syn::parse::Parse <span class="keyword">for</span> SeqParser &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">parse</span></span>(input: syn::parse::ParseStream) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="keyword">Self</span>&gt; &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以发现，<code>parse</code>方法的入参是<code>ParseStream</code>类型，而不是我们之前说的<code>TokenStream</code>,那这个新的<code>ParseStream</code>是何方神圣呢？先打个预防针，从这一关开始到后续几关，我们会看到很多个新的数据类型，它们之间会有千丝万缕的联系，我们先给大家做一个整体总结，后面还会给大家详细介绍每一种类型，所以大家不要慌。我们会遇到的有关组件如下：<br><img src="/images/rust_procedural_macro/custom_syntax_parsing_related_structs.png" alt="解析Rust自定义语法所需数据结构总结"></p>
+<p>好了，禁止跑偏，我们赶快回归正题，回到<code>ParseStream</code>上面来，从上面的框图大概可以了解到，<code>ParseStream</code>是一种可以高效访问Token的数据结构，为我们提供了一些易于使用的方法。照葫芦画瓢，对照第一关题目要求中给出的官方文档链接以及<code>lazy-static</code>这个示例，我们可以用下面的代码来填充我们的自定义语法树节点：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> syn::&#123;<span class="keyword">self</span>, braced&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> syn::parse::Parse <span class="keyword">for</span> SeqParser &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">parse</span></span>(input: syn::parse::ParseStream) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="keyword">Self</span>&gt; &#123;</span><br><span class="line">        <span class="comment">// 我们要解析形如 `N in 0..512 &#123;.......&#125;` 这样的代码片段</span></span><br><span class="line">        <span class="comment">// 假定`ParseStream`当前游标对应的是一个可以解析为`Ident`类型的Token，</span></span><br><span class="line">        <span class="comment">// 如果真的是`Ident`类型节点，则返回Ok并将当前读取游标向后移动一个Token</span></span><br><span class="line">        <span class="comment">// 如果不是`Ident`类型，则返回Err,说明语法错误，直接返回</span></span><br><span class="line">        <span class="keyword">let</span> variable_ident: syn::Ident = input.parse()?;    </span><br><span class="line"></span><br><span class="line">        <span class="comment">// 假定`ParseStream`当前游标对应的是一个写作`in`的自定义的Token</span></span><br><span class="line">        input.parse::&lt;syn::Token!(<span class="keyword">in</span>)&gt;()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 假定`ParseStream`当前游标对应的是一个可以解析为整形数字面量的Token，</span></span><br><span class="line">        <span class="keyword">let</span> start: syn::LitInt = input.parse()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 假定`ParseStream`当前游标对应的是一个写作`..`的自定义的Token</span></span><br><span class="line">        input.parse::&lt;syn::Token!(..)&gt;()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 假定`ParseStream`当前游标对应的是一个可以解析为整形数字面量的Token，</span></span><br><span class="line">        <span class="keyword">let</span> end: syn::LitInt = input.parse()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 这里展示了braced!宏的用法，用于把一个代码块整体读取出来，如果读取成功就将代码块</span></span><br><span class="line">        <span class="comment">// 内部数据作为一个`ParseBuffer`类型的数据返回，同时把读取游标移动到整个代码块的后面</span></span><br><span class="line">        <span class="keyword">let</span> body_buf;</span><br><span class="line">        syn::braced!(body_buf <span class="keyword">in</span> input);</span><br><span class="line">        <span class="keyword">let</span> body: proc_macro2::TokenStream  = body_buf.parse()?;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> t = SeqParser &#123;</span><br><span class="line">            variable_ident,</span><br><span class="line">            start: start.base10_parse()?,</span><br><span class="line">            end: end.base10_parse()?,</span><br><span class="line">            body,</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">Ok</span>(t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，上面处理代码明显可以分为两种风格，对于普通的代码片段，我们只需要按照Token出现的顺序，依次调用<code>parse()</code>方法就好，但是当处理括号的时候，我们就要做一翻额外的工作。所以这里给一个重点提示：</p>
+<blockquote>
+<p>重点&amp;提示：在Rust提供的过程宏机制中，唯一没法自定义的Token就是括号，圆括号、方括号、花括必须成对出现，在输入的<code>TokenStream</code>中就已经以括号为分割，将不同的代码片段划分为嵌套的<code>Group</code>，所以，在Rust的过程宏中，我们目前没有办法去自定义类似shell脚本中case语句那种以单个右括号表示一个分支的语法。如果大家有什么好的方法可以实现，请立即告诉我~</p>
+</blockquote>
+<p>实现了自定义的<code>Parse</code> Trait以后，我们就可以把自定义的<code>SeqParser</code>类型作为一个新的语法树节点来使用了，修改我们的过程宏定义代码如下，看完下面这一行不知道大家会不会有一种恍然大悟的感觉：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[proc_macro]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">seq</span></span>(input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 还记得我们之前的关卡里，写的都是下面这一行：</span></span><br><span class="line">    <span class="comment">// let st = syn::parse_macro_input!(input as DeriveInput);</span></span><br><span class="line">    <span class="comment">// 现在我们自己实现了一个和`DeriveInput`类似的语法树节点，作为我们seq宏的语法树根节点</span></span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> SeqParser);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> TokenStream::new()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这样，我们就通过了第一关的测试用例。</p>
+<h3 id="第二关"><a href="#第二关" class="headerlink" title="第二关"></a>第二关</h3><p>第二关的题目要求其实我们在第一关中就已经实现了。主要就是在说我们<code>seq!(for N in 0..512&#123;XXXXXX&#125;)</code>这样的语法格式中，<code>XXXXXX</code>所在的位置，用户可以写任意的代码，所以我们没法直接将其解析为具体的语法树节点，需要先将其以<code>TokenStream</code>的形式存储下来。所以这一关直接通过~</p>
+<h3 id="第三关"><a href="#第三关" class="headerlink" title="第三关"></a>第三关</h3><p>第三关开始，我们要处理前两关中以<code>TokenStream</code>格式临时存储的用户代码，执行真正的展开操作了。</p>
+<p>这一关，以及后面的几关中，我们都是要在<code>TokenStream</code>中进行穿梭，找到符合我们指定格式的片段，将其中的占位符替换为指定的格式。因此我们很有必要再来看一下<code>TokenStream</code>这个数据类型的内部构造。再强调一下，我们要研究的是<code>proc_macro2</code>包提供的<code>TokenStream</code>类型。</p>
+<p>无论是通过Print大法观察<code>TokenStream</code>的形式，还是查看<code>TokenStream</code>的源代码，亦或翻阅<code>proc_macro2</code>的官方文档，我们都会发现和<code>TokenStream</code>形影不离的另外一个结构体<code>TokenTree</code>，查看源代码也可以看出，<code>TokenStream</code>的底层核心结构其实是一个<code>Vec&lt;TokenTree&gt;</code>,而这个<code>TokenTree</code>是一个枚举类型，包含4个成员，分别是：</p>
+<ul>
+<li><code>Group</code> 非叶子节点,里面又包含子<code>TokenStream</code></li>
+<li><code>Ident</code> 叶子节点，表示一个标识符</li>
+<li><code>Punct</code> 叶子节点，表示一个标点符号（除了圆、方、花括号以外的其他不成对出现的标点符号，因为如果是括号的话，那么括号必须成对出现，而扩住的内容，就会以<code>Group</code>成员的形式出现）<ul>
+<li>注意，尖括号是一个特例，<code>&lt;T&gt;</code>不是一个<code>Group</code>，因为圆括号、方括号、花括号，必须成对出现，而尖括号所使用的<code>&lt;</code>和<code>&gt;</code>可以在大小比较、移位运算、返回值符号等多个地方，以不成对的形式出现，所以这里对待泛型参数时使用的尖括号并不是<code>Group</code>，</li>
+<li>我猜想是因为过程宏用到的Token解析比较简单，因为其他三种括号一定成对出现，所以确定一对括号出现的范围及其包含的内容，算法比较简单，而大于号和小于号要处理的case太多了，所以就没支持？</li>
+</ul>
+</li>
+<li><code>Literal</code> 叶子节点，表示一个字面量，可以是字符串字面量，也可以是数值型的字面量</li>
+</ul>
+<p>经过上面的分析，我们可以有一个清晰的认识：Rust中所有的代码，在Token的层面上（也就是不考虑语法），其实只有3类：标识符、标点符号、字符串字面量，而Group呢，我个人没有把它算作一类，因为它只是前面3种基本类型的一个组合。而我们在看其他资料时（假设你了解<code>macro_rules!</code>宏），可能还会看到一些概念，比如<code>stmt</code>、<code>expr</code>、<code>path</code>等等，这些概念都是在语法分析后才能得到的，例如在语法层面上，我们把<code>AA::BB</code>的形式称为一个<code>path</code>；而如果从<code>Token</code>的层面来理解，它就是<code>Ident(AA)</code>、<code>Punct(:)</code>、<code>Punct(:)</code>、<code>Ident(BB)</code>组成的一个序列。这个概念我们在第一篇文章中已经介绍过了，如果生疏了可以再回看一下第一篇文章。</p>
+<p>所以，看到这里，大家是不是会开始觉得，<code>TokenStream</code>这个名字起得有点骗人，它根本不是一个我们想象中的线性的Stream，它实质上是一棵多叉树！更严谨的来说，应该是:</p>
+<ul>
+<li>只要我们不遇到各种各样的括号，那么<code>TokenStream</code>的确是一个线性的Stream</li>
+<li>但是一旦遇到了圆括号、方括号、花括号中的任何一个，这个Stream就<strong>分叉</strong>了，就变成【树】了</li>
+</ul>
+<p>是不是很坑？所以我们后面处理<code>TokenStream</code>的时候，其实都是在用遍历树的算法来搞，所以，这一关我们会涉及到很多的递归逻辑。好了，再上一张图，来直观感受一下<code>TokenStream</code>和<code>TokenTree</code>，可以看出来，如果横着看每一行，确实可以认为是一个”流“，但是加上纵向的内容，这就是一棵树。从图中也可以看到,<code>TokenTree::Group</code>类型本身记录了括号的不同类型。</p>
+<p><img src="/images/rust_procedural_macro/tokenstream_and_tokentree.png" alt="TokenStream与TokenTree的关系展示"></p>
+<p>上面说了这么多，我们现在开始真的进入第三关的题目，第三关的题目比较好理解，就是把用户代码重复指定次数，并在每次重复时，把其中的N替换为不同的数字。所以我们要做的就是遍历<code>TokenStream</code>，找到其中的N，然后将其进行替换。</p>
+<p>在第一关给出的配图中，我们可以看到有多种手段可以处理这个原始的<code>TokenStream</code>，这些手段的使用方式以及执行效率各不相同，我们先介绍一种代码写起来比较简单直观，但是宏展开过程开销比较大的方法。</p>
+<blockquote>
+<p>方法1：使用<code>TokenStream</code>提供的迭代器，获得一个<code>Vec&lt;TokenTree&gt;</code>数组，因为转换成了数组，我们就可以通过下标来对各个<code>TokenTree</code>节点进行灵活的随机访问。</p>
+</blockquote>
+<p>代码如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> SeqParser &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">expand</span></span>(&amp;<span class="keyword">self</span>, ts: &amp;proc_macro2::TokenStream, n: <span class="built_in">isize</span>) -&gt; proc_macro2::TokenStream &#123;</span><br><span class="line">        <span class="keyword">let</span> buf = ts.clone().into_iter().collect::&lt;<span class="built_in">Vec</span>&lt;_&gt;&gt;();</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 这里为了简单，使用了for循环，实际我想表达的意思是，</span></span><br><span class="line">        <span class="comment">// 这个idx你可以随心所欲的控制，跳着访问，回溯已经访问过的节点等等，都可以</span></span><br><span class="line">        <span class="keyword">for</span> idx <span class="keyword">in</span> <span class="number">0</span>..buf.len() &#123;</span><br><span class="line">            <span class="keyword">let</span> tree_node = &amp;buf[idx];</span><br><span class="line">            <span class="keyword">match</span> tree_node &#123;</span><br><span class="line">                proc_macro2::TokenTree::Group(g) =&gt; &#123;</span><br><span class="line">                    <span class="comment">// 如果是括号包含的内容，我们就要递归处理内部的TokenStream</span></span><br><span class="line">                    <span class="keyword">let</span> new_stream = <span class="keyword">self</span>.expand(&amp;g.stream(), n);</span><br><span class="line">                    <span class="comment">// 这里需要注意，上一行中g.stream()返回的是Group内部的TokenStream，</span></span><br><span class="line">                    <span class="comment">// 也就是说不包含括号本身，所以要在下面重新套上一层括号，而且括号的</span></span><br><span class="line">                    <span class="comment">// 种类要与原来保持一致。 </span></span><br><span class="line">                    <span class="comment">// 当然这里的写法比较暴力，不一定是效率最高的写法，在后面的文章里</span></span><br><span class="line">                    <span class="comment">// 我们会使用其他的方法来写。</span></span><br><span class="line">                    <span class="keyword">let</span> wrap_in_group = proc_macro2::Group::new(g.delimiter(), new_stream);</span><br><span class="line">                    ret.extend(quote::quote!(#wrap_in_group));</span><br><span class="line">                &#125;</span><br><span class="line">                proc_macro2::TokenTree::Ident(i) =&gt; &#123;</span><br><span class="line">                    <span class="comment">// 如果是一个Ident，那么看一下是否为要替换的变量标识符，如果是则替换，</span></span><br><span class="line">                    <span class="comment">// 如果不是则透传。</span></span><br><span class="line">                    <span class="keyword">if</span> i == &amp;<span class="keyword">self</span>.variable_ident &#123;</span><br><span class="line">                        <span class="comment">// 注意第二关的测试用例中，过程宏期待的是一个Literal，所以为了</span></span><br><span class="line">                        <span class="comment">// 通过，我们也要产生一个Literal</span></span><br><span class="line">                        <span class="keyword">let</span> new_ident = proc_macro2::Literal::i64_unsuffixed(n <span class="keyword">as</span> <span class="built_in">i64</span>);</span><br><span class="line">                        ret.extend(quote::quote!(#new_ident));</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        ret.extend(quote::quote!(#tree_node));</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">                _ =&gt; &#123;</span><br><span class="line">                    <span class="comment">// 对于其它的元素（也就是Punct和Literal），原封不动透传</span></span><br><span class="line">                    ret.extend(quote::quote!(#tree_node));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        ret</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>仔细阅读一下上面的代码，注意其中的注释：</p>
+<ul>
+<li>首先使用迭代器的collect方法，得到一个数组，这样我们就可以通过数组的下标来随机访问<code>TokenStream</code>中的每一个<code>TokenTree</code>元素了<ul>
+<li>吐槽一下，翻遍了整个<code>proc_macro2</code>包，就没有任何的手段来随机访问<code>TokenTree</code>，只能通过迭代器顺序访问，所以只能通过先构造一个数组的方式，来实现随机访问。</li>
+<li>我们上面的例子，对于随机访问的需求并不强烈，大家只是有个印象就行，等到需要后看、回溯等复杂匹配的时候，能想起来这个方法就行</li>
+</ul>
+</li>
+<li>由于<code>TokenTree</code>是个枚举，只有四种可能，所以就分别处理了。<ul>
+<li>其中标点符号（Punct）和字面量（Literal）不需要处理，无脑透传就行</li>
+<li>对于标识符（Ident）,需要判断是否为要替换的标识符，并作出相应的处理</li>
+<li>对于分组（Group）,就需要递归处理了</li>
+</ul>
+</li>
+<li>Group的<code>stream()</code>方法可以帮助我们获得Group内部的<code>TokenStream</code>，但是这会导致标记Group区间的括号丢失掉，所以在递归调用结束以后，还需要手工把括号给补回来。<ul>
+<li><code>g.delimiter()</code>的作用就是获取这个group边界的括号类型</li>
+</ul>
+</li>
+</ul>
+<p>有了上面的展开函数以后，我们再来修改一下过程宏的入口函数，如下所示：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[proc_macro]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">seq</span></span>(input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    <span class="comment">// 还记得我们之前的关卡里，写的都是下面这一行：</span></span><br><span class="line">    <span class="comment">// let st = syn::parse_macro_input!(input as DeriveInput);</span></span><br><span class="line">    <span class="comment">// 现在我们自己实现了一个和`DeriveInput`类似的语法树节点，作为我们seq宏的语法树根节点</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> SeqParser);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 下面5行是第三关新加入的</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> st.start..st.end &#123;</span><br><span class="line">        ret.extend(st.expand(&amp;st.body, i))</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret.into()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段新增的代码非常简单，主要就是通过一个循环，将代码展开指定的次数即可。这样，我们已经可以通过第三关的测试用例了。</p>
+<p>上面已经详细介绍了通过<code>TokenStream</code>和<code>TokenTree</code>来解析自定义语法的方法了，下面来说一下这种方法的缺点：<code>TokenTree</code>只实现了<code>Clone</code>，每一次遍历<code>TokenStream</code>得到<code>TokenTree</code>数组的时候，都是对当前节点及其树形结构下层节点的一次克隆操作，开销比较大，特别是在解析语法时，通常需要前看几个节点、递归内层结构等，如果某个语法规则匹配不上还要回退尝试其他语法规则，这样就导致了效率低下。在后面的关卡中会为大家介绍其他的方法。</p>
+<p>综上所述，在访问<code>TokenStream</code>的节点的时候，开销比较大。如果我们不需要在<code>TokenStream</code>中来回穿梭，不需要前前后后访问每一个Token的话，用<code>TokenStream</code>也不是不行，它用起来是比较简便的。</p>
+<h3 id="第四关"><a href="#第四关" class="headerlink" title="第四关"></a>第四关</h3><p>在第三关中，我们实现了对标识符N替换为对应数字的功能，但是这个功能基本上没有太大的用处。因为我们在使用这个过程宏的时候，通常是希望产生一个<code>标识符</code>的，也就是以字母开头，以可变数字N结尾的一组标识符，而我们上一关中把N替换为一个数字，实际上是产生了一个数值类型的<code>字面量</code>，那么这一关的内容就是要解决这个问题：我们在代码中搜索<code>xxx#N</code>这种形式，其中<code>xxx</code>是一个标识符前缀，<code>#N</code>代表着要在<code>xxx</code>后面追加一个动态变化的数字后缀。只有找到满足这种模式的代码片段时，我们才能进行过程宏的替换。</p>
+<p>所以，这一关的重点其实就是需要向后预读两个<code>TokenTree</code>元素。</p>
+<p>这里需要注意一个问题：</p>
+<ul>
+<li>对于<code>xxx#N</code>这样一个代码片段，我们得到的<code>TokenStream</code>实际上是3个：一个标识符<code>xxx</code>、一个标点符号<code>#</code>、一个标识符<code>N</code></li>
+<li>对于<code>xxx # N</code>、<code>xxx #N</code>、<code>xxx# N</code>这几种写法，我们得到的<code>TokenStream</code>都由3个元素组成</li>
+<li>所以，我们除了要判断这三个元素的出现顺序以外，还要根据他们的Span的信息，来检验他们在源代码中是不是紧密连在一起的。</li>
+<li>为了在代码中能够访问一个Token的位置信息，需要给<code>proc-macro2</code>这个包开启<code>span-locations</code>这个特性</li>
+</ul>
+<p>另外，很重要的一点，虽然我们要支持<code>xxx#N</code>这种写法，第三关的<code>N</code>的写法也还要支持。这就涉及到匹配优先级的问题，不过这个还是很好解决的，优先匹配长的规则就好。</p>
+<p>下面我们来看一下代码，注意其中的注释：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> SeqParser &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">expand</span></span>(&amp;<span class="keyword">self</span>, ts: &amp;proc_macro2::TokenStream, n: <span class="built_in">isize</span>) -&gt; proc_macro2::TokenStream &#123;</span><br><span class="line">        <span class="keyword">let</span> buf = ts.clone().into_iter().collect::&lt;<span class="built_in">Vec</span>&lt;_&gt;&gt;();</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 第四关修改，把原来的for循环改为while循环，从而获得对idx的灵活控制能力</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> idx = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">while</span> idx &lt; buf.len() &#123;</span><br><span class="line">            <span class="keyword">let</span> tree_node = &amp;buf[idx];</span><br><span class="line">            <span class="comment">// 下面的match中只有Ident对应的分支需要调整</span></span><br><span class="line">            <span class="keyword">match</span> tree_node &#123;</span><br><span class="line">                proc_macro2::TokenTree::Group(g) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">let</span> new_stream = <span class="keyword">self</span>.expand(&amp;g.stream(), n);</span><br><span class="line">                    <span class="keyword">let</span> wrap_in_group = proc_macro2::Group::new(g.delimiter(), new_stream);</span><br><span class="line">                    ret.extend(quote::quote!(#wrap_in_group));</span><br><span class="line">                &#125;</span><br><span class="line">                proc_macro2::TokenTree::Ident(prefix) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> idx + <span class="number">2</span> &lt; buf.len() &#123; <span class="comment">// 我们需要向后预读两个TokenTree元素</span></span><br><span class="line">                        <span class="keyword">if</span> <span class="keyword">let</span> proc_macro2::TokenTree::Punct(p) = &amp;buf[idx + <span class="number">1</span>] &#123;</span><br><span class="line">                            <span class="comment">// 井号是一个比较少见的符号，</span></span><br><span class="line">                            <span class="comment">// 我们尽量早一些判断井号是否存在，这样就可以尽快否定掉不匹配的模式</span></span><br><span class="line">                            <span class="keyword">if</span> p.as_char() == <span class="string">&#x27;#&#x27;</span> &#123; </span><br><span class="line">                                <span class="keyword">if</span> <span class="keyword">let</span> proc_macro2::TokenTree::Ident(i) = &amp;buf[idx + <span class="number">2</span>] &#123;</span><br><span class="line">                                    <span class="keyword">if</span> i == &amp;<span class="keyword">self</span>.variable_ident</span><br><span class="line">                                        &amp;&amp; prefix.span().end() == p.span().start() <span class="comment">// 校验是否连续，无空格</span></span><br><span class="line">                                        &amp;&amp; p.span().end() == i.span().start()</span><br><span class="line">                                    &#123;</span><br><span class="line">                                        </span><br><span class="line">                                        <span class="keyword">let</span> new_ident_litral = <span class="built_in">format!</span>(<span class="string">&quot;&#123;&#125;&#123;&#125;&quot;</span>, prefix.to_string(), n);</span><br><span class="line">                                        <span class="keyword">let</span> new_ident = proc_macro2::Ident::new(new_ident_litral.as_str(), prefix.span());</span><br><span class="line">                                        ret.extend(quote::quote!(#new_ident));</span><br><span class="line">                                        idx += <span class="number">3</span>; <span class="comment">// 我们消耗了3个Token，所以这里要加3</span></span><br><span class="line">                                        <span class="keyword">continue</span>;</span><br><span class="line">                                    &#125;</span><br><span class="line">                                &#125;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">// 虽然这一关要支持新的模式，可以为了通过前面的关卡，老逻辑也得兼容。</span></span><br><span class="line">                    <span class="comment">// 写Parser的一个通用技巧：当有多个可能冲突的规则时，优先尝试最长的</span></span><br><span class="line">                    <span class="comment">// 规则，因为这个规则只需要看一个Token，而上面的规则需要看3个Token，</span></span><br><span class="line">                    <span class="comment">// 所以这个规则要写在上一个规则的下面，否则就会导致短规则抢占，长规则无法命中。</span></span><br><span class="line">                    <span class="keyword">if</span> prefix == &amp;<span class="keyword">self</span>.variable_ident &#123;</span><br><span class="line">                        <span class="keyword">let</span> new_ident = proc_macro2::Literal::i64_unsuffixed(n <span class="keyword">as</span> <span class="built_in">i64</span>);</span><br><span class="line">                        ret.extend(quote::quote!(#new_ident));</span><br><span class="line">                        idx += <span class="number">1</span>;</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    ret.extend(quote::quote!(#tree_node));</span><br><span class="line">                &#125;</span><br><span class="line">                _ =&gt; &#123;</span><br><span class="line">                    ret.extend(quote::quote!(#tree_node));</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            idx+=<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        ret</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过上面的代码修改，我们就已经可以成功通过第四关了。回忆前文的示意图，解析自定义语法有几种不同的方式，上面的解法实际还是基于先将<code>TokenStream</code>转换为<code>TokenTree</code>数组的方式来实现随机访问，也就是上面图中绿色背景所包含的内容，这些都是由<code>proc_macro2</code>这个包提供的数据结构和工具。我们将在下一关中来给大家讲解一下另一种解析语法树的方式，也就是上面图中黄色背景所包含的内容，这部分数据结构和工具是由<code>syn</code>包提供的。</p>
+<h3 id="第五关"><a href="#第五关" class="headerlink" title="第五关"></a>第五关</h3><p>这一关的题目要求是说，我们要在<code>seq!</code>宏用户书写的代码块中，找到<code>#(xxxxxxxxx)*</code>这种特定的模式，只有在这种模式内部，也就是<code>xxxxxxxx</code>对应的位置是需要重复的，而<code>#(xxxxxxxxx)*</code>模式之外的代码不能重复。</p>
+<p>所以这里我们还是要做一个和第四关差不多的模式匹配过程，不过这一次，我们使用一套全新的数据结构和工具：</p>
+<ul>
+<li>我们要将<code>proc_macro2::TokenStream</code>通过<code>syn::buffer::TokenBuffer::new2()</code>转换为一个<code>syn::buffer::TokenBuffer</code>类型的对象</li>
+<li>调用<code>syn::buffer::TokenBuffer</code>的<code>begin()</code>方法，可以得到一个指向<code>syn::buffer::TokenBuffer</code>开头的<code>Cursor</code>对象</li>
+<li><code>Cursor</code>对象提供了一系列方法，可以解析<code>TokenBuffer</code>中的Token，如果解析成功，则返回解析的元素以及一个【新的】<code>Cursor</code>对象，为了便于理解，可以看下面的图示：</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">blog</span></span>(ideawand: <span class="built_in">u8</span>, geek_kindergarten: <span class="built_in">u8</span>) &#123;&#125;</span><br><span class="line">^  ^   ^^                                 ^  ^ </span><br><span class="line">|  |   ||                                 |  |</span><br><span class="line">|  |   |c4                                e  |</span><br><span class="line">|  |   |                                     c5</span><br><span class="line">|  |   c3</span><br><span class="line">|  c2 </span><br><span class="line">c1</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>假设<code>TokenBuffer</code>中存储了<code>fn blog(ideawand: u8, geek_kindergarten: u8) &#123;&#125;</code>这一行代码对应的Token，则调用<code>TokenBuffer</code>的<code>begin()</code>方法，可以获得上述c1这个<code>Cursor</code>，这个<code>Cursor</code>指向了<code>TokenBuffer</code>的开头。</li>
+<li>调用<code>c1.ident()</code>方法，尝试将c1所指向的位置解析为一个标识符，如果成功，则会返回两个变量，一个是我们读取到的标识符，在这里也就是<code>fn</code>， 另一个是向后移动了一个Token的另一个新<code>Cursor</code>，也就是c2。</li>
+<li>我们可以继续调用c2的<code>ident()</code>方法，得到<code>blog</code>这个标识符，以及另一个新的<code>Cursor</code>，也就是c3</li>
+<li>对于c3,因为指向了一个括号，因此需要调用<code>c3.group()</code>这个方法，这个方法会返回两个新的<code>Cursor</code>,c4和c5,其c4指向这个group内部的第一个Token，而c5指向跨过这个Group以后的第一个Token</li>
+<li>如果此时要继续解析圆括号中的内容，那么就在c4上继续调用对应的方法，顺着c4往下走，c4走到图中e指向的位置时，便是走到了尽头，如果想跳过圆括号向后解析，则应该在c5上继续调用对应的方法，顺着c5走下去</li>
+<li>由于每一次都是返回一个新的<code>Cursor</code>，所以在需要回溯的地方只需要缓存一下对应的<code>Cursor</code>就可以了，比如在解析到c3的时候才发现情况不对，那么只需要丢掉c3,从c1或者c2继续往下解析就可以。</li>
+</ul>
+<p>好了，有了这么多的铺垫知识，我们可以开始写这一关的代码了，我们来写一个新的函数，用来从代码中识别出<code>#(xxxxxxxxx)*</code>这个模式,如果识别出来了，则调用我们在上一关中已经写好的<code>expand</code>函数。同时，我们需要额外返回一个布尔型的标记，用于标记我们是否成功进行了展开，因为要考虑前面几关的测试用例，当我们扫描完整个代码，发现并没有找到这样的模式时，我们还要用上一关实现的<code>expand</code>函数，对整体代码进行一次展开：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">find_block_to_expand_and_do_expand</span></span>(&amp;<span class="keyword">self</span>, c: syn::buffer::Cursor) -&gt; (proc_macro2::TokenStream, <span class="built_in">bool</span>) &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> found = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> cursor = c;</span><br><span class="line">        <span class="keyword">while</span> !cursor.eof() &#123;</span><br><span class="line">            <span class="comment">// 注意punct()这个函数的返回值，它会返回一个新的`Cursor`类型的值，</span></span><br><span class="line">            <span class="comment">// 这个新的Cursor指向了消耗掉当前标点符号以后，在TokenBuffer中的下一个位置</span></span><br><span class="line">            <span class="comment">// syn包提供的Cursor机制，并不是拿到一个Cursor以后，不断向后移动更新这个Cursor，</span></span><br><span class="line">            <span class="comment">// 而是每次都会返回给你一个全新的Cursor，新的Cursor指向新的位置，</span></span><br><span class="line">            <span class="comment">// 老的Cursor指向的位置保持不变</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((punct_prefix, cursor_1)) = cursor.punct()&#123;</span><br><span class="line">                <span class="keyword">if</span> punct_prefix.as_char() == <span class="string">&#x27;#&#x27;</span> &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((group_cur,_,cursor_2)) = cursor_1.group(proc_macro2::Delimiter::Parenthesis) &#123;</span><br><span class="line">                        <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((punct_suffix, cursor_3)) = cursor_2.punct() &#123;</span><br><span class="line">                            <span class="keyword">if</span> punct_suffix.as_char() == <span class="string">&#x27;*&#x27;</span> &#123;</span><br><span class="line">                                <span class="comment">// 走到这里，说明找到了匹配的模式，按照指定的次数开始展开</span></span><br><span class="line">                                <span class="keyword">for</span> i <span class="keyword">in</span> <span class="keyword">self</span>.start..<span class="keyword">self</span>.end &#123;</span><br><span class="line">                                    <span class="comment">// 因为之前expand是用TokenStream这一套写的，所以</span></span><br><span class="line">                                    <span class="comment">// 这里还要把Cursor转换为TokenStream。毕竟是演示嘛，</span></span><br><span class="line">                                    <span class="comment">// 希望在最少的代码里用到最多的特性，如果是自己写的话，</span></span><br><span class="line">                                    <span class="comment">// 可以用Cursor的方式来写expand函数，这样这里就可以</span></span><br><span class="line">                                    <span class="comment">// 直接把Cursor传进去了</span></span><br><span class="line">                                    <span class="keyword">let</span> t = <span class="keyword">self</span>.expand(&amp;group_cur.token_stream(), i);</span><br><span class="line">                                    ret.extend(t);</span><br><span class="line">                                &#125;</span><br><span class="line">                                <span class="comment">// 下面这行很重要，千万别忘了，把老的cursor丢了，替换成</span></span><br><span class="line">                                <span class="comment">// 新的，相当于把游标向前移动了</span></span><br><span class="line">                                cursor = cursor_3;</span><br><span class="line">                                found = <span class="literal">true</span>;</span><br><span class="line">                                <span class="keyword">continue</span></span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 走到这里，说明`#(xxxxxxxxx)*`这个模式没有匹配到，那么就要按照普通代码的各个元素来处理了。</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">// cursor也有用起来不方便的地方，比如在处理group的时候，我们没法统一处理()\[]\&#123;&#125;，需要把他们分别处理</span></span><br><span class="line">            <span class="comment">// 有一种暴力的做法，就是cursor提供了token_tree()方法，可以把当前游标指向的内容作为一个TokenTree返回，</span></span><br><span class="line">            <span class="comment">// 我们再去断言TokenTree是Group、Indet、Literal、Punct中的哪一种，这就相当于回到了上一关介绍的方法，</span></span><br><span class="line">            <span class="comment">// 回到了`proc_macro2`包提供的工具上去。</span></span><br><span class="line">            <span class="comment">// 所以我们这里本着尽量采用不重复的方式来讲解的原则，继续使用`cursor`提供的各种工具来完成本关题目</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((group_cur,_, next_cur)) = cursor.group(proc_macro2::Delimiter::Brace) &#123;</span><br><span class="line">                <span class="keyword">let</span> (t, f) = <span class="keyword">self</span>.find_block_to_expand_and_do_expand(group_cur);</span><br><span class="line">                found = f;</span><br><span class="line">                ret.extend(quote::quote!(&#123;#t&#125;));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((group_cur,_, next_cur)) = cursor.group(proc_macro2::Delimiter::Bracket) &#123;</span><br><span class="line">                <span class="keyword">let</span> (t, f) = <span class="keyword">self</span>.find_block_to_expand_and_do_expand(group_cur);</span><br><span class="line">                found = f;</span><br><span class="line">                ret.extend(quote::quote!([#t]));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((group_cur,_, next_cur)) = cursor.group(proc_macro2::Delimiter::Parenthesis) &#123;</span><br><span class="line">                <span class="keyword">let</span> (t, f) = <span class="keyword">self</span>.find_block_to_expand_and_do_expand(group_cur);</span><br><span class="line">                found = f;</span><br><span class="line">                ret.extend(quote::quote!((#t)));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((punct ,next_cur)) = cursor.punct() &#123;</span><br><span class="line">                ret.extend(quote::quote!(#punct));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((ident ,next_cur)) = cursor.ident() &#123;</span><br><span class="line">                ret.extend(quote::quote!(#ident));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((literal ,next_cur)) = cursor.literal() &#123;</span><br><span class="line">                ret.extend(quote::quote!(#literal));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="literal">Some</span>((lifetime ,next_cur)) = cursor.lifetime() &#123;</span><br><span class="line">                <span class="comment">// lifetime这种特殊的分类也是用cursor模式来处理的时候特有的，之前`proc_macro2::TokenTree`里面没有定义这个分类</span></span><br><span class="line">                ret.extend(quote::quote!(#lifetime));</span><br><span class="line">                cursor = next_cur;</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        (ret, found)</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后再修改一下过程宏的入口：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[proc_macro]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">seq</span></span>(input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> SeqParser);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 以下1行第五关新加，从TokenStream创建TokenBuffer</span></span><br><span class="line">    <span class="keyword">let</span> buffer = syn::buffer::TokenBuffer::new2(st.body.clone());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 以下4行第五关新加，首先尝试寻找`#(xxxxxxxxx)*`模式的代码块</span></span><br><span class="line">    <span class="keyword">let</span>(ret_1, expanded) =  st.find_block_to_expand_and_do_expand(buffer.begin());</span><br><span class="line">    <span class="keyword">if</span> expanded &#123;</span><br><span class="line">        <span class="keyword">return</span> ret_1.into()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 走到这里，说明`#(xxxxxxxxx)*`这个模式没有匹配到，那么重新使用上一关的方式，在整个代码块中尝试展开</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> st.start..st.end &#123;</span><br><span class="line">        ret.extend(st.expand(&amp;st.body, i))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ret.into();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>好了，通过上述的修改，通过第五关就没问题了。</p>
+<h3 id="第七关"><a href="#第七关" class="headerlink" title="第七关"></a>第七关</h3><p>这一关太简单了，唯一的一个知识点就是介绍一下<code>syn::parse::ParseStream</code>类型提供的<code>peek()</code>方法吧，它可以在不消耗<code>ParseStream</code>的情况下，后看一个Token是什么，类似的方法还有<code>peek2()</code>和<code>peek3()</code>，顾名思义，就是后看第二个或者第三个Token。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">parse</span></span>(input: syn::parse::ParseStream) -&gt; syn::<span class="built_in">Result</span>&lt;<span class="keyword">Self</span>&gt; &#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> variable_ident: syn::Ident = input.parse()?;</span><br><span class="line"></span><br><span class="line">        input.parse::&lt;syn::Token!(<span class="keyword">in</span>)&gt;()?;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> start: syn::LitInt = input.parse()?;</span><br><span class="line"></span><br><span class="line">        input.parse::&lt;syn::Token!(..)&gt;()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 以下5行第七关新加</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> inc = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> input.peek(syn::Token!(=)) &#123;</span><br><span class="line">            input.parse::&lt;syn::Token!(=)&gt;()?;</span><br><span class="line">            inc = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> end: syn::LitInt = input.parse()?;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">let</span> body_buf;</span><br><span class="line">        syn::braced!(body_buf <span class="keyword">in</span> input);</span><br><span class="line">        <span class="keyword">let</span> body: proc_macro2::TokenStream = body_buf.parse()?;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 第七关修改，将t改为mut的</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> t = SeqParser &#123;</span><br><span class="line">            variable_ident,</span><br><span class="line">            start: start.base10_parse()?,</span><br><span class="line">            end: end.base10_parse()?,</span><br><span class="line">            body,</span><br><span class="line">        &#125;;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 以下3行第七关新加</span></span><br><span class="line">        <span class="keyword">if</span> inc &#123;</span><br><span class="line">            t.end += <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">Ok</span>(t);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="第八关"><a href="#第八关" class="headerlink" title="第八关"></a>第八关</h3><p>这一关就是校验一下产生的错误提示信息是否正确。因为我们前面在拼接生成<code>XXX#N</code>这种模式的标识符的过程中，已经把新生成的标识符的span信息处理好了，所以这里可以直接通过。</p>
+<h3 id="第九关"><a href="#第九关" class="headerlink" title="第九关"></a>第九关</h3><p>这一关同样不用修改任何代码，出题者只是希望通过这个测试用例，来给我们演示一种Trick，展示了我们编写的过程宏如何与<code>macro_rules!</code>定义的普通宏交互配合。</p>
+<p>测试用例中想表达的意思就是，我们不能在过程宏使用其他代码中定义的const变量作为过程宏的入参，也就是比如我们在这道题目中实现的<code>seq!</code>，需要指定一个重复次数N，这个N不能是其他地方定义的常量。究其根本原因，还是我们已经在前面的文章中提到过很多次的问题：过程宏展开的时候还没有经过名称解析。</p>
+<p>然后这一关的测试用例，提出了另一种方法，就是通过<code>macro_rules!</code>的方式，来绕过这个限制，它的核心思想是这样的：</p>
+<ul>
+<li>你想定义一个const的变量，其实就是你想在一个地方定义一个值，然后在多个地方引用这个值。</li>
+<li>我可以定义一个宏，这个宏可以展开成一个常量的字面量，比如一个数字或者一个字符串</li>
+<li>相比于原来在各个地方直接引用const类型的变量，现在改成在需要的地方做一下宏展开</li>
+<li>最终效果都是一致的，无论是用const，还是用宏，如果我要修改这个常量，只要在一个地方修改就可以了</li>
+</ul>
+<p>当然，在本关的测试用中，出题者还是给我们演示了一下宏和const组合在一起使用的方法，即通过宏来定义一个const。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p><code>seq!</code>宏这道题目设涉及了<code>syn</code>包、<code>proc_macro2</code>包的很多使用技巧，也引入了很多新的数据类型。在文章开头我们给出了一张图片，当时大家可能看的比较懵，现在我们再拿出这张图来看一下，总结归纳一下这些数据类型的用法：</p>
+<p><img src="/images/rust_procedural_macro/custom_syntax_parsing_related_structs.png" alt="解析Rust自定义语法所需数据结构总结"></p>
+<p>首先是<code>syn::parse</code>模块提供的数据类型：</p>
+<ul>
+<li>左下角的<code>ParseStream</code>是我们在第一关中就遇到的类型，它实际是左下角<code>ParseBuffer</code>类型引用的一个别名</li>
+<li>无论是<code>ParseStream</code>还是<code>ParseBuffer</code>,这两个类型不能由我们自己来创建，只能通过<code>syn</code>包内部生成并通过某些接口提供给我们来使用</li>
+<li><code>ParseStream</code> 提供的是高层的封装，提供了很多高层次的API，详细内容请大家参阅<code>syn</code>的文档</li>
+</ul>
+<p>然后看<code>syn::buffer</code>模块提供的数据类型：</p>
+<ul>
+<li><code>TokenBuffer</code>是一个Token的容器，没有提供什么公开的方法，不能直接使用</li>
+<li>通过<code>Cursor</code>类型的对象来访问<code>TokenBuffer</code>中的Token</li>
+<li><code>syn::buffer</code>的底层使用了unsafe的方式，避免了遍历过程中的Copy，效率比较高</li>
+<li>上面提到的<code>syn::parse</code>模块也是基于<code>syn::buffer</code>实现的</li>
+</ul>
+<p>最后看一下<code>proc_macro2</code>模块提供的数据类型：</p>
+<ul>
+<li><code>TokenStream</code>是由<code>TokenTree</code>组成的树形结构，是最原生态的一种数据结构</li>
+<li>通过遍历<code>TokenStream</code>可以得到<code>TokenTree</code>数组，通过下标来随意地访问其中的内容</li>
+<li>不支持Copy，每次Clone会复制全部子节点，代价比较大</li>
+</ul>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/" title="Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目">http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Rust-%E8%BF%87%E7%A8%8B%E5%AE%8F-proc-macro-proc-macro-workshop/" rel="tag"># Rust,过程宏,proc-macro,proc_macro_workshop</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2021/10/01/writing-a-shared-library-using-rust-and-using-it-in-golang/" rel="next" title="实战：使用rust开发动态链接库并在Golang中使用">
+                  <i class="fa fa-chevron-left"></i> 实战：使用rust开发动态链接库并在Golang中使用
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E6%98%AF%E8%A7%86%E9%A2%91%E7%89%88%E6%9C%AC%E7%9A%84%E6%95%99%E7%A8%8B%EF%BC%8C%E6%96%87%E5%AD%97%E7%89%88%E6%9C%AC%E7%9A%84%E5%9C%A8%E4%B8%8B%E9%9D%A2"><span class="nav-number">1.</span> <span class="nav-text">先是视频版本的教程，文字版本的在下面~</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E5%AD%97%E7%89%88%E6%9C%AC"><span class="nav-number">2.</span> <span class="nav-text">文字版本</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3"><span class="nav-number">3.</span> <span class="nav-text">第一关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E5%85%B3"><span class="nav-number">4.</span> <span class="nav-text">第二关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E5%85%B3"><span class="nav-number">5.</span> <span class="nav-text">第三关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="nav-number">6.</span> <span class="nav-text">第四关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3"><span class="nav-number">7.</span> <span class="nav-text">第五关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%83%E5%85%B3"><span class="nav-number">8.</span> <span class="nav-text">第七关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="nav-number">9.</span> <span class="nav-text">第八关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B9%9D%E5%85%B3"><span class="nav-number">10.</span> <span class="nav-text">第九关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">11.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
