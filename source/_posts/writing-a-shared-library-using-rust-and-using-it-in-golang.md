@@ -1,5 +1,5 @@
 ---
-title: 实战：使用rust开发动态链接库并在Golang中使用
+title: 实战：使用rust开发动态链接库并在Golang中使用(上)
 date: 2021-10-01 22:35:57
 tags: rust, golang, shared library
 ---
