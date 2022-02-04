@@ -198,6 +198,79 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/" class="post-title-link" itemprop="url">Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-01-12 10:02:15" itemprop="dateCreated datePublished" datetime="2022-01-12T10:02:15+08:00">2022-01-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-04 23:19:57" itemprop="dateModified" datetime="2022-02-04T23:19:57+08:00">2022-02-04</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>本系列的上一篇文章中，我们实战了<code>proc_macro_workshop</code>项目的<code>seq</code>题目。前面三篇文章已经给大家介绍过了rust三种过程宏里面的两种，也就是派生式过程宏和函数式过程宏，这一次我们要介绍的是最后一种，也就是属性样式的过程宏。</p>
+<p>好了，不废话了，准备好一台电脑，开始我们的第四个挑战任务<code>sorted</code></p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -855,86 +928,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2020/03/22/how-to-write-tail-command-in-python/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Myrfy">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="IdeaWand">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/03/22/how-to-write-tail-command-in-python/" class="post-title-link" itemprop="url">实战:用Python实现tail命令</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-03-22 11:22:05" itemprop="dateCreated datePublished" datetime="2020-03-22T11:22:05+08:00">2020-03-22</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-03-29 20:59:39" itemprop="dateModified" datetime="2020-03-29T20:59:39+08:00">2020-03-29</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="背景介绍"><a href="#背景介绍" class="headerlink" title="背景介绍"></a>背景介绍</h1><p><code>tail</code>命令作为linux下最常用的命令之一，大家肯定不陌生，<code>tail -f</code>用法更是排查问题查看日志的利器。很多日志收集工具，比如logstash、filebeat、flume等，也都能实现<code>tail -f</code>的类似功能，从文件末尾不断读取新的内容，并发送到指定的收集服务集群。那么，要实现这样一个工具，我们要用到哪些与文件操作有关的知识呢？</p>
-<p>笔者曾经遇到这样的场景，公司采用zipkin来追踪各个系统之间的调用关系，每个子系统产生自己的日志并落盘，由每台服务器上部署的flume来收集日志并收集上报。</p>
-<p>那么就有了一个问题，线上环境有公司的整套日志系统，而开发环境比较简陋，并没有部署收集工具。考虑到flume和logstash都是java系，有点重，而filebeat有个坑就是上报数据它一定会自作主张给外面套上一层结构，导致收集集群无法识别，于是笔者就想，能不能用python脚本，争取在50行代码之内，实现一个日志收集上报工具呢？</p>
-<p>我们要解决如下几个问题:</p>
-<ul>
-<li>如何快速定位到文件最后的n行？</li>
-<li>日志文件可能发生切割，如何保证日志切割后还能正确读取最新的文件？</li>
-<li>如何高效的尽快检测到文件写入？</li>
-</ul>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/03/22/how-to-write-tail-command-in-python/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -1022,7 +1015,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2022</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>

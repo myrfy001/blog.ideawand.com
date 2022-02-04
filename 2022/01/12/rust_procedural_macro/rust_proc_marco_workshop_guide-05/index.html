@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的seq题目。前面三篇文章已经给大家介绍过了rust三种过程宏里面的两种，也就是派生式过程宏和函数式过程宏，这一次我们要介绍的是最后一种，也就是属性样式的过程宏。 好了，不废话了，准备好一台电脑，开始我们的第四个挑战任务sorted">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)">
+<meta property="og:url" content="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="本系列的上一篇文章中，我们实战了proc_macro_workshop项目的seq题目。前面三篇文章已经给大家介绍过了rust三种过程宏里面的两种，也就是派生式过程宏和函数式过程宏，这一次我们要介绍的是最后一种，也就是属性样式的过程宏。 好了，不废话了，准备好一台电脑，开始我们的第四个挑战任务sorted">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-01-12T02:02:15.000Z">
+<meta property="article:modified_time" content="2022-02-04T15:19:57.963Z">
+<meta property="article:author" content="Myrfy">
+<meta property="article:tag" content="Rust,过程宏,proc-macro,proc_macro_workshop">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏) | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-01-12 10:02:15" itemprop="dateCreated datePublished" datetime="2022-01-12T10:02:15+08:00">2022-01-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-02-04 23:19:57" itemprop="dateModified" datetime="2022-02-04T23:19:57+08:00">2022-02-04</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本系列的上一篇文章中，我们实战了<code>proc_macro_workshop</code>项目的<code>seq</code>题目。前面三篇文章已经给大家介绍过了rust三种过程宏里面的两种，也就是派生式过程宏和函数式过程宏，这一次我们要介绍的是最后一种，也就是属性样式的过程宏。</p>
+<p>好了，不废话了，准备好一台电脑，开始我们的第四个挑战任务<code>sorted</code></p>
+<span id="more"></span>
+
+<h3 id="先是视频版本的教程，文字版本的在下面"><a href="#先是视频版本的教程，文字版本的在下面" class="headerlink" title="先是视频版本的教程，文字版本的在下面~"></a>先是视频版本的教程，文字版本的在下面~</h3><ul>
+<li><p>Rust过程宏开发实战系列(5-1)【属性式过程宏】sorted题目1-4关</p>
+<iframe src="//player.bilibili.com/player.html?aid=336973972&bvid=BV1uR4y147t2&cid=450642274&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+</li>
+<li><p>Rust过程宏开发实战系列(5-2)【属性式过程宏】sorted题目5-8关</p>
+<iframe src="//player.bilibili.com/player.html?aid=465380547&bvid=BV1bL411V7aC&cid=476549454&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
+
+
+</li>
+</ul>
+<h3 id="文字版本开始"><a href="#文字版本开始" class="headerlink" title="文字版本开始~"></a>文字版本开始~</h3><p>首先打开<code>proc_macro_workshop</code>项目的<code>readme.md</code>文件，看一下<code>sorted</code>这个项目要实现什么样的功能。根据其中的描述，这个题目的最终目标是实现一个可以检测枚举类型中各个成员的排列顺序是否严格按照字母表的顺序递增排列，如果发现有的成员名字与相邻的成员不是递增关系，则抛出异常终止编译，可以说，这个宏是强迫症患者的福音了。</p>
+<p>这里提前说明一下，属性式的过程宏和派生式的过程宏写起来很像，所以大家在学习的时候，可以对照着前面的<code>builder</code>题目以及<code>debug</code>题目来学习。在接下来的文章中，我们会先介绍一下属性式过程宏和派生式过程宏的区别，然后与之前不同的是，由于大量知识是前面已经给大家介绍过的，所以这篇文章就不再一关一关的进行了，而是会把相似的几个关卡合成一个主题来讲解，这样会让文章紧凑一些，但是也意味着，如果你还没有对派生式的过程宏有一个了解，那么强烈建议你先去看前面的文章。你可以访问我的个人博客<a href="http://blog.ideawand.com">http://blog.ideawand.com</a> 来阅读之前的文章，或者关注我的微信公众号【极客幼稚园】阅读之前的文章。好了，我们先开始对比一下派生式过程宏和属性式过程宏的异同点。</p>
+<table>
+  <tr>
+    <td></td>
+    <td>派生式</td>
+    <td>属性式</td>
+  </tr>
+  <tr>
+    <td>调用方法</td>
+    <td>#[derive(XXX)]</br>必须以derive开头</td>
+    <td>#[XXX(YYY,ZZZ.....)]</br>#[]内部可以任何的合法标识符开头作为宏的名字，且宏的名字后面可以写任意合法的TokenStream</td>
+  </tr>
+    <tr>
+    <td>目标代码块</td>
+    <td>只能是struct、enum、union</td>
+    <td>语法树中Item节点对应的代码块，</br>除了struct、enum、union以外，还可以包含函数、impl块、mod块、trait等等</br>全部列表可以参见https://docs.rs/syn/1.0.73/syn/enum.Item.html</td>
+  </tr>
+  </tr>
+    <tr>
+    <td>代码修改能力</td>
+    <td>只能添加代码，不能修改被修饰的原始代码，即不能修改被装饰的struct、enum、union内部的代码</td>
+    <td>可以替换、删除、新增代码，对被修饰的代码有完全的掌控权限</td>
+  </tr>
+  </tr>
+    <tr>
+    <td>入口函数签名</td>
+    <td>#[proc_macro_derive(Builder)]</br>
+pub fn derive(input: TokenStream) -> TokenStream {}</br></br>有一个入参，对应被修饰的struct/enum/union代码块</td>
+    <td>#[proc_macro_attribute]</br>
+pub fn sorted(args: TokenStream, input: TokenStream) -> TokenStream {}</br></br>有两个入参，第一个入参对应宏调用本身（也就是#[xxxxx]这一行），第二个参数代表被修饰的代码块</td>
+  </tr>
+
+</table>
+
+<h3 id="第一关-第四关"><a href="#第一关-第四关" class="headerlink" title="第一关 ~ 第四关"></a>第一关 ~ 第四关</h3><p>为了加快速度，增加干货，减少废话，我们把前四关的代码放在一起整体实现。毕竟这里面用到的知识点我们在前面已经见过很多次了。</p>
+<ul>
+<li>第一关告诉我们将输入的TokenStream解析成<code>syn::Item</code>语法树节点，并且提示我们为了使用<code>syn::Item</code>我们需要开启<code>syn</code>的<code>full</code>特性。</li>
+<li>第二关的测试用例要求我们检查过程宏是否作用在枚举体上，同时告诉我们如何设计函数的返回值，从而利用<code>syn::Result</code>和其<code>to_compile_error</code>方法的组合实现统一的编译错误提示。关于<code>syn::Result</code>和<code>to_compile_error</code>的组合模式，我们在之前的<a href="https://blog.ideawand.com/2021/03/24/rust_procedural_macro/rust_proc_marco_workshop_guide-02/">《Rust过程宏系列教程(2)–实现proc-macro-workshop项目之Builder题目》</a>和<a href="https://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/">《Rust过程宏系列教程(3)–实现proc_macro_workshop项目之debug题目》</a>两篇文章中都有提及，大家不熟悉的话可以回看一下。<ul>
+<li>第二关会使用到<code>proc_macro2::Span::call_site()</code>来获取过程宏调用的位置</li>
+</ul>
+</li>
+<li>第三关和第四关都是要检查枚举体的成员是否按字母顺序排列，是本道题目的核心功能，第四关相比第三关，只是支持的枚举类型更加复杂一点，要注意输出结果span的调整。</li>
+</ul>
+<p>好，开始搭架子，首先是整个入口框架：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"><span class="keyword">use</span> syn::&#123;<span class="keyword">self</span>, spanned::Spanned&#125;;</span><br><span class="line"><span class="keyword">use</span> quote::&#123;ToTokens, quote&#125;;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro_attribute]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">sorted</span></span>(args: TokenStream, input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line">    <span class="comment">// 解析为syn::Item语法树节点（源自测试用例01的提示）</span></span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> syn::Item); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 宏的入口使用syn::Result，配合syn::Result::to_compile_error使用（源自测试用例02的提示）</span></span><br><span class="line">    <span class="keyword">match</span> do_expand(&amp;st) &#123;</span><br><span class="line">        <span class="literal">Ok</span>(token_stream) =&gt; token_stream.into(),</span><br><span class="line">        <span class="literal">Err</span>(e) =&gt; e.to_compile_error().into(),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">do_expand</span></span>(st: &amp;syn::Item) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> ret = proc_macro2::TokenStream::new();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>下面来写前四关的主体逻辑，需要注意的点都标明在注释中了。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">do_expand</span></span>(st: &amp;syn::Item) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123; </span><br><span class="line">    <span class="keyword">let</span> ret = <span class="keyword">match</span> st &#123;</span><br><span class="line">        syn::Item::Enum(enum_node) =&gt; check_enum_order(enum_node),</span><br><span class="line">        <span class="comment">// 注意下面call_site()方法的使用，它可以获得过程宏被调用的位置，这样才可以满足测试用例02的输出要求</span></span><br><span class="line">        _ =&gt; syn::<span class="built_in">Result</span>::<span class="literal">Err</span>(syn::Error::new(proc_macro2::Span::call_site(), <span class="string">&quot;expected enum or match expression&quot;</span>))</span><br><span class="line">    &#125;?;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">Ok</span>(ret);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">check_enum_order</span></span>(st: &amp;syn::ItemEnum) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt;&#123;</span><br><span class="line">    <span class="comment">// 这里是核心的比较算法，构造两个数组，一个是排序的，一个是没有排序的，同时从头遍历，遇到第一个不一致的位置就是需要提示错误的位置</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> origin_names: <span class="built_in">Vec</span>&lt;_&gt; = st.variants.iter().map(|item|&#123;(item.ident.to_string(), item)&#125;).collect();</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> sorted_origin_names = origin_names.clone();</span><br><span class="line">    sorted_origin_names.sort_by(|a,b|&#123;a.<span class="number">0</span>.cmp(&amp;b.<span class="number">0</span>)&#125;);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (a,b) <span class="keyword">in</span> origin_names.iter().zip(sorted_origin_names.iter()) &#123;</span><br><span class="line">        <span class="keyword">if</span> a.<span class="number">0</span> != b.<span class="number">0</span> &#123;</span><br><span class="line">            <span class="comment">// 注意下面一行要使用`b.1.ident.span()`，而不是`b.1.span()`，因为测试用例04的输出结果中只有Ident部分被特别标出</span></span><br><span class="line">            <span class="keyword">return</span> syn::<span class="built_in">Result</span>::<span class="literal">Err</span>(syn::Error::new(b.<span class="number">1</span>.ident.span(), <span class="built_in">format!</span>(<span class="string">&quot;&#123;&#125; should sort before &#123;&#125;&quot;</span>, b.<span class="number">0</span>, a.<span class="number">0</span>)))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> syn::<span class="built_in">Result</span>::<span class="literal">Ok</span>(st.to_token_stream())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接下来跑一下测试用例，会发现有两个问题：</p>
+<ul>
+<li>首先因为有3关都是校验标注错误输出的，因为我们代码中有未使用的变量和import的内容，所以要修改一下</li>
+<li>第二个是，当我们发现第一个顺序不对的元素就返回时，会导致最后返回给编译器的的<code>TokenStream</code>中只包含错误信息，这就等同于被我们的过程宏所修饰的整个枚举体被从代码中删掉了，这样会导致编译器输出其他的异常信息，从而导致标准输出中的错误和预期不一致，因此，不管是否有错误发生，我们都要返回给编译器原来的完整的枚举体。这个地方和派生式过程宏是有区别的，因为派生式的过程宏只能添加代码，不能删掉已有的代码，所以你报错之后直接返回空的<code>TokenStream</code>没有什么问题，但是在属性式的过程宏中麻烦就大了，返回空的<code>TokenStream</code>等于删掉了被过程宏修饰的代码，所以修改后的入口函数如下,修改点参见注释：</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> proc_macro::TokenStream;</span><br><span class="line"><span class="keyword">use</span> syn;</span><br><span class="line"><span class="keyword">use</span> quote::ToTokens;</span><br><span class="line"><span class="keyword">use</span> proc_macro2;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[proc_macro_attribute]</span></span><br><span class="line"><span class="comment">// 下面的_args入参因为用不到，所以加一个下划线，避免出现警告信息</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">sorted</span></span>(_args: TokenStream, input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析为syn::Item语法树节点（源自测试用例01的提示）</span></span><br><span class="line">    <span class="keyword">let</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> syn::Item); </span><br><span class="line"></span><br><span class="line">    <span class="comment">// 宏的入口使用syn::Result，配合syn::Result::to_compile_error使用（源自测试用例02的提示）</span></span><br><span class="line">    <span class="keyword">match</span> do_expand(&amp;st) &#123;</span><br><span class="line">        <span class="literal">Ok</span>(token_stream) =&gt; token_stream.into(),</span><br><span class="line">        <span class="literal">Err</span>(e) =&gt; &#123;</span><br><span class="line">            <span class="comment">// 下面这一行拿到的TokenStream是空的，里面只包含了错误信息，没有代码信息</span></span><br><span class="line">            <span class="keyword">let</span> <span class="keyword">mut</span> t = e.to_compile_error();</span><br><span class="line">            <span class="comment">// 将原始的用户代码塞进去，这样返回结果中既包含代码信息，也包含错误信息</span></span><br><span class="line">            t.extend(st.to_token_stream());</span><br><span class="line">            t.into()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="第五关-第八关"><a href="#第五关-第八关" class="headerlink" title="第五关 ~ 第八关"></a>第五关 ~ 第八关</h3><p>这五关其实也不难，其更重要的意义是给我们提供了一个通过过程宏来扩展rust编译器功能的案例，并且可以尝试使用<code>syn</code>提供的<code>VisitMut</code>Trait以访问者的模式来对语法树节点进行修改。</p>
+<p>在<code>procmarco_workshop</code>作者设置这道题目的时候，rust的编译器的稳定版本还不支持在<code>match</code>语句块上增加属性标签，也就是下面这段代码中的<code>#[sorted]</code>是不能写在这个地方的（不过有可能你看到这篇文章时，这个特性已经稳定加入rust编译器了）。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[sorted]</span></span><br><span class="line"><span class="keyword">match</span> my_works &#123;</span><br><span class="line">    Blog =&gt; <span class="string">&quot;blog.ideawand.com&quot;</span>,</span><br><span class="line">    BiliBili =&gt; <span class="string">&quot;&quot;</span>,</span><br><span class="line">    Wechat =&gt; <span class="string">&quot;&quot;</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于这个特性还没有稳定，所以我们不能使用编译器的这个特性。为了绕过这个问题，我们引入一个新的过程宏来修饰包含match语句的函数，因为函数本身是可以被过程宏修饰的，我们让这个处理函数的过程宏检测代码中是否有match语句被<code>#[sorted]</code>修饰，如果有，就把match语句块上的<code>#[sorted]</code>去掉，同时检测这个match语句块的各个分支是否按照字母顺序排列。下面给出了一个例子：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[sorted::check]</span>   <span class="comment">// 这里是过程宏的调用</span></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">foo</span></span>() &#123;</span><br><span class="line">  <span class="meta">#[sorted]</span>     <span class="comment">// 这一行会被外面的过程宏去掉，在这里就是一个标记，最终编译器看不到这个标签</span></span><br><span class="line">  <span class="keyword">match</span> my_works &#123;</span><br><span class="line">      Blog =&gt; <span class="string">&quot;blog.ideawand.com&quot;</span>,</span><br><span class="line">      BiliBili =&gt; <span class="string">&quot;&quot;</span>,</span><br><span class="line">      Wechat =&gt; <span class="string">&quot;&quot;</span>,</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>关于访问者模式，我们在前面的文章<a href="https://blog.ideawand.com/2021/06/26/rust_procedural_macro/rust_proc_marco_workshop_guide-03/">《Rust过程宏系列教程(3)–实现proc_macro_workshop项目之debug题目》</a>中已经介绍过，只不过之前使用的是只读模式的Visitor,而在这一关中我们要使用可变的Visitor,记得要在<code>Cargo.toml</code>中为syn增加<code>visit-mut</code>特性以开启可修改的访问者模式。</p>
+<p>第六关和第七关是第五关的强化版，我们要用的一个新的语法树节点<code>syn::Pat</code>,它表示了一个匹配模式，由于match语句中可以使用的匹配模式很多，例如列表也可以作为一个匹配模式，但在我们的过程宏中，如果某个match分支的匹配模式是一个列表，那么比较顺序就失去了意义，所以我们只处理<code>Pat::Path</code>、<code>Pat::TupleStruct</code>和<code>Pat::Struct</code>。</p>
+<p>最后的第八关，因为在Ascii编码中，<code>_</code>对应的位置本来就排在所有字母的后面，所以我们的比较逻辑不需要做任何调整，应该可以直接通过。</p>
+<p>好了，下面开始上代码，下面这段代码和上面的代码写在一个文件里就行，相当于这个时候我们在一个文件里定义了两个属性式的过程宏，重要信息请依然阅读其中的注释：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[proc_macro_attribute]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="function"><span class="keyword">fn</span> <span class="title">check</span></span>(_args: TokenStream, input: TokenStream) -&gt; TokenStream &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这个过程宏的目标是函数，所以我们一上来就将其直接解析为函数块定义的节点</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> st = syn::parse_macro_input!(input <span class="keyword">as</span> syn::ItemFn); </span><br><span class="line"></span><br><span class="line">    <span class="keyword">match</span> do_match_expand(&amp;<span class="keyword">mut</span> st) &#123;</span><br><span class="line">        <span class="literal">Ok</span>(token_stream) =&gt; token_stream.into(),</span><br><span class="line">        <span class="literal">Err</span>(e) =&gt; &#123;</span><br><span class="line">            <span class="keyword">let</span> <span class="keyword">mut</span> t = e.to_compile_error();</span><br><span class="line">            t.extend(st.to_token_stream());</span><br><span class="line">            t.into()</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">do_match_expand</span></span>(st: &amp;<span class="keyword">mut</span> syn::ItemFn) -&gt; syn::<span class="built_in">Result</span>&lt;proc_macro2::TokenStream&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 创建Visitor并通过Visitor模式完成核心工作：从语法树节点找到满足条件的match语句块</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> visitor = MatchVisitor&#123;err:<span class="literal">None</span>&#125;;</span><br><span class="line"></span><br><span class="line">    visitor.visit_item_fn_mut(st);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> visitor.err.is_none() &#123;</span><br><span class="line">        <span class="keyword">return</span> syn::<span class="built_in">Result</span>::<span class="literal">Ok</span>( st.to_token_stream())</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> syn::<span class="built_in">Result</span>::<span class="literal">Err</span>(visitor.err.unwrap());</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义一个工具函数，用于把一个Path类型转换为形如AA::BB::CC形式的字符串，这个主要是为了测试用例06使用</span></span><br><span class="line"><span class="function"><span class="keyword">fn</span> <span class="title">get_path_string</span></span>(p: &amp;syn::Path) -&gt; <span class="built_in">String</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut</span> buf = <span class="built_in">Vec</span>::new();</span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> &amp;p.segments &#123;</span><br><span class="line">        buf.push(i.ident.to_string());</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> buf.join(<span class="string">&quot;::&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义Visitor</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">MatchVisitor</span></span> &#123;</span><br><span class="line">    err: <span class="built_in">Option</span>&lt;syn::Error&gt;,</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">impl</span> syn::visit_mut::VisitMut <span class="keyword">for</span> MatchVisitor &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">visit_expr_match_mut</span></span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, i: &amp;<span class="keyword">mut</span> syn::ExprMatch) &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut</span> target_idx:<span class="built_in">isize</span> = -<span class="number">1</span>;</span><br><span class="line">        <span class="comment">// 尝试锁定携带了`sorted`标记的match语句块</span></span><br><span class="line">        <span class="keyword">for</span> (idx, attr) <span class="keyword">in</span> i.attrs.iter().enumerate() &#123;</span><br><span class="line">            <span class="keyword">if</span> get_path_string(&amp;attr.path) == <span class="string">&quot;sorted&quot;</span> &#123;</span><br><span class="line">                target_idx = idx <span class="keyword">as</span> <span class="built_in">isize</span>;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> target_idx != -<span class="number">1</span> &#123;</span><br><span class="line">            <span class="comment">// 删除掉编译器不支持的写在match语句块上面的属性标签</span></span><br><span class="line">            i.attrs.remove(target_idx <span class="keyword">as</span> <span class="built_in">usize</span>);</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">let</span> <span class="keyword">mut</span> match_arm_names = <span class="built_in">Vec</span>::new();</span><br><span class="line">            <span class="keyword">for</span> arm <span class="keyword">in</span> &amp;i.arms &#123;</span><br><span class="line">                <span class="comment">// 按照测试用例06的提示，我们要处理三种匹配模式，测试用例07告诉我们对于不支持的模式需要抛出异常</span></span><br><span class="line">                <span class="keyword">match</span> &amp;arm.pat &#123;</span><br><span class="line">                    syn::Pat::Path(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    syn::Pat::TupleStruct(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    syn::Pat::Struct(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    _ =&gt; &#123;</span><br><span class="line">                        <span class="keyword">self</span>.err = <span class="literal">Some</span>(syn::Error::new_spanned(&amp;arm.pat, <span class="string">&quot;unsupported by #[sorted]&quot;</span>));</span><br><span class="line">                        <span class="keyword">return</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 这里的算法和前面4关完全一样</span></span><br><span class="line">            <span class="keyword">let</span> <span class="keyword">mut</span> sorted_names = match_arm_names.clone();</span><br><span class="line">            sorted_names.sort_by(|a,b|&#123;a.<span class="number">0</span>.cmp(&amp;b.<span class="number">0</span>)&#125;);</span><br><span class="line">            <span class="keyword">for</span> (a,b) <span class="keyword">in</span> match_arm_names.iter().zip(sorted_names.iter()) &#123;</span><br><span class="line">                <span class="keyword">if</span> a.<span class="number">0</span> != b.<span class="number">0</span> &#123;</span><br><span class="line">                    <span class="keyword">self</span>.err = <span class="literal">Some</span>(syn::Error::new_spanned(b.<span class="number">1</span>, <span class="built_in">format!</span>(<span class="string">&quot;&#123;&#125; should sort before &#123;&#125;&quot;</span>, b.<span class="number">0</span>, a.<span class="number">0</span>)));</span><br><span class="line">                    <span class="keyword">return</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 继续迭代深层次的match</span></span><br><span class="line">        visit_mut::visit_expr_match_mut(<span class="keyword">self</span>, i)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码前面7关都可以通过，但是最后一关过不了，因为我们只考虑测试用例06提示我们的3种匹配模式还不够，测试用例08又引入了两种match模式。比较烦恼的是这两个新的模式和我们上面已经支持的3种模式，他们的语法树节点结构不太一样,我们获取span信息的方法需要修改。通过阅读<code>syn::Error::new_spanned()</code>的定义，我们知道需要传入一个满足<code>quote::ToTokens</code> Trait的对象才可以，所以这里动用一下trait object来解决在列表中存储不同类型语法树节点的问题，修改后的代码如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> syn::visit_mut::VisitMut <span class="keyword">for</span> MatchVisitor &#123;</span><br><span class="line">    <span class="function"><span class="keyword">fn</span> <span class="title">visit_expr_match_mut</span></span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, i: &amp;<span class="keyword">mut</span> syn::ExprMatch) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 省略部分没有改变代码 。。。。。。</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> target_idx != -<span class="number">1</span> &#123;</span><br><span class="line">            i.attrs.remove(target_idx <span class="keyword">as</span> <span class="built_in">usize</span>);</span><br><span class="line">            <span class="comment">// 显示指定trait object的类型</span></span><br><span class="line">            <span class="keyword">let</span> <span class="keyword">mut</span> match_arm_names: <span class="built_in">Vec</span>&lt;(_, &amp;<span class="keyword">dyn</span> ToTokens)&gt; = <span class="built_in">Vec</span>::new();</span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> arm <span class="keyword">in</span> &amp;i.arms &#123;</span><br><span class="line">                <span class="keyword">match</span> &amp;arm.pat &#123;</span><br><span class="line">                    syn::Pat::Path(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    syn::Pat::TupleStruct(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    syn::Pat::Struct(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((get_path_string(&amp;p.path), &amp;p.path));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    <span class="comment">// 下面新增两种匹配模式的处理</span></span><br><span class="line">                    syn::Pat::Ident(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((p.ident.to_string(), &amp;p.ident));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    syn::Pat::Wild(p) =&gt; &#123;</span><br><span class="line">                        match_arm_names.push((<span class="string">&quot;_&quot;</span>.to_string(), &amp;p.underscore_token));</span><br><span class="line">                    &#125;,</span><br><span class="line">                    _ =&gt; &#123;</span><br><span class="line">                        <span class="keyword">self</span>.err = <span class="literal">Some</span>(syn::Error::new_spanned(&amp;arm.pat, <span class="string">&quot;unsupported by #[sorted]&quot;</span>));</span><br><span class="line">                        <span class="keyword">return</span></span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 省略部分没有改变代码 。。。。。。</span></span><br><span class="line">        &#125;</span><br><span class="line">       <span class="comment">// 省略部分没有改变代码 。。。。。。</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>至此，全部测试用例通过~</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/" title="Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)">http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Rust-%E8%BF%87%E7%A8%8B%E5%AE%8F-proc-macro-proc-macro-workshop/" rel="tag"># Rust,过程宏,proc-macro,proc_macro_workshop</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2021/10/17/rust_procedural_macro/rust_proc_marco_workshop_guide-04/" rel="next" title="Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目">
+                  <i class="fa fa-chevron-left"></i> Rust过程宏系列教程(4)--实现proc_macro_workshop项目之seq题目
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%88%E6%98%AF%E8%A7%86%E9%A2%91%E7%89%88%E6%9C%AC%E7%9A%84%E6%95%99%E7%A8%8B%EF%BC%8C%E6%96%87%E5%AD%97%E7%89%88%E6%9C%AC%E7%9A%84%E5%9C%A8%E4%B8%8B%E9%9D%A2"><span class="nav-number">1.</span> <span class="nav-text">先是视频版本的教程，文字版本的在下面~</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%87%E5%AD%97%E7%89%88%E6%9C%AC%E5%BC%80%E5%A7%8B"><span class="nav-number">2.</span> <span class="nav-text">文字版本开始~</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E5%85%B3-%E7%AC%AC%E5%9B%9B%E5%85%B3"><span class="nav-number">3.</span> <span class="nav-text">第一关 ~ 第四关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AC%AC%E4%BA%94%E5%85%B3-%E7%AC%AC%E5%85%AB%E5%85%B3"><span class="nav-number">4.</span> <span class="nav-text">第五关 ~ 第八关</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
