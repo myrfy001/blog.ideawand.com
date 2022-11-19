@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="alternate" href="/atom.xml" title="IdeaWand" type="application/atom+xml">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '7.5.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"always","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="这篇博客是我受邀在清华大学开源操作系统训练营活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106。 本讲义的视频回放：  第一次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106&#x2F;replay&#x2F;3772 第二次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="rCore tutorial 实验入门指导(持续更新中)">
+<meta property="og:url" content="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/index.html">
+<meta property="og:site_name" content="IdeaWand">
+<meta property="og:description" content="这篇博客是我受邀在清华大学开源操作系统训练营活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106。 本讲义的视频回放：  第一次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106&#x2F;replay&#x2F;3772 第二次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;1">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-11-18T07:00:10.000Z">
+<meta property="article:modified_time" content="2022-11-19T14:52:44.378Z">
+<meta property="article:author" content="Myrfy">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+<script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  <title>rCore tutorial 实验入门指导(持续更新中) | IdeaWand</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
+    <script>
+      var host = window.location.hostname;
+      if (host !== "localhost" || !true) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-109133538-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?bbacc323b97a99015e18a0f4ac809c48";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">IdeaWand</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">A Wand Makes Your Ideas Come True</p>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          rCore tutorial 实验入门指导(持续更新中)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-18 15:00:10" itemprop="dateCreated datePublished" datetime="2022-11-18T15:00:10+08:00">2022-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-19 22:52:44" itemprop="dateModified" datetime="2022-11-19T22:52:44+08:00">2022-11-19</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>这篇博客是我受邀在清华大学<code>开源操作系统训练营</code>活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106%E3%80%82">https://os2edu.cn/course/106。</a></p>
+<p>本讲义的视频回放：</p>
+<ul>
+<li>第一次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3772">https://os2edu.cn/course/106/replay/3772</a></li>
+<li>第二次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3789">https://os2edu.cn/course/106/replay/3789</a></li>
+</ul>
+<p>清华大学<code>开源操作系统训练营</code>活动的相关链接如下：</p>
+<ul>
+<li>训练营活动github地址：<a target="_blank" rel="noopener" href="https://github.com/LearningOS/rust-based-os-comp2022">https://github.com/LearningOS/rust-based-os-comp2022</a></li>
+<li>清华大学开源操作系统社区：<a target="_blank" rel="noopener" href="https://os2edu.cn/">https://os2edu.cn</a></li>
+</ul>
+<p>阅读本讲义之前必须要在手头准备好的4个文档：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://riscvbook.com/chinese/RISC-V-Reader-Chinese-v2p1.pdf">《RISC-V 手册-一本开源指令集指南》</a></li>
+<li><a target="_blank" rel="noopener" href="https://content.riscv.org/wp-content/uploads/2018/05/riscv-privileged-BCN.v7-2.pdf">PPT for RISC-V特权指令级架构</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf">Unprivileged Spec</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf">Pivileged Spec</a></li>
+</ul>
+<span id="more"></span>
+
+<h1 id="什么是RISC-V"><a href="#什么是RISC-V" class="headerlink" title="什么是RISC-V"></a>什么是RISC-V</h1><p>先看一下riscv.org官网的介绍：</p>
+<blockquote>
+<p>RISC-V is an <strong>open</strong> standard Instruction Set Architecture (<strong>ISA</strong>) enabling a new era of processor innovation through <strong>open</strong> collaboration</p>
+</blockquote>
+<ul>
+<li>免费开源、开放社区</li>
+<li>只是一个架构规范，现实世界中存在各种各样的具体实现。</li>
+</ul>
+<blockquote>
+<p>不重要的小知识：注意区分处理器内核和SOC这两个概念。 SOC &#x3D; 处理器内核 + 片上外设。 我们现在讨论的是处理器内核，而不涉及到片上的外设。 等大家进入到下一阶段，可能会在实际的硬件上编写操作系统，这时你用到的芯片里面可能有FLASH存储器、显示屏驱动接口、USB通信等等功能，但是这些都属于芯片内部的外设，外设受处理器内核的管控。</p>
+</blockquote>
+<h1 id="特权级架构PPT-《RISC-V-手册-一本开源指令集指南》第十章"><a href="#特权级架构PPT-《RISC-V-手册-一本开源指令集指南》第十章" class="headerlink" title="特权级架构PPT + 《RISC-V 手册 一本开源指令集指南》第十章"></a>特权级架构PPT + 《RISC-V 手册 一本开源指令集指南》第十章</h1><h3 id="P2，目录"><a href="#P2，目录" class="headerlink" title="P2，目录"></a>P2，目录</h3><p>基本上除了最后一节Counters之外其他的所有内容，都要在接下来的实验中用到。</p>
+<h3 id="P3，为什么需要特权级架构"><a href="#P3，为什么需要特权级架构" class="headerlink" title="P3，为什么需要特权级架构"></a>P3，为什么需要特权级架构</h3><p>管理、保护共享资源，对上层用户屏蔽下层实现细节</p>
+<h3 id="P4，特权级架构的层次划分"><a href="#P4，特权级架构的层次划分" class="headerlink" title="P4，特权级架构的层次划分"></a>P4，特权级架构的层次划分</h3><p>实验不涉及到虚拟化，所以只用关心前两幅图就好。下层为上层提供调用接口。上层不必关心下层的具体实现。</p>
+<p>对比第一幅图和第二幅图，Application都是通过ABI和底层进行交互的，但是第一幅图中ABI的下层是Hardware，而第二幅图ABI的下层是OS。</p>
+<ul>
+<li>其中第一幅图表示的就是在裸机上运行的应用程序，比较常见的是单片机、简易嵌入式系统。这种应用场景下，我们只需要两个特权级，两个特权级通过ABI接口进行隔离。</li>
+<li>第二幅图表示是在操作系统中运行的应用程序，常见的就是我们日常使用的PC，在裸机硬件上运行了操作系统（OS），然后应用程序在OS里面运行。在这种场景下，需要三个特权级，App和OS之间通过ABI进行交互，OS和机器硬件之间通过SBI进行交互。<ul>
+<li>可以看到，对于APP而言，理想情况下他不关心自己是在一个裸机上运行，还是在操作系统上运行，只要有标准的ABI就可以运行起来。这就是一种抽象和隔离。</li>
+</ul>
+</li>
+<li>第三幅图，表示的是在虚拟机环境下运行应用程序，常见的场景是服务器主机，一台服务器硬件上通过虚拟化技术同时运行多个OS，在这种情况下，就需要四个特权级了（这种情况不要求掌握）</li>
+</ul>
+<p>我们在这里会第一次接触到<code>ECALL</code>指令，这是一条RISC-V的汇编指令，后面我们还会很多次提到他，先留一个印象就行了。但是在这里先粗略说一下他的用途，即用于在特权态之间切换。</p>
+<h3 id="P6，RISC-V的平台配置概念：一些常见配置"><a href="#P6，RISC-V的平台配置概念：一些常见配置" class="headerlink" title="P6，RISC-V的平台配置概念：一些常见配置"></a>P6，RISC-V的平台配置概念：一些常见配置</h3><p>RISC-V是开放、灵活、模块化、可裁剪的。这些特性大家在后面会慢慢体会到，这一页PPT可以先给大家一些直观的感受。<br>RISC-V被设计为可以应用在各种领域、各种级别的处理器上面。举个例子，目前市面上的RISC-V架构处理器，覆盖了从￥0.50元的单片机，到上千元的服务器处理器。不同价位的芯片，其内部集成电路上的晶体管数量也一定差异很大，更多的功能就意味着要更多的晶体管和更大的硅片面积，也就意味着成本越高，所以RISC-V被设计为可以裁剪的，针对一些简单场景（比如电机控制、家电控制等），可以只提供最基本的功能，但是便宜。而对于服务器级别的处理器，则可以把功能做全。</p>
+<p>表格里的第二列Modes指的是特权态，因为我们不涉及虚拟化技术，所以我们只关心U、S、M三个内核态即可，这个概念在下一页PPT中有详细描述</p>
+<p>第三列给出了不同级别处理器的信任模型。对于最简单的处理器实现而言，处理器没有什么保护能力，所以只能完全相信代码。而对于高端一些的处理器，我们将允许系统中一部分代码是不可信的，但是总要保证有一些核心内容是可信的。</p>
+<p>第四列标明了对内存保护能力的支持，这个在后面会有专门的地方介绍，简单说一下，我们有3中选择：不保护，通过PMP硬件单元来保护、通过虚拟内存来保护。</p>
+<p>我们实验中使用Qemu模拟器来模拟的处理器是第三行支持M+S+U三种特权态的处理器。前两行主要是对应到嵌入式、单片机级别的。如果大家以前接触过ARM处理器，那么一个大致的比喻就是，前两行对应Cortex-M架构，第三行第四行对应Cortex-A。</p>
+<h3 id="P8-特权级模式"><a href="#P8-特权级模式" class="headerlink" title="P8 特权级模式"></a>P8 特权级模式</h3><p>不考虑虚拟化时，RISC-V支持:</p>
+<ul>
+<li>User (U Mode) 最低特权级   平时可以称作 用户态</li>
+<li>Supervisor (S Mode)  中等特权级  平时可以称作监管者模式、内核态、特权态等。</li>
+<li>Machine （M-Mode） 最高特权级  通常称作机器态</li>
+</ul>
+<blockquote>
+<p>这里平时大家交流的时候，根据上下文来理解<code>特权态</code>这三个字，广义上说，S态和M态都是相对于U态来说的特权态，因为S和M的特权级都比U更高。但是大家搞操作系统，通常习惯于说应用程序运行在用户模式，操作系统运行在特权模式，这种语境下，特权模式就狭义的指RISC-V里面的S态，因为操作系统通常跑在RISC-V的S态。</p>
+</blockquote>
+<p>接下来列出了一些支持的特权态组合，这个和上一页的PPT实际是相互对应的。</p>
+<ul>
+<li>M，最简单的单片机嵌入式系统，它自己可以在没有复杂外界输入的情况下自己运行。没有什么外部网络接入（即程序烧写之后也几乎不会更新，你可以认为在上面跑的代码是绝对安全的）。这个时候不需要区分特权态和用户态，代码就在最高权限跑就行，应用层的代码就对整个CPU享有完全的控制权，成本最低。<ul>
+<li>这样的CPU上面也可以跑嵌入式操作系统实现分时多任务调度（例如FreeRTOS之类的），但是各个任务之间，没有内存访问保护的，任意一段应用程序代码，只要知道操作系统内核数据结构的内存地址，就可以轻松去修改操作系统内核的数据。这个时候的嵌入式操作系统，只有任务调度的功能，并没有保障安全的能力，操作系统自己可以随时被一个应用程序搞垮。</li>
+</ul>
+</li>
+<li>M+U，相比于第一种，增加了内存保护功能。例如对于IOT设备，他们是接入网络的，并且可以通过网络获取外部的指令，甚至自己进行OTA程序升级。这样的设备就有可能受到不安全代码的攻击（你的程序可能被动态替换掉，你没法保证新进来的程序是安全的，另外对于一些非法的输入数据也可能对你的设备进行攻击）。<ul>
+<li>在这类CPU上，就可以让操作系统运行在M态，用户程序运行在U态，把操作系统所在的程序段、以及使用到的内存段，通过内存保护机制限制U态用户程序的访问。这种处理器上的操作系统，既可以实现任务的调度，也可以保证在用户程序干坏事的时候内核自己不受影响。</li>
+</ul>
+</li>
+<li>M+S+U，相比于前两种，这一种引入了S态，而S态很重要的一个作用就是引入了页表，从而可以实现虚拟内存相关的一系列高端功能。也就是说支持这三个特权态的处理器都是配备有MMU的，因此也就可以跑类Unix操作系统了。</li>
+</ul>
+<p>每一个更高级别的特权模式的功能都会比低级的更强大，这种强大体现在两方面：</p>
+<ul>
+<li>更高的特权级可以执行更多的指令，而低特权级不能执行这些指令</li>
+<li>更高的特权级可以操作更多的CSR（Control&#x2F;Status Register）</li>
+</ul>
+<p>每个特权级只能操作自己以及比自己特权级低的特权级所拥有的CSR。</p>
+<p>另外特别注意的一点是，有不少CSR，在不同的特权级有不同的副本，例如有两个CSR的名字，分别叫做<code>mtvec</code>和<code>stvec</code>，这两个CSR的作用差不多，但是一个是属于M态的，一个是属于S态的，所以在后面大家看到各种CSR的名字的时候，可以特别留心一下名字的第一个字母，如果是s，大概率这个CSR是S态的，如果是m的话同理。</p>
+<h3 id="P10-各特权态的指令"><a href="#P10-各特权态的指令" class="headerlink" title="P10, 各特权态的指令"></a>P10, 各特权态的指令</h3><p>各个特权级可以做的事情，用集合概念来表示，是一个包含结构，用户态是最小子集，内核态比用户态大一些，机器态则比内核态再大一些。</p>
+<ul>
+<li>各个特权级都拥有的指令（也就是最小子集）：<ul>
+<li>ECALL  主要用于特权态切换，通常的用法是在U态调用ECALL来陷入S态，在S态调用ECALL来陷入M态。（不过为了实现这种陷入关系，需要有额外的配置，下文会说明）</li>
+<li>EBREAK  产生断点异常，对于程序调试有帮助</li>
+<li>FENCE.I  产生一个内存读写屏障</li>
+<li>SRET  从S态返回U态（只有在支持S态的CPU上才可以）<ul>
+<li>URET我们用不到，自行了解</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>S 态引入的指令：<ul>
+<li>SFENCE.VMA  主要的作用是刷页表</li>
+</ul>
+</li>
+<li>M 态引入的指令：<ul>
+<li>WFI： 让当前处理器核心进入睡眠状态</li>
+</ul>
+</li>
+</ul>
+<h3 id="P11-各特权态的CSR"><a href="#P11-各特权态的CSR" class="headerlink" title="P11 各特权态的CSR"></a>P11 各特权态的CSR</h3><ul>
+<li>CSR寄存器有自己的一套独立的地址空间，并且访问CSR需要使用专用的指令。</li>
+<li>每一个处理器核心都有自己一套独立的4K CSR, 这4K CSR分别对应到4个特权态（U\S\M是我们之前提到的三个，第四个和虚拟化有关，我们不讨论）所以对于每一个特权态，最多有1024个CSR可以使用。</li>
+<li>访问没有权限的CSR会Trap，访问不存在的CSR会Trap，写只读的CSR会Trap，对于可选寄存器的操作会被忽略</li>
+</ul>
+<h3 id="P12-CSR的地址空间"><a href="#P12-CSR的地址空间" class="headerlink" title="P12 CSR的地址空间"></a>P12 CSR的地址空间</h3><p>可以看到，RISC-V标准中只分配了4K的地址空间给CSR使用，4K空间的<code>[9:8]</code>bit表明了这个CSR属于哪一个特权级</p>
+<p>所有的CSR寄存器分配，可以从<code>https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf</code>的2.2节找到</p>
+<h3 id="P13-CSR及其分类"><a href="#P13-CSR及其分类" class="headerlink" title="P13 CSR及其分类"></a>P13 CSR及其分类</h3><p>大概看一下，有个印象就行。</p>
+<h3 id="P15-内存地址翻译：虚拟内存"><a href="#P15-内存地址翻译：虚拟内存" class="headerlink" title="P15 内存地址翻译：虚拟内存"></a>P15 内存地址翻译：虚拟内存</h3><ul>
+<li>最小的页大小是4kB</li>
+<li>有多种地址映射的方式（Sv32、Sv39、Sv48等）， 我们实验要用到的是Sv39，也就是说我们的虚拟地址空间由39bit的地址组成，可以寻址512GB的地址空间。</li>
+<li>巨页、ASID相关的知识不再我们讨论范围之内</li>
+</ul>
+<h3 id="P16-RISC-V-页表项"><a href="#P16-RISC-V-页表项" class="headerlink" title="P16 RISC-V 页表项"></a>P16 RISC-V 页表项</h3><blockquote>
+<p>对页表概念还不熟悉的同学们不要急，后面会复习页表相关的知识。</p>
+</blockquote>
+<p>这一页PPT要吐槽一下，它把RV32&#x2F;RV64两种不同位宽架构，以及【satp寄存器】和【页表项】两个不同的东西放到同一页，看起来很奇怪。</p>
+<ul>
+<li>上面的一个示意图，是【32位】处理器的【页表项】，同样的，对于64位的处理器，也有64位对应的【页表项】格式，但是这里没展示出来。</li>
+<li>下面一个示意图，是【64位】处理器的【satp寄存器】，同样的，对于32位的处理器，也有32位处理器对应的【satp寄存器】，这里也没有展示出来。</li>
+<li>此处的内容还是很多的，我们只能粗略的说一下，最官方权威的内容请参考官方的特权级参考手册的4.1.11小节，以及4.3~4.6小节。<a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf">https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf</a></li>
+</ul>
+<p>我们先来看这里的107~108页，写的会清晰一点。<a target="_blank" rel="noopener" href="http://riscvbook.com/chinese/RISC-V-Reader-Chinese-v2p1.pdf">http://riscvbook.com/chinese/RISC-V-Reader-Chinese-v2p1.pdf</a></p>
+<p>我们先来看107页最上面的图，这里列出了Sv32和Sv39两种页表项的示例。<br>这里的32和39分别表示虚拟地址空间的位宽：</p>
+<ul>
+<li>对于32位宽的处理器，如果开启了虚拟内存，那么只有32bit位宽的虚拟地址空间可以选。</li>
+<li>对于64位宽的处理器，选择就很多了，如果开启虚拟内存的话，也有Sv39、Sv48、Sv57等几种不同的虚拟地址方案，分别表示虚拟地址的位宽是39bit,48bit,57bit。</li>
+</ul>
+<p>观察一下不同的虚拟地址方案，他们的页表项（page-table entry，PTE）的最低10个bit的定义是一致的，在107页上面也有详细的每一个比特位的说明，这里不再抄过来了。</p>
+<p>这里需要提一句，页表是以一棵树的形式来存储的，如果大家对页表还不了解，没关系，我们后面会复习到。先知道页表是以一个树状形式存储的，那么一棵树必然要有一个树根，这个树根所在的位置，就要存放在<code>stap</code>这个寄存器中。这一部分可以参考108页。</p>
+<p>可以看到，stap寄存器的PPN字段记录了页表根节点的位置，在32位架构上，MODE字段只能取0、1两个值，分别代表关闭或者开启地址映射。在64位架构上，MODE可选的取值很多，这里只列出了其中的3种，0表示不开启转换。</p>
+<p>好了，再回到我们的PPT，看第17页</p>
+<h3 id="P17-内存屏障"><a href="#P17-内存屏障" class="headerlink" title="P17 内存屏障"></a>P17 内存屏障</h3><p>S特权态引入了一个名为SFENCE.VMA的指令，这个命令是用来刷新页表缓存(TLB)的。这里需要注意一点的是，这个刷新操作只在当前的处理器核心上起作用，如果是多核环境，则需要通过核间通信的方式让其他内核也进行刷新。不过我们的实验不涉及到多核。<br>关于刷新页表缓存的必要性，参考《RISC-V 手册-一本开源指令集指南》的第109页最后一段。我们在后面讲页表的时候也会提到。</p>
+<h3 id="P19-P21-内存保护相关的内容"><a href="#P19-P21-内存保护相关的内容" class="headerlink" title="P19~P21 内存保护相关的内容"></a>P19~P21 内存保护相关的内容</h3><p>这一部分和实验关系不是特别大，简单提两句。不过日后设计实际的操作系统，并且需要考虑安全性的时候，这部分有必要了解一下。</p>
+<ul>
+<li>RISC-V有两种内存保护机制：<ul>
+<li>如果处理器支持并开启的内存地址转换（也就是用了页表），那么可以通过页表项里面的权限位来控制每个内存页的访问权限。（我们的实验中会涉及到相关的操作）</li>
+<li>如果处理器不支持S特权态（比较简单廉价的处理器），他可能支持物理内存保护单元（PMP），RISC-V的内存保护单元最多支持保护16片内存区域，也就是说你可以为最多16片内存区域设置各自不同的访问权限。（但是很多嵌入式处理器可能只支持4个或8个保护区）</li>
+<li>如果同时启用了虚拟内存和物理内存保护单元，那么虚拟内存权限控制优先于PMP</li>
+</ul>
+</li>
+</ul>
+<h3 id="P23-中断与异常"><a href="#P23-中断与异常" class="headerlink" title="P23 中断与异常"></a>P23 中断与异常</h3><ul>
+<li>异常：同步事件，发生的原因是明确的（由具体的某一条指令而导致的）</li>
+<li>中断：异步事件，并不是因为某一条指令的执行而造成的，是外部事件造成的</li>
+<li>中断和异常的处理流程“几乎”是一样的</li>
+</ul>
+<p>和异常处理有关的CSR：</p>
+<ul>
+<li><p>stvec、mtvec(Trap-Vector Base-Address Register): 用于设置事件发生以后的处理函数地址。事件发生以后会跳转到这里所设置的地址上面去执行处理函数。</p>
+<ul>
+<li>发生事件时的跳转策略有两种，一种是无论什么事件都跳转到同一个固定的位置去执行处理函数，另一种是通过向量表，根据不同的事件类型跳转到不同的地址去执行不同的处理函数，rCore实验里面用的是第一种。</li>
+</ul>
+</li>
+<li><p>medeleg、mideleg(Trap Delegation Registers)：用来决定发生事件时进入哪个特权级来处理事件，详见下一页PPT</p>
+</li>
+<li><p>scause、mcause（Cause Register）：用于存储事件发生原因的ID，最高位是1表示这是一个中断，最高位是0表示这是异常。</p>
+</li>
+<li><p>stval、mtval（Trap Value Register）: 用于存储与事件相关的额外信息，比如可能是非法地址、非法操作数等，具体可以参考官方规范文档。</p>
+</li>
+<li><p>sepc、mepc (Exception Program Counter)：用于存储从高特权态返回到低特权态时，要回到的地址</p>
+</li>
+<li><p>mstatus、sstatus(Status Register): 用于记录一些常用的标志位</p>
+</li>
+</ul>
+<p>以上这些寄存器，有的用于在时间发生前建立如何处理事件的机制，有的用于在处理的过程中获得有关事件的信息，还有的用于描述在事件处理结束以后，如何返回到原来的状态</p>
+<h3 id="P24-Trap的代理机制"><a href="#P24-Trap的代理机制" class="headerlink" title="P24 Trap的代理机制"></a>P24 Trap的代理机制</h3><p>通常状态下，事件发生时都是直接陷入到最高特权级的M态，但是很多时候没必要直接上报到最高领导那里去对吧，通常的思路是，U态遇到处理不了的问题了，就抛给S态去处理，S态要是还处理不了，再找M态去解决。</p>
+<p>回忆一下在本文很靠前的位置，我们提到了ECALL指令用于在特权态之间切换，通常情况下，一般默认调用ECALL的时候，都是无条件转到M态的，但是通过设置medeleg、mideleg两个寄存器，可以实现在U态执行ECALL的时候进入S态，在S态执行ECALL的时候进入M态。</p>
+<h3 id="P25-Trap处理中异常、中断原因列表"><a href="#P25-Trap处理中异常、中断原因列表" class="headerlink" title="P25 Trap处理中异常、中断原因列表"></a>P25 Trap处理中异常、中断原因列表</h3><p>这一页主要介绍了mcause、scause寄存器的各种取值所对应的事件原因。简单了解即可。特别注意一点，通过这个寄存器的最高位是0还是1，可以判断这个事件是中断，还是异常</p>
+<h3 id="P28-P31-中断相关"><a href="#P28-P31-中断相关" class="headerlink" title="P28~P31 中断相关"></a>P28~P31 中断相关</h3><p>本次rCore实验中很少涉及到中断相关的内容，而且课时有限，因此这一部分就不做讲解了，大家自行阅读即可。</p>
+<h3 id="P33-P34-定时器、性能计数器相关"><a href="#P33-P34-定时器、性能计数器相关" class="headerlink" title="P33~P34 定时器、性能计数器相关"></a>P33~P34 定时器、性能计数器相关</h3><p>这里主要介绍了一些用于评估处理器性能的寄存器，如果大家要实现类似于pprof之类的应用，可以使用这些寄存器。大家自行了解。</p>
+<p>以上是特权级架构PPT的解读，上述PPT中的内容有很多和《《RISC-V 手册-一本开源指令集指南》第十章的内容是重复的，强烈建议各位同学在课后趁热打铁，阅读一下《RISC-V 手册-一本开源指令集指南》的第十章，看看是不是能和PPT中的内容对应上。</p>
+<p>接下来我们介绍一下在《RISC-V 手册-一本开源指令集指南》中提到而在PPT中没有提到的内容</p>
+<ul>
+<li><p>P102，详细提到了发生事件时，处理器陷入特权态的流程，值得好好读一下</p>
+<ul>
+<li><p>关于mepc、sepc的设置，中断指令，通常不用重试指令，处理完成中断以后直接回到原来的位置接着执行即可，所以mepc、sepc的值在发生中断时，会被设置为下一条需要执行的指令。而对于异常，通常需要重试，例如在执行访存操作的时候发生了内存缺页异常，这个时候需要陷入到内核中，调整页表，从特权态返回之后再回来重新执行一次这条触发了异常的访存指令，因此对于同步异常，mepc指向导致异常的指令，而不是导致异常的指令的下一条指令。</p>
+</li>
+<li><p>mstatus、sstatus寄存器里面会保留特权态切换之前的中断、特权级记录一下，用于后面恢复特权态的时候恢复原来的状态。</p>
+</li>
+<li><p>这里提到了一个新的CSR叫做mscratch，并且列举了一个比较抽象的使用方法，这个寄存器可以在发生特权态切换的时候传递一些数据，这个在实验的trap模块的汇编代码中有所体现。如果这里看不懂，可以结合实验指导书进行学习。</p>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="虚拟内存、页表相关的基础知识复习"><a href="#虚拟内存、页表相关的基础知识复习" class="headerlink" title="虚拟内存、页表相关的基础知识复习"></a>虚拟内存、页表相关的基础知识复习</h1><blockquote>
+<p>下面的内容会大量混合应用2进制、10进制、16进制的不同表达方式，所以需要大家对2进制和16进制之间的对应关比较熟悉，先简单复习一下，4个二进制比特位可以组成16进制的一位。使用16进制来表达内存地址的便利之处希望大家可以逐渐体会。</p>
+</blockquote>
+<p>我们先看几个常见的事情，然后在复习完页表相关的知识以后，大家应该就能够明白其背后的原理了。</p>
+<ul>
+<li><p>第一个例子：假设我们编写了一个程序，然后在我们熟悉的Windows、linux或OsX系统上运行这个程序，假设我们把这个程序同时启动了N次(N&gt;1), 那么这N个程序，每个程序在运行的时候都会对自己的代码中定义的变量进行读写，那么，这几个程序是一样的，他们各自操作自己的变量，会不会造成数据的冲突呢？</p>
+</li>
+<li><p>第二个例子：我们知道在Linux上面有一个<code>fork</code>系统调用，可以创建一个进程的副本，但是我们希望这个创建副本的过程应该尽可能高效，所以并不会把父进程所拥有的内存完全复制给子进程，而是只复制必要的数据，剩余的绝大部分数据通过写时复制（Copy On Write， COW）的方式，先在父子进程之间共享，只要大家都不修改共享的内存，只是读取，那么就可以一直共享下去，如果一个进程要写内存的时候，再把他要写的内存复制一下，变成进程私有的。这是怎么做到的？</p>
+</li>
+<li><p>第三个例子：Linux上还有一个叫做<code>mmap</code>的系统调用，可以把硬盘上的一个文件映射到内存地址上，这个时候访问内存地址就能够读写磁盘上的文件，就不再需要通过<code>read()</code>或者<code>write()</code>这样的调用来读写文件了。这又是怎么做到的？</p>
+</li>
+</ul>
+<p>所有上面这些酷炫的功能，都是通过虚拟内存技术来实现的。所谓虚拟内存，就是把虚拟地址空间映射到实际的物理内存地址空间上面去。</p>
+<p>啥叫虚拟地址空间？就是让每一个进程都认为自己拥有整个世界。比如你的处理器是32位的，那每一个进程就都认为自己有4GB的内存空间可以使用，对应内存地址0x00000000到0xFFFFFFFF。如果是64位的处理器呢，64位对应着16384 PB的内存大小，就是说每一个进程都认为自己有16384 PB的内存可以使用。这是一个非常巨大的数值，但是回忆一下上次课程中我们提到过Sv39、Sv48这些名词，它表示在RISC-V处理器上，实际的虚拟地址空间没有64bit那么大，如果你选用了Sv39，那就是每个虚拟地址空间由39个bit组成，也就是512GB的内存空间。</p>
+<p>那啥又叫物理内存地址空间呢？物理地址空间就是你真实世界中物理内存的大小。比如你是一个32位的系统，但是你只有1GB的内存条，那么你就并没有把所有的内存地址空间用完，你的物理内存地址范围就是0x00000000~0x3FFFFFFF。当然，这里也要说一下，实际分配给内存条的物理地址空间也不一定是从0x00000000开始的，可能有一个偏移量，还是以1GB的内存条为例，你的物理内存地址空间可能是0x10000000~0x4FFFFFFF,不管怎样，这个地址空间首尾地址的差值肯定是1GB，就是你实际物理内存条的存储容量。</p>
+<p>下一个问题，如果每个进程都认为自己有很大的内存可以用，但是实际的物理内存是有限的，那所有的应用都说给我4GB内存，这可咋办？回忆我们上一课在将特权级架构的时候，PPT一开始就提到了为什么需要特权级架构？其中一个原因是我们要管理共享资源，内存空间就是一种共享资源，所以我们需要操作系统来给各个应用程序的进程分配内存。通常情况下，一个应用程序启动的时候只需要很小的内存，后续需要更多内存的时候会通过诸如<code>malloc</code>之类的方法找操作系统分配堆内存，如果要申请内存的时候操作系统手里也没货了，那么就会出现Out Of Memory（OOM）的错误。所以这里有一个很重要的点：虽然虚拟内存地址空间很大，但是通常应用程序只会用到其中很小的一部分。但是呢，应用程序在使用虚拟地址空间的时候，不一定是连续使用的，一个应用完全可以说我在虚拟地址空间的最开始和最末尾分别申请1个字节的内存来用。这个时候，虽然应用程序只申请了很少的内存，但是他所使用的地址空间跨度是很大的，换句话说，在虚拟地址空间中可以有很多的没有使用的空洞。</p>
+<p>上面已经大致解释了一些名词和使用场景，接下来看看操作系统要是想管理内存分配，具体是怎么实现这些功能的。为了后面的介绍方便，我们把虚拟内存地址简称为VA（Virtual Address），把物理地址简称为PA（Physical Address）。</p>
+<p>VA和PA之间的关系，实际就是一个映射关系，我们可以通过查表的方式来实现这个映射。例如某一个进程说，我要申请0x1000（4kB）大小的一块内存，放在以VA 0x10000000作为开始的地方，然后再申请一块0x2000(8kB)大小的一块内存，放在以VA 0x50000000开始的地方。操作系统收到这两个内存分配请求以后，先翻翻自己的账本，看看有没有足够的内存，如果发现没有了，直接返回OOM错误给用户进程。如果自己还有存货，假设操作系统知道在PA为0x12340000和0x43210000两个位置都还有空间，于是就可以建立一个映射表：</p>
+<table>
+<thead>
+<tr>
+<th>VA</th>
+<th>PA</th>
+<th>Size</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0x10000000</td>
+<td>0x12340000</td>
+<td>0x1000</td>
+</tr>
+<tr>
+<td>0x50000000</td>
+<td>0x43210000</td>
+<td>0x2000</td>
+</tr>
+</tbody></table>
+<p>这样，比如说应用程序想读取VA 0x50000010地址上的数据，那么经过查表可以发现，首先这个VA在映射表中是存在的，因为他位于0x50000000~0x50000000+0x2000这个区间内，所以就可以把这个读取操作映射到对物理内存地址0x43210010的操作。如果应用想读取VA 0x50003010地址上的数据呢？由于这个访问超出了映射表里记录的范围，所以会被驳回。</p>
+<p>因为每一个用户进程都认为自己拥有整个VA空间，所以每个进程都有自己的一份映射表。在一个CPU核心上，同一时刻只能执行一个进程对吧，所以操作系统在切换进程的时候，也需要切换不同的映射表。运行A进程的时候，按照A进程的映射表进行翻译，运行B进程的时候，按照B进程的映射表进行翻译。</p>
+<p>这里再强调一点，用户进程是感知不到PA存在的，它们就活在VA的世界里（除非操作系统给他开了个口子，让他可以查询到自己世界里的VA对应的PA是什么），而操作系统因为运行在比用户应用高的特权级里面，所以操作系统是上帝视角，它既能看到物理地址，也能看到每一个进程的VA是如何映射到PA的。</p>
+<p>好了，已经了解了内存地址映射的基本思路了，接下来就看看怎么具体实现这个查表的过程吧。因为VA中每一个对内存的读写操作都需要经过地址翻译才能找到真正的PA，所以这个过程必须快。想快的话，有两个优化方向：</p>
+<ul>
+<li>让硬件自动去完成查表和转换</li>
+<li>优化列表的存储数据结构，加速查找</li>
+</ul>
+<p>因为我们就是想快，越快越好，所以这两种手段我们都要用。其中硬件查表这件事，就是通过引入一个叫做MMU的硬件电路来实现的。而为了让MMU也能够查的更快，我们也需要给MMU提供一种更加优化的数据格式。关于MMU这个硬件咱们后面再说，先看看数据结构的问题。</p>
+<p>首先来思考一个问题，这个内存地址转换的最小单位是什么，或者说上面的表格里，size一列最小可以是多少。这个地方需要考虑的是映射表和实际可用内存之间的关系，如果映射粒度太细，那么可能内存里绝大部分的空间都用去存储映射表了，这就本末倒置了。举个例子，假设极端情况，我们允许以1个字节为单位进行映射，还是以32位系统举例，为了映射每1个字节，映射表里都需要存储VA、PA、Size，总共4*3&#x3D;12个字节，也就是说，假设我想映射1GB的内存地址空间，那么要占用额外的12GB内存空间用来存储映射表。是不是有点过分了？</p>
+<p>所以呢，大家就想了一个方法，咱们定义一个叫做页的概念，通常每个页的大小是4kB，这是一个通用的大小，也有些系统使用了比4kB大很多的页面，叫做巨页。我们只关心4kB的标准页大小。然后呢，我们之前的映射表里，最小的映射单位就是页了，所以这个映射表也被称作页表（page table）.然后表格的每一行称之为一个页表项（Page Table Entry, PTE）</p>
+<p>先来看最简单暴力的页表存储方法：我们可以根据VA的地址从小到大排列这个表，然后在检索这个表的时候，只需要进行二分查找，就可以找到对应的页表项。算法的复杂度是O(LogN)。</p>
+<p>我们想再快一点，能不能做到O(1)的时间复杂度呢？按照空间换时间的思路，可以这样来做。我们要求每一条页表项里面的映射关系只能代表4kB大小的页面，也就是说，每4kB的内存，就要对应一个页表项。哪怕是连续的内存地址，也不能用一个PTE来记录，例如我有12kB连续的内存空间，那么必须要3个PTE分别记录每个4kB页面的映射关系。另外一点是，我们要一次性把整个虚拟地址空间都建好映射关系，这样带来了两个好处：</p>
+<ul>
+<li>首先，因为每个页表项都是4kB大，所以我们最初的页表里面，第三列就不需要了。</li>
+<li>其次，因为我们把整个地址空间都提前建立好了映射关系，也就是说从第0个4kB页面到最后一个4kB页面，我们都有对应的页表项，并且这些页表项自然就是排好顺序的，像是一个大数组。对于任何一个要访问的VA，我们只需要除以4096字节（也就是4kB，一个页面的大小），就可以得到这个VA所对应的页表项在数组里面的下标。我们知道对数组的下标访问时间复杂度是O(1)的，完美符合我们的要求，并且除以4096这件事，可以通过右移12位的位运算来实现，所以实现起来也很高效很简便。另外还有一点，我们最原始映射表里面的第一列是VA，但现在VA这一列可以由数组的下标来表示了，因此，我们的PTE就变成了一个只有4字节的条目。</li>
+</ul>
+<p>这里再说的细一点，还是假设我们32bit机器，4GB的VA地址空间，这4GB包含1M个4kB的页，所以我们要申请一个长度是1024*1024的大数组，这个数组的每一个元素都是一个32bit的PA地址，这个PA地址指向一个4kB页的起始位置，所以我们整个页表项会占用1M * 4B &#x3D; 4MB的内存空间。</p>
+<p>当我们假设要访问VA&#x3D;0x12345678这个地址的时候，我们就首先把这个地址右移12bit，得到了0x00012345这个下标，于是我们就可以按照下标找到页表数组里面第0x00012345个元素，把这个元素的值取出来，就是这个VA所对应的PA的页面的起始地址，假设这个PTE里面存储的是0xAABBC000(注意这个PA的后三位一定是0，因为PTE中存储的是每个4kB页面的起始地址，所以他一定是4kB对齐的)。然后取出我们要访问的VA的后12个bit,这12个bit就是这个地址相对于这个4kB页面起始地址的偏移量，在我们的例子中，后12个bit用16进制表示就是0x00000678。好了，把偏移量和物理页起始地址相加，得到 0xAABBC000 + 0x00000678 &#x3D; 0xAABBC678，那么我们就完成了VA到PA的映射，从VA&#x3D;0x12345678映射到了PA&#x3D;0xAABBC678。</p>
+<p>整个转换过程基本上就是位运算，所以非常适合用组合数字电路来实现。</p>
+<p>看起来挺美好的，但是问题也不少，主要问题在于占用的空间。我们是预分配了整个虚拟地址空间的映射关系，咱们上面的例子是32bit的虚拟地址空间，每个页表要占用4MB的内存。那如果是我们之前提到的Sv39呢？如果给Sv39预先分配页表的话，那就得占用512MB的内存空间，而且这还只是1个进程的页表项，你要是开10个进程呢？不好意思，5个GB的内存已经被页表吃掉了。</p>
+<p>你可能会说，不是所有的进程都会使用完整的内存空间啊，确实，但是回忆我们刚才说过的，虚拟地址空间里面可以有很多的空洞，一个进程想使用地址空间的最后一个字节是合理的。于是这个问题就变成了一个如何高效实现稀疏数组存储的问题了。</p>
+<p>我们面对的问题是如何存储稀疏的地址，那么，什么是地址？<code>北京市海淀区双清路30号</code>是清华大学的地址，计算机世界的地址和我们生活中的地址有什么共性吗？看到生活中的地址，我们很自然的会想到<code>北京市</code>&#x2F;<code>海淀区</code>&#x2F;<code>双清路30号</code>。这是一个分级的表达方式，那么对于计算机中的地址呢，也是类似的，地址是一个无符号整数，对于它来说，越高的比特位代表了越大的内存地址范围。</p>
+<p>假设我们有一个参加了我们训练营的同学居住地址的列表，现在想把这些地址进行数字化编码。那我们可以设计一个类似这样的树形结构，并且给每一个节点都编上号，那么以下面的树形结构为例，<code>北京市昌平区育知东路</code>就被编码为<code>0b00101001</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">北京市(00)</span><br><span class="line">  |--朝阳区(00)</span><br><span class="line">      |--建国路(1001)</span><br><span class="line">  |--海淀区(01)</span><br><span class="line">  |--昌平区(10)</span><br><span class="line">      |--育知东路(1001)</span><br><span class="line">  |--西城区(11)</span><br><span class="line">      |--南礼士路(1001)</span><br><span class="line">天津市(01)</span><br><span class="line">  |--和平区(01)</span><br><span class="line">  |--北辰区(10)</span><br><span class="line">上海市(10)</span><br><span class="line">  |--黄埔区(11)</span><br><span class="line">重庆市(11)</span><br></pre></td></tr></table></figure>
+<p>可以看到这个例子和我们的页表其实很像，我们训练营的人不多，所以很多地区可能没有我们的学员，那么这棵树的一部分分支就没必要深入到更下的层级去。</p>
+<p>回到我们的页表存储上来。我们还是以32bit系统为例，假设有一个地址是<code>0x12345678</code>,它对应的2进制表达是<code>0b00010010001101000101011001111000</code>,如果我们把这个地址给做一下分段，变成这个样子：</p>
+<p>0b0001001000_1101000101_011001111000</p>
+<p>可以看到，我们把一个32bit的地址分成了10 + 10 + 12这样的三段。我们可以把这三段分别类比成上面的城市、行政区、街道三级。先看第一段，由10个bit组成。这10个bit正好可以表示1024，也就是1k，类比到上面的例子里，就是我们可以编码1k个不同的城市。所以说通过高10bit，我们可以首先锁定城市。接下来我们就要顺着城市再去找城市里面的行政区。</p>
+<p>这里可以看做在第一级中，只有一个集合，这个集合里面每一个元素都是城市。第二级里面，最多可以有1024个集合，每个集合里面又可以有最多1024个元素，这些第二级的集合元素分别是某一个城市里面的行政区。</p>
+<p>那么，当我们给定一个城市以后，肯定要顺着某些指示找到第二级中对应的集合。顺着某个东西找到另一个东西，这句话翻译到计算机里面不就是指针么。现在我们就可以从城市类比到页表上了。</p>
+<p>我们知道一个页是4kB大小，32位系统里面一个指针是4字节，那么一个内存页恰好可以存储1k个指针。那我们选定一个内存页作为我们的<code>一级页表</code>，这个<code>一级页表</code>的大小就是4kB，并且只有一个<code>一级页表</code>，里面包含了1024个指针，这些指针指向什么呢？指向<code>二级页表</code>。</p>
+<p>那么<code>二级页表</code>又是什么样的呢？首先，我们有1024个<code>二级页表</code>（因为一级页表中的每个指针都指向一个<code>二级页表</code>），每一个<code>二级页表</code>的大小也是4kB,所以每个也表内也有1024个条目，这样在第二级，我们就有了1024 * 1024 &#x3D; 1M个条目。到这里有个区别了，我们假设这棵树只有两层深，那么<code>一级页表</code>中的每一个条目是一个指向<code>二级页表</code>的指针，而<code>二级页表</code>中的每一个条目所存储的内容就是一个物理页的起始地址。这句话换个说法就是，非叶子节点存储的是指向下一级的指针，而叶子结点存储的是一个物理页的地址（也可以理解为指向物理页的指针）。</p>
+<p>我们还是回到刚才提到的这个地址：0b0001001000_1101000101_011001111000</p>
+<p>怎么查这个页表呢？先把第一段<code>0b0001001000</code>拿出来，根据他可以在一级页表的1024个元素中，根据数组下标，直接找到一个对应的条目，这个条目里存储的是另一个4kB页面的地址，这个新4kB页面里面又有1024个条目，我们根据第二段<code>0b1101000101</code>,又可以在这个页面里面找到一个元素，于是我们可以把这个元素的值取出来，假设这个元素里存储的内容是<code>0xAABBC000</code>,这个就是物理地址空间中一个4kB页面的起始地址，然后我们再把VA中第三段<code>0b011001111000</code>和<code>0xAABBC000</code>相加，就可以得到<code>0xAABBC678</code>。可以看到第三段地址的宽度是12bit，正好可以表示4096个字节在一个4kB页面中的偏移量。这样就实现了一个通过二级查表的方式，完成了从VA到PA的转换。</p>
+<p>我们来对比一下这种方式和上一种方式的异同之处：</p>
+<ul>
+<li>虽然我们查了两次表，但是从时间复杂度上来说，这是一个常数级别的操作，所以仍然是O(1)，满足我们的要求</li>
+<li>由于是树状结构，如果某些二级页表对应的VA从来没有使用过，那么这一部分对应的二级页表就可以不存储。等到二级页表某个地方真的要用到的时候，只需要在物理内存中随便找一块空闲的4kB大小的空间，再在一级页表中指向这一块空间即可。这就相当于我们的页表存储其实是可以高效的插入和删除的，没必要一开始全部都分配好。后期可以按需不断膨胀。</li>
+</ul>
+<p>以上这种10+10+12的地址划分方式呢，就是Sv32所采用的划分方式。了解为Sv32之后，我们再来看看Sv39，用Sv39再来加深一下对页表概念的理解。</p>
+<p>注意到，Sv32一定是在32位的处理器架构上的，所以其指针大小都是4字节，而Sv39一定是运行在64位架构的处理器上的，所以对于SV39而言，每个页表项就不是4字节了，而是8字节。所以，一个4kB的内存页，就只能存放512个PTE了。那么512只需要用9个比特位就可以表示，所以在Sv39地址空间方案中，39bit的VA是按照9+9+9+12的方案来划分的，同理，Sv48采用的是9+9+9+9+12的方案，Sv57采用的是9+9+9+9+9+12的划分。</p>
+<p>那么同样可以得出，对于Sv39来说，我们需要3级页表，对于Sv48来说，就需要4级页表，而对于Sv57来说，自然就是5级页表了。 详情可以参考特权级架构手册。</p>
+<p>上面已经对页表的大概原理有了了解，接下来看看在RISC-V中的页表机制到底是怎么实现的，我们怎么才能用起来页表。</p>
+<p>我们打开特权级架构手册的79~80页，可以看到在79页的图4.16，有一个在Sv32模式下的VA地址划分图，就体现了我们10+10+12的划分方式，其中高20位被称为虚拟页号(virtual page number, VPN)，而这个VPN又被划分为两级，分别叫做<code>VPN[1]</code>和<code>VPN[0]</code>，然后地址的低12位被称作页内偏移（page offset）。</p>
+<blockquote>
+<p>再次仔细体会一下分页、页内偏移这些概念，基于二进制地址做一些数学游戏，就可以把一个32bit的二进制数划分为不同的区段。假设我们让低12bit全部为0，那么高20bit的任一组合就可以形成类似<code>0xXXXXX000</code>这样的地址，这样的地址一定是4kB对齐的。体会这种通过把最低位置零来实现内存对齐的算法。如果我们把高位看做页的编号了，那么低12位就可以表示在一个特定页面内部的偏移量。</p>
+</blockquote>
+<p>再来看第80页上面的图4.17，列出了物理地址的划分格式，可以看到这里采用了12+10+12的划分方式。（啥？这加起来不是34么？我们后面说），这里的高22位被称作物理页号(physical page number, PPN), 物理页号也被分成了高低两级，分别是<code>PPN[1]</code>和<code>PPN[0]</code>。</p>
+<p>接下来我们来解释一下这个34位物理地址是咋回事。我们说Sv32是32位宽处理器特有的，32位宽处理器指的是CPU在做普通的数学运算、内存访问的时候，能计算的数最大是32bit的，但是由于内存地址翻译功能的存在，我们相当于让CPU核心与外面的内存中间加了一个中间层。CPU核心运算单元能看到的内存地址总是32bit的，但它实际访问的物理内存地址经过翻译可能超过32bit。</p>
+<p>这也就是说，在32bit的RISC-V处理器上，如果开启了内存地址翻译功能，那么每一个进程仍然只能访问自己的4GB内存空间，这个不变。但是可以接到这个CPU芯片上的内存颗粒，可以达到16GB的总大小，也就是说所有运行的进程加起来，他们可以使用的内存最大可以到16GB。</p>
+<p>但是啊，这个也要看芯片的生产厂商为实际的一款芯片留出了多少根地址线，因为芯片的引脚数量是有限的，生产商在生产的时候，不一定会把34根地址信号线都引出芯片，假设一款芯片引出了34根地址线，那么这款芯片最大可以连接的物理内存就是16GB，但是你在设计一块主板的时候，虽然最大可以有16GB，但是你的板子上可能只放了1GB的内存颗粒，这样就相当于你实际只使用了30根地址信号线。同样，有的厂商因为芯片引脚有限，可能只引出了28根信号线出来，那这样就限定了这款芯片能访问的物理内存最大不超过256MB。</p>
+<p>注意我们现在学习的是RISC-V的架构规范，规范里给出了标准情况的规范，但是实际的芯片设计和使用与标准情况是会有所不同的。</p>
+<p>再回到手册的80页图4.18，这里列出了一个页表项的格式，从图4.16的VA到图4.17的PA的转换要在图4.18的PTE的指导下进行。</p>
+<p>回忆一下前面我们逐步演进设计页表存储结构的时候，我们设计的每一个页表项里存储的都是一个地址，这个地址都指向一个4kB对齐的物理内存。因为指向的位置都是4kB对齐的，所以地址的低12位一定都是0，如果不利用起来实在是一种浪费，所以我们可以看到在RISC-V的实现中，每一个页表项的低12位被用来存储了许多额外标志位，这些标志位可以让我们的内存翻译功能更加强大。</p>
+<p>我们一位一位来看，从最低位开始看起：</p>
+<ul>
+<li>V标志位，表明这个PTE是否可用，我们是在一个4k页里面连续分配了1024个PTE，这1024个PTE就像一个数组，虽然每次都会预分配1024个PTE，但不一定每一个PTE都是被用到的，通过这个标志位可以让我们方便的判断一个PTE是否空闲。在分配内存时，可以查找V&#x3D;0的PTE，对应的就是可用的空闲内存。</li>
+<li>XWR三个比特位分别用于表示这个页表项所指向的内存区域的访问权限。<ul>
+<li>同时这3个bit还有另一重用途，就是用来在多级页表的树形结构中判断这个节点是中间节点还是叶子节点。如果这三个比特位都是0，那么他就是一个中间节点，这个PTE指向的物理内存上存储的是下一级页表，如果不是全0的，那么这就是叶子节点，PTE指向的物理内存就是真正要分配给应用使用的内存地址。</li>
+<li>叶子节点和非叶子节点的PTE格式完全一样</li>
+<li>如果应用程序试图访问没有权限访问的内存，会导致处理器Trap</li>
+</ul>
+</li>
+<li>U标志位设置这个页面是否可以在U特权态中被访问，U&#x3D;0表示U特权态不能访问，U&#x3D;1表示这个页属于U特权态，U态可以访问。<ul>
+<li>对于U&#x3D;1的页面，S态是否可以访问取决于sstatus寄存器中的SUM标志位，出于安全考虑，通常情况下S态是无权访问U&#x3D;1的页面。</li>
+</ul>
+</li>
+<li>G标志位用于表示这个页面是否在所有的地址空间中共享，对于一些需要在所有地址空间共享的内存，设置G&#x3D;1可以降低页表切换过程中的开销。但是如果对不能共享的内存设置了G&#x3D;1，则是一个软件上的BUG。如果你不能确定G&#x3D;1可以使用，那就不要设置G&#x3D;1。</li>
+<li>A表示自从上一次清零该比特位之后，如果对应的内存区域有过读、写或者取指令操作，那么标记为1</li>
+<li>D表示自从上一次清零该比特位之后，如果对应的内存区域有过写操作，那么标记为1</li>
+<li>RSW是两个保留位，无意义</li>
+</ul>
+<p>上面已经介绍了和页表项有关的知识，我们已经知道了一个页表的树形结构是什么样子了。接下来看一下如何实现在多个进程之间切换页表。我们已经说过，每一个进程都有自己的页表，每个页表都是一棵树，每棵树都有一个树根，这个树根也是一个大小为4kB的内存区域。我们只要知道了这个4k页面的首地址，就相当于知道了整个页表。</p>
+<p>于是，在RISC-V里面，S态引入了一个叫做<code>satp</code>的寄存器，老样子，s表示这个寄存器属于S态，atp是Address Translation and Protection的简写，翻译过来就是“地址翻译和保护”,从前面页表项的内容也可以知道，页表项里即包含了用于把VA翻译成PA的必要信息，又包含了每个内存页的读、写、执行权限，所以页表既能实现翻译，也能实现保护功能。</p>
+<p>我们看一下特权级规范的4.1.11小节，这里分别给出了32bit和64bit处理器上satp寄存器的位域描述。中间的ASID部分我们不管，看首尾，最低位部分是PPN（Physical Page Number），也就是一个指向物理地址上某个4k页的指针。这个4k页显然就是我们之前说的页表根节点所在的4k页。这样，我们说的切换页表的过程，实际就是修改这个satp寄存器中PPN位域的过程，让它指向不同的页表根节点即可。而satp寄存器的高位是一个模式选择位，从这里可以选择是使用Sv39还是其他的虚拟地址格式。</p>
+<p>所以，一圈看下来，我们上面说了那么多的内容，其实都在介绍页表在内存里是怎么存储的。而真正到了和虚拟内存有关CSR寄存器的时候，竟然只有一个简简单单的satp寄存器。</p>
+<p>再来提一嘴MMU（Memory Management Unit），MMU的作用就是以硬件电路的形式来实现上面介绍的查表过程。也就是说页表数据结构的建立和维护，是需要我们写软件来实现的，但是这个表的主要使用者是一个硬件。</p>
+<p>接下来开始解决开头的3个问题，第一个问题，就是页表最基础的作用，应该不用再多说了。</p>
+<p>第二个问题，页表如何帮助实现COW。答案其实也不难，当进行fork的时候，操作系统会把父进程的页表项都设置为只读权限，并且把父进程的页表项复制一份给子进程，这样子进程与父进程其实共享的都是同一块物理内存。（两个进程各自的VA映射到同一块PA上），这样，我们就不用去复制整个父进程的内存地址给到子进程了。无论父进程还是子进程，只要不进行写操作，那就什么事都没有，而一旦进行写操作，因为现在父子进程的页面都改为只读了，所以会触发一个异常，从U态陷入S态，操作系统这个时候接管过来执行权，根据异常的原因发现这是要修改共享的内存，于是就可以重新分配一个页给到子进程，然后把子进程对应的页表项指向新分配的这块内存空间，然后就可以把这块内存在父子进程中的权限都改为可读可写，然后再返回用户态。我们之前也提到过中断和异常的区别，异常是有确定的指令触发的，比如这里的异常就是尝试修改共享内存的那条指令导致的，在trap处理结束后，会重新跳回到导致异常的指令上去，也就是重试这个指令。这次重试的时候，因为已经有权限访问这块内存了，所以从应用程序的视角来看，就像什么都没发生过一样。通过这种方式，我们就实现了COW，以4kB为最小单位，用多少内存复制多少内存。</p>
+<p>第三个问题，mmap的实现，也是通过设置页表权限，引发异常，然后做一番操作。比如用户要把硬盘上的某个文件的一段映射到内存的某个地址区间里面去，那么就先在页表项里把这一段VA对应的内存映射到一块物理内存上，然后把硬盘文件中对应的数据加载到物理内存对应的区域里面去。如果要映射的文件很小，那是可以一次性把磁盘文件都读到内存里面去的，但是如果映射的文件体积很大，甚至硬盘上文件的大小可能超过物理内存的大小，这个时候，我们可以先在VA空间里把整个文件对应的内存地址都先分配好页表，但是不指向具体的物理内存，同时设置读写权限，当程序访问内存的时候，同样是陷入，然后操作系统根据读写的地址把硬盘文件对应的区块加载到内存里面，然后再修改页表，这样就可以实现通过读取内存的形式来读取文件了。那么如果是写内存呢？如果你对文件映射到的内存区间有写操作，对应页表项的D标志位会被置1，操作系统中会有一个后台线程定期检测哪些页表是脏的，再把这些脏的页刷回到磁盘上去。</p>
+<p>关于内存映射最后说一点，关于TLB的，也就是页表缓存的内容，这个可以参考《开源手册》P109最后一段，TLB是MMU里面的一块硬件子电路，一个复杂的TLB实现可能包含用硬件电路实现的哈希表、LRU等算法。</p>
+
+    </div>
+
+    
+    
+    <img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="25%" height="25%"/>
+<div align="center">
+<div>微信公众号：极客幼稚园</div>
+<div>关注阅读更多优质技术文章</div>
+</div>
+
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>Myrfy
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/" title="rCore tutorial 实验入门指导(持续更新中)">http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+                <a href="/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/" rel="next" title="Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)">
+                  <i class="fa fa-chevron-left"></i> Rust过程宏系列教程(5)--实现proc_macro_workshop项目之sorted题目(属性式过程宏)
+                </a>
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFRISC-V"><span class="nav-number">1.</span> <span class="nav-text">什么是RISC-V</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84PPT-%E3%80%8ARISC-V-%E6%89%8B%E5%86%8C-%E4%B8%80%E6%9C%AC%E5%BC%80%E6%BA%90%E6%8C%87%E4%BB%A4%E9%9B%86%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%AC%E5%8D%81%E7%AB%A0"><span class="nav-number">2.</span> <span class="nav-text">特权级架构PPT + 《RISC-V 手册 一本开源指令集指南》第十章</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#P2%EF%BC%8C%E7%9B%AE%E5%BD%95"><span class="nav-number">2.0.1.</span> <span class="nav-text">P2，目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P3%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84"><span class="nav-number">2.0.2.</span> <span class="nav-text">P3，为什么需要特权级架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P4%EF%BC%8C%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84%E7%9A%84%E5%B1%82%E6%AC%A1%E5%88%92%E5%88%86"><span class="nav-number">2.0.3.</span> <span class="nav-text">P4，特权级架构的层次划分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P6%EF%BC%8CRISC-V%E7%9A%84%E5%B9%B3%E5%8F%B0%E9%85%8D%E7%BD%AE%E6%A6%82%E5%BF%B5%EF%BC%9A%E4%B8%80%E4%BA%9B%E5%B8%B8%E8%A7%81%E9%85%8D%E7%BD%AE"><span class="nav-number">2.0.4.</span> <span class="nav-text">P6，RISC-V的平台配置概念：一些常见配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P8-%E7%89%B9%E6%9D%83%E7%BA%A7%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.0.5.</span> <span class="nav-text">P8 特权级模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P10-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84%E6%8C%87%E4%BB%A4"><span class="nav-number">2.0.6.</span> <span class="nav-text">P10, 各特权态的指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P11-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84CSR"><span class="nav-number">2.0.7.</span> <span class="nav-text">P11 各特权态的CSR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P12-CSR%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">2.0.8.</span> <span class="nav-text">P12 CSR的地址空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P13-CSR%E5%8F%8A%E5%85%B6%E5%88%86%E7%B1%BB"><span class="nav-number">2.0.9.</span> <span class="nav-text">P13 CSR及其分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P15-%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80%E7%BF%BB%E8%AF%91%EF%BC%9A%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98"><span class="nav-number">2.0.10.</span> <span class="nav-text">P15 内存地址翻译：虚拟内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P16-RISC-V-%E9%A1%B5%E8%A1%A8%E9%A1%B9"><span class="nav-number">2.0.11.</span> <span class="nav-text">P16 RISC-V 页表项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P17-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.0.12.</span> <span class="nav-text">P17 内存屏障</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P19-P21-%E5%86%85%E5%AD%98%E4%BF%9D%E6%8A%A4%E7%9B%B8%E5%85%B3%E7%9A%84%E5%86%85%E5%AE%B9"><span class="nav-number">2.0.13.</span> <span class="nav-text">P19~P21 内存保护相关的内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P23-%E4%B8%AD%E6%96%AD%E4%B8%8E%E5%BC%82%E5%B8%B8"><span class="nav-number">2.0.14.</span> <span class="nav-text">P23 中断与异常</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P24-Trap%E7%9A%84%E4%BB%A3%E7%90%86%E6%9C%BA%E5%88%B6"><span class="nav-number">2.0.15.</span> <span class="nav-text">P24 Trap的代理机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P25-Trap%E5%A4%84%E7%90%86%E4%B8%AD%E5%BC%82%E5%B8%B8%E3%80%81%E4%B8%AD%E6%96%AD%E5%8E%9F%E5%9B%A0%E5%88%97%E8%A1%A8"><span class="nav-number">2.0.16.</span> <span class="nav-text">P25 Trap处理中异常、中断原因列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P28-P31-%E4%B8%AD%E6%96%AD%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.17.</span> <span class="nav-text">P28~P31 中断相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P33-P34-%E5%AE%9A%E6%97%B6%E5%99%A8%E3%80%81%E6%80%A7%E8%83%BD%E8%AE%A1%E6%95%B0%E5%99%A8%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.18.</span> <span class="nav-text">P33~P34 定时器、性能计数器相关</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E3%80%81%E9%A1%B5%E8%A1%A8%E7%9B%B8%E5%85%B3%E7%9A%84%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E5%A4%8D%E4%B9%A0"><span class="nav-number">3.</span> <span class="nav-text">虚拟内存、页表相关的基础知识复习</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Myrfy</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">19</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="feed-link motion-element">
+    <a href="/atom.xml" rel="alternate">
+      <i class="fa fa-rss"></i>RSS
+    </a>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-nd.svg" alt="Creative Commons"></a>
+  </div>
+
+
+<img src="/images/qrcode_for_gh_d3fcb061f2e4_258.jpg" width="70%" height="70%"/>
+<div>微信公众号：极客幼稚园</div>
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Myrfy</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v6.3.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
+  </div>
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

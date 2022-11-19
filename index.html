@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -198,6 +198,95 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/" class="post-title-link" itemprop="url">rCore tutorial 实验入门指导(持续更新中)</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2022-11-18 15:00:10" itemprop="dateCreated datePublished" datetime="2022-11-18T15:00:10+08:00">2022-11-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2022-11-19 22:52:44" itemprop="dateModified" datetime="2022-11-19T22:52:44+08:00">2022-11-19</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>这篇博客是我受邀在清华大学<code>开源操作系统训练营</code>活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106%E3%80%82">https://os2edu.cn/course/106。</a></p>
+<p>本讲义的视频回放：</p>
+<ul>
+<li>第一次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3772">https://os2edu.cn/course/106/replay/3772</a></li>
+<li>第二次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3789">https://os2edu.cn/course/106/replay/3789</a></li>
+</ul>
+<p>清华大学<code>开源操作系统训练营</code>活动的相关链接如下：</p>
+<ul>
+<li>训练营活动github地址：<a target="_blank" rel="noopener" href="https://github.com/LearningOS/rust-based-os-comp2022">https://github.com/LearningOS/rust-based-os-comp2022</a></li>
+<li>清华大学开源操作系统社区：<a target="_blank" rel="noopener" href="https://os2edu.cn/">https://os2edu.cn</a></li>
+</ul>
+<p>阅读本讲义之前必须要在手头准备好的4个文档：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://riscvbook.com/chinese/RISC-V-Reader-Chinese-v2p1.pdf">《RISC-V 手册-一本开源指令集指南》</a></li>
+<li><a target="_blank" rel="noopener" href="https://content.riscv.org/wp-content/uploads/2018/05/riscv-privileged-BCN.v7-2.pdf">PPT for RISC-V特权指令级架构</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf">Unprivileged Spec</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf">Pivileged Spec</a></li>
+</ul>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2022/01/12/rust_procedural_macro/rust_proc_marco_workshop_guide-05/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -375,7 +464,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-12-05 12:12:25" itemprop="dateModified" datetime="2021-12-05T12:12:25+08:00">2021-12-05</time>
+                <time title="修改时间：2021-12-05 12:26:40" itemprop="dateModified" datetime="2021-12-05T12:26:40+08:00">2021-12-05</time>
               </span>
 
           
@@ -856,78 +945,6 @@
   
   
 
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2020/08/01/go-gc-tuning-practice-1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Myrfy">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="IdeaWand">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/08/01/go-gc-tuning-practice-1/" class="post-title-link" itemprop="url">Golang GC调优实战系列之一</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2020-08-01 22:32:29" itemprop="dateCreated datePublished" datetime="2020-08-01T22:32:29+08:00">2020-08-01</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2020-08-02 13:52:52" itemprop="dateModified" datetime="2020-08-02T13:52:52+08:00">2020-08-02</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>本文记录了笔者在工作中遇到一个真实场景，在堆内存超过16G,堆对象过亿情况下，以真实案例带领读者感受不同参数设置情况下Go的GC性能变化。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2020/08/01/go-gc-tuning-practice-1/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
   </div>
 
   
@@ -976,7 +993,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1021,7 +1038,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Myrfy</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v6.3.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0

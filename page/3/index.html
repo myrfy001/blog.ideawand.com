@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
+<meta name="generator" content="Hexo 6.3.0">
   <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
@@ -198,7 +198,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/06/10/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -212,7 +212,7 @@
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
           
-            <a href="/2017/06/10/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+            <a href="/2017/06/11/Character-combine-in-Unicode-and-a-related-bug-in-Python/" class="post-title-link" itemprop="url">Unicode中的【合字】现象以及Python中的相关Bug</a>
         </h1>
 
         <div class="post-meta">
@@ -222,8 +222,15 @@
               </span>
               <span class="post-meta-item-text">发表于</span>
 
-              <time title="创建时间：2017-06-10 18:01:35" itemprop="dateCreated datePublished" datetime="2017-06-10T18:01:35+08:00">2017-06-10</time>
+              <time title="创建时间：2017-06-11 22:46:46" itemprop="dateCreated datePublished" datetime="2017-06-11T22:46:46+08:00">2017-06-11</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-06-12 11:03:08" itemprop="dateModified" datetime="2017-06-12T11:03:08+08:00">2017-06-12</time>
+              </span>
 
           
 
@@ -236,19 +243,38 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+          <ul>
+<li>注意：本篇博客涉及字符编码及其显示问题，不同平台、浏览器、字体的显示效果可能不同。如无法正常显示，请尝试更换字体。</li>
+</ul>
+<p>最近在调试公司的一个服务，在使用正则表达式对抓取的网页进行分词处理时，采用了  <code>\w+</code>  作为分词规则。在印地语（Hindi，属于梵文）作为输入时出现了一个Badcase。</p>
+<p>输入内容为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">u&quot;बसपा, भाजपा में सांठगांठ, मुसलमान सपा के पक्ष में एकजुट: आजम खान”</span></span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+<p>经过匹配后重组的句子变为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">u&quot;बसप भ जप म स ठग ठ म सलम न सप क पक ष म एकज ट आजम ख न”</span></span><br></pre></td></tr></table></figure>
+<p>对比前后两段文字，可以看到经过正则匹配的文字丢失掉了一些细节， 比如某些符号上面的小黑点等。</p>
+<p>造成这个现象的原因是Unicode里面存在的 “合字” 机制（刷新了我对字符的理解），我们以字符<code>में</code>为例进行说明。</p>
+<p>在IPython下查看这个符号的组成：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">152</span>]: a = <span class="string">u&#x27;में&#x27;</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">153</span>]: a</span><br><span class="line">Out[<span class="number">153</span>]: <span class="string">u&#x27;\u092e\u0947\u0902&#x27;</span>	</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+<p>可以看到，我们看起来的一个“字符”实际上是由3个Unicode字符组成的，那么，我们分别看一下这三个Unicode字符分别是什么：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">154</span>]: <span class="built_in">print</span> a[<span class="number">0</span>]</span><br><span class="line">म</span><br><span class="line"></span><br><span class="line">In [<span class="number">155</span>]: <span class="built_in">print</span> a[<span class="number">1</span>]</span><br><span class="line"> े</span><br><span class="line"></span><br><span class="line">In [<span class="number">156</span>]: <span class="built_in">print</span> a[<span class="number">2</span>]</span><br><span class="line"> ं</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+<p>后两个字符，下面是一个虚线画出的圆圈占位符，这种符号可以和前面的字母组合为新的显示形式，组合后，原来的虚线圆环就不会再显示了。</p>
+<p>这种现象，个人感觉非常类似用汉字中的偏旁部首来描述一个汉字的感觉。<br>接下来，按照这个思路，我们可以自己造一个符号出来 ;)</p>
+<p>下面的这个示例，输出应该为1个字符A，并且字符A的上面有一个 从左上至右下的斜杠以及一个点 组成的上标。如果浏览器显示为两个字符或者三个字符，则说明显示问题。复制该段代码到Python中执行，在我的OSX操作系统上可以看到正确的输出。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">260</span>]: b = <span class="string">u&#x27;\u0041\u0947\u0902&#x27;</span></span><br><span class="line"></span><br><span class="line">In [<span class="number">261</span>]: <span class="built_in">print</span> b</span><br><span class="line">Aें</span><br></pre></td></tr></table></figure>
 
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/deployment.html">Deployment</a></p>
+<p>下面，问题来了，看看Python的自带正则表达式模块re是怎么处理这种字符的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">157</span>]: re.findall(<span class="string">r&#x27;\w+&#x27;</span>, a, re.UNICODE)</span><br><span class="line">Out[<span class="number">157</span>]: [<span class="string">u&#x27;\u092e’]</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到，re只把字根保留了下来，而其他部分被当做标点符号给去除掉了。</p>
+<p>解决方案是，使用第三方正则库regex</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">In [<span class="number">160</span>]: regex.findall(<span class="string">r&#x27;\w+&#x27;</span>, a, regex.UNICODE)</span><br><span class="line">Out[<span class="number">160</span>]: [<span class="string">u&#x27;\u092e\u0947\u0902&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+
+<p>最后一句话：使用Python的正则表达式库处理不常见语言要小心。</p>
+<p><a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license noopener" target="_blank" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.</p>
 
       
     </div>
@@ -337,6 +363,83 @@
   
   
 
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://blog.ideawand.com/1970/01/01/hello-world/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Myrfy">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="IdeaWand">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+            <a href="/1970/01/01/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：1970-01-01 08:00:00" itemprop="dateCreated datePublished" datetime="1970-01-01T08:00:00+08:00">1970-01-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2017-06-10 18:01:36" itemprop="dateModified" datetime="2017-06-10T18:01:36+08:00">2017-06-10</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
+
+<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/deployment.html">Deployment</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
   </div>
 
   
@@ -385,7 +488,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">23</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -430,7 +533,7 @@
   </span>
   <span class="author" itemprop="copyrightHolder">Myrfy</span>
 </div>
-  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v5.4.0
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v6.3.0
   </div>
   <span class="post-meta-divider">|</span>
   <div class="theme-info">主题 – <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> v7.5.0
