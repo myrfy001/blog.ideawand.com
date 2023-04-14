@@ -53,13 +53,13 @@
 
   <meta name="description" content="这篇博客是我受邀在清华大学开源操作系统训练营活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106。 本讲义的视频回放：  第一次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106&#x2F;replay&#x2F;3772 第二次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;1">
 <meta property="og:type" content="article">
-<meta property="og:title" content="rCore tutorial 实验入门指导(持续更新中)">
+<meta property="og:title" content="rCore tutorial 实验入门指导（2022年秋季）">
 <meta property="og:url" content="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/index.html">
 <meta property="og:site_name" content="IdeaWand">
 <meta property="og:description" content="这篇博客是我受邀在清华大学开源操作系统训练营活动中讲授相关入门知识的讲义。本讲义对应的视频课程可以在清华大学开源操作系统社区在线课程中找到，访问链接为：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106。 本讲义的视频回放：  第一次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;106&#x2F;replay&#x2F;3772 第二次课程回放：https:&#x2F;&#x2F;os2edu.cn&#x2F;course&#x2F;1">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-11-18T07:00:10.000Z">
-<meta property="article:modified_time" content="2022-11-19T14:52:44.378Z">
+<meta property="article:modified_time" content="2023-04-14T03:04:18.459Z">
 <meta property="article:author" content="Myrfy">
 <meta name="twitter:card" content="summary">
 
@@ -78,7 +78,7 @@
 </script>
 
 <script data-ad-client="ca-pub-6889177530753831" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  <title>rCore tutorial 实验入门指导(持续更新中) | IdeaWand</title>
+  <title>rCore tutorial 实验入门指导（2022年秋季） | IdeaWand</title>
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-109133538-1"></script>
     <script>
@@ -215,7 +215,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          rCore tutorial 实验入门指导(持续更新中)
+          rCore tutorial 实验入门指导（2022年秋季）
         </h1>
 
         <div class="post-meta">
@@ -232,7 +232,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2022-11-19 22:52:44" itemprop="dateModified" datetime="2022-11-19T22:52:44+08:00">2022-11-19</time>
+                <time title="修改时间：2023-04-14 11:04:18" itemprop="dateModified" datetime="2023-04-14T11:04:18+08:00">2023-04-14</time>
               </span>
 
           
@@ -250,7 +250,15 @@
 <p>本讲义的视频回放：</p>
 <ul>
 <li>第一次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3772">https://os2edu.cn/course/106/replay/3772</a></li>
-<li>第二次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3789">https://os2edu.cn/course/106/replay/3789</a></li>
+<li>第二次课程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3789">https://os2edu.cn/course/106/replay/3789</a><ul>
+<li>第二次课程补录的图解地址翻译过程回放：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3802">https://os2edu.cn/course/106/replay/3802</a></li>
+</ul>
+</li>
+<li>第三次课程回放：<ul>
+<li>上：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3813">https://os2edu.cn/course/106/replay/3813</a></li>
+<li>下：<a target="_blank" rel="noopener" href="https://os2edu.cn/course/106/replay/3814">https://os2edu.cn/course/106/replay/3814</a></li>
+</ul>
+</li>
 </ul>
 <p>清华大学<code>开源操作系统训练营</code>活动的相关链接如下：</p>
 <ul>
@@ -548,6 +556,130 @@
 <p>第二个问题，页表如何帮助实现COW。答案其实也不难，当进行fork的时候，操作系统会把父进程的页表项都设置为只读权限，并且把父进程的页表项复制一份给子进程，这样子进程与父进程其实共享的都是同一块物理内存。（两个进程各自的VA映射到同一块PA上），这样，我们就不用去复制整个父进程的内存地址给到子进程了。无论父进程还是子进程，只要不进行写操作，那就什么事都没有，而一旦进行写操作，因为现在父子进程的页面都改为只读了，所以会触发一个异常，从U态陷入S态，操作系统这个时候接管过来执行权，根据异常的原因发现这是要修改共享的内存，于是就可以重新分配一个页给到子进程，然后把子进程对应的页表项指向新分配的这块内存空间，然后就可以把这块内存在父子进程中的权限都改为可读可写，然后再返回用户态。我们之前也提到过中断和异常的区别，异常是有确定的指令触发的，比如这里的异常就是尝试修改共享内存的那条指令导致的，在trap处理结束后，会重新跳回到导致异常的指令上去，也就是重试这个指令。这次重试的时候，因为已经有权限访问这块内存了，所以从应用程序的视角来看，就像什么都没发生过一样。通过这种方式，我们就实现了COW，以4kB为最小单位，用多少内存复制多少内存。</p>
 <p>第三个问题，mmap的实现，也是通过设置页表权限，引发异常，然后做一番操作。比如用户要把硬盘上的某个文件的一段映射到内存的某个地址区间里面去，那么就先在页表项里把这一段VA对应的内存映射到一块物理内存上，然后把硬盘文件中对应的数据加载到物理内存对应的区域里面去。如果要映射的文件很小，那是可以一次性把磁盘文件都读到内存里面去的，但是如果映射的文件体积很大，甚至硬盘上文件的大小可能超过物理内存的大小，这个时候，我们可以先在VA空间里把整个文件对应的内存地址都先分配好页表，但是不指向具体的物理内存，同时设置读写权限，当程序访问内存的时候，同样是陷入，然后操作系统根据读写的地址把硬盘文件对应的区块加载到内存里面，然后再修改页表，这样就可以实现通过读取内存的形式来读取文件了。那么如果是写内存呢？如果你对文件映射到的内存区间有写操作，对应页表项的D标志位会被置1，操作系统中会有一个后台线程定期检测哪些页表是脏的，再把这些脏的页刷回到磁盘上去。</p>
 <p>关于内存映射最后说一点，关于TLB的，也就是页表缓存的内容，这个可以参考《开源手册》P109最后一段，TLB是MMU里面的一块硬件子电路，一个复杂的TLB实现可能包含用硬件电路实现的哈希表、LRU等算法。</p>
+<h2 id="RISC-V的指令集-以及-《RISC-V-手册-一本开源指令集指南》相关内容"><a href="#RISC-V的指令集-以及-《RISC-V-手册-一本开源指令集指南》相关内容" class="headerlink" title="RISC-V的指令集 以及 《RISC-V 手册-一本开源指令集指南》相关内容"></a>RISC-V的指令集 以及 《RISC-V 手册-一本开源指令集指南》相关内容</h2><p>这一部分我们主要参照《RISC-V 手册-一本开源指令集指南》这本电子书来讲解。</p>
+<h4 id="可以查找汇编指令说明的各种资源列表"><a href="#可以查找汇编指令说明的各种资源列表" class="headerlink" title="可以查找汇编指令说明的各种资源列表"></a>可以查找汇编指令说明的各种资源列表</h4><p>这本书的开头有两张RISC-V汇编指令速查表，既然提到了汇编指令，那么就在这里一次性汇总一下可以查找汇编指令说明的地方：</p>
+<ul>
+<li>《RISC-V 手册-一本开源指令集指南》的前两页，特点是比较全面，缺点是没有详细的解释。适合于在对指令集有了一个初步了解之后，放在手边的速查卡片。想不起来了看一眼</li>
+<li>《RISC-V 手册-一本开源指令集指南》的附录部分，特点是非常全面，有很细致的说明，而且有中文翻译，缺点是页数很多，查起来不太方便。</li>
+<li>《ISA Specification Volume 1, Unprivileged Spec》 以及 《ISA Specification Volume 2, Privileged Spec》 优点是最权威最细致的官方文档。缺点就是比较晦涩难懂。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/jameslzhu/riscv-card/blob/master/riscv-card.pdf">《Riscv-Card》</a>，一个类似于速查卡片的文档，优点是有各个指令的二进制表示，如果想粗略了解每一条指令的机器码，可以阅读一下这个文档。但缺点是里面的指令并不是很全，例如和CSR操作相关的指令就没有列出来</li>
+</ul>
+<h4 id="第一章，RISC-V概述"><a href="#第一章，RISC-V概述" class="headerlink" title="第一章，RISC-V概述"></a>第一章，RISC-V概述</h4><p>本书的第一章从历史发展、生产工艺以及和其他架构对比等诸多方面，介绍了RISC-V的特点以及与其他处理器指令级架构的区别。可以作为睡前读物进行阅读，与完成实验的关系不太大，但是对于后续更深入了解RISC-V还是挺有用的。</p>
+<h4 id="第二章，RV32I：RISC-V-基础整数指令集"><a href="#第二章，RV32I：RISC-V-基础整数指令集" class="headerlink" title="第二章，RV32I：RISC-V 基础整数指令集"></a>第二章，RV32I：RISC-V 基础整数指令集</h4><p>这里先看一下标题，什么是RV32I？ 这里的RV32表示的是该处理器的位宽是32位的，比较好理解，和他相对的还有RV64。</p>
+<p>那么后面的I是什么意思呢？ 这个I表示一个子指令集。我们之前提到过RISC-V的模块化做的很好，这也是一个体现。 RISC-V里面最精简的处理器可以只实现I指令集。而高端的处理器可以实现若干其他的扩展指令集。</p>
+<p>RISC-V中的指令集可以分为基础指令集和扩展指令集两个大类，而每个大类里面又可以分成多个小类。</p>
+<p>目前已经被官方批准的基础指令集只有I这个指令集，而被批准的扩展指令集有M、A、F、D、Q、C、Zicsr、Zifencei等，具体的内容可以阅读Unprivileged Spec的Perface章节，以及后续各个章节。</p>
+<p>所以说，一个支持整数、硬件乘法、32位浮点数、原子操作的指令集，可以用类似RV64IMFA这样的形式来表达。</p>
+<p>这里有一个小的知识点：由于包含IMAFD这几个扩展的指令集过于常见，因此给IFAFD这个组个起了一个新的代号G（General），所以RV32G &#x3D; RV32IMAFD</p>
+<p>再看P24下方的示意图，列出了RISC-V目前所有的指令格式。也就是说在目前的规范中，任何一条指令，一定落在这6种格式之中。</p>
+<p>可以看到表中的rd、rs1、rs2这几个位域，他们对应的是3个不同的通用寄存器编号。因为这几个位域的宽度都是5bit，所以也可以推断出RISC-V架构中有2^5&#x3D;32个通用寄存器可供使用。</p>
+<p>第25页列出了一些常用的汇编指令及其对应的指令码格式。看到这里，可能有些同学会开始紧张，感觉汇编语言，指令集，机器代码这些都是很高深的东西。但是不必惊慌，首先看懂汇编语言的语法其实不难，难就难在它很不直观，读起来别扭，如果手边准备好纸笔，把每一步汇编指令的执行都写写画画，记录下每一步操作对寄存器、内存的影响，一行一行慢慢读，就会发现其实挺容易的。另外，RISC-V的汇编指令其实很少，就几十条的样子，相比于ARM架构上百条，x86的上千条机器指令来说，RISC-V的汇编语言是非常适合作为入门的。我们在这里举一个最简单的例子来帮助大家了解一下汇编语言指令是怎么变成机器指令码的，这个大家之前可能感觉很神秘高深的概念。</p>
+<p>例如我们有这样的一段Rust代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="variable">a</span> = b + c;</span><br></pre></td></tr></table></figure>
+<p>假设b、c两个变量也是一个整型数，并且在执行这条加法指令之前，b已经存放在了5号寄存器中，c存放在了6号寄存器中，并且假设编译器将上面的加法语句翻译成了下面这样一行汇编代码:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">add x7, x5, x6</span><br></pre></td></tr></table></figure>
+
+<p>通过查阅书中25页或者116页的表格，可以找到一条名为<code>add</code>的指令，并可以看到他是一个R类型的指令。按照R类型的格式，我们应该可以得到这样的一个二进制串：</p>
+<table>
+<thead>
+<tr>
+<th>funct7</th>
+<th>rs2</th>
+<th>rs1</th>
+<th>funct3</th>
+<th>rd</th>
+<th>opcode</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0000000</td>
+<td>00110</td>
+<td>00101</td>
+<td>000</td>
+<td>00111</td>
+<td>0110011</td>
+</tr>
+</tbody></table>
+<p>我们再把这个二进制串按照小端序的方式转换成一个十六进制表示是的数字，可以得到<code>0x006283B3</code></p>
+<p>我们再打开一个二进制文本编辑器，把这4个字节的数据写进去，注意按照小端顺序写入，所以写入的第一个字节应该是0xB3,假设我们写好的这个二进制文件名叫<code>tmp.bin</code>,那么执行以下命令并观察输出：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">riscv-none-embed-objdump.exe -D -bbinary -mriscv tmp.bin</span><br><span class="line"></span><br><span class="line">t.t:     file format binary</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Disassembly of section .data:</span><br><span class="line"></span><br><span class="line">0000000000000000 &lt;.data&gt;:</span><br><span class="line">   0:   006283b3                add     t2,t0,t1</span><br></pre></td></tr></table></figure>
+
+<p>通过命令的输出结果，可以证明我们作为人肉汇编器，所生成的机器指令是正确的。但是问题又来了，这里寄存器的名字怎么从x7、x5、x6变成t2、t0、t1了呢?</p>
+<p>这里可以参考书中第28页的表格（在第42页还有一个类似的更详细的表）。虽然RISC-V中定义了32个通用寄存器，可以用标号x0~x31来表示，但是在RISCV调用规范中，对这32个通用寄存器各自的主要用途做了一些规范。</p>
+<p>什么是调用规范呢？就是通常我们写的代码都要设计到函数调用，既可能是被别人调用，也可能是调用别人，而且别人的代码不是你写的，为了大家能够互相调用，就要遵循一定的规范，这就是调用规范。当然，如果你非要抬杠说一个程序，从头到尾每一个指令都是我自己用汇编写的，那这种情况下32个寄存器随你怎么用都行。</p>
+<p>特别需要注意一下，PC寄存器并不在这32个通用寄存器之中。</p>
+<p>所以，t2、t0、t1就是x7、x5、x6的别名。接下来我们详细看一下这32个寄存器，我们先跳到42页。</p>
+<ul>
+<li>第一个寄存器x0就非常特殊，它就叫做0寄存器，从它里面读出来的数据永远是0，而往里面写入的所有数据都会被忽略掉（有点像linux下面的&#x2F;dev&#x2F;null）</li>
+<li>x1用于保存函数调用的返回地址，类似于ARM里面的lr寄存器。</li>
+<li>x2是栈指针</li>
+<li>x3~x4是两个用作指针的寄存器，具体怎么样我还没有特别深入去研究</li>
+<li>x5~x7是临时寄存器，顾名思义，干什么都行</li>
+<li>x8~x9保存寄存器，意味由被调用者保存的寄存器，后面再说</li>
+<li>x10~x17函数参数寄存器，用于函数调用时传参。其中x10和x11在函数返回的时候用于传递返回值。<ul>
+<li>返回值给了两个寄存器，一种常用的操作时一个寄存器用来返回正常结果，另一个寄存器用来返回异常代码，这种设计可以很好的和Rust中常用的<code>Result&lt;T,E&gt;</code>对应起来</li>
+</ul>
+</li>
+<li>x18~x27保存寄存器，和上面的一样</li>
+<li>x28~x31临时寄存器，和上面的一样</li>
+</ul>
+<p>再来看一下最后一列，说明了寄存器在函数调用过程中应该被调用者还是被调用者保存。几个注意点：</p>
+<ul>
+<li>在调用中保存寄存器，就是把寄存器的值压到栈上，相当于要进行访存操作，如果每次调用都把32个寄存器都保存一遍太浪费，所以原则是能少保存就少保存。</li>
+<li>所有临时寄存器（t开头的），都由<code>调用者</code>自行决定是否保存</li>
+<li>所有的参数寄存器（a开头的），都由<code>调用者</code>自行决定是否保存</li>
+<li>所有保存寄存器（s开头的，包括sp），都由<code>被调用者</code>自行决定是都要保存</li>
+</ul>
+<p>随后的26~33页介绍了I指令集扩展里面的一些指令的用法，写的很详细，这里就直接跳过了。需要说明的一点是，这本《开源指令集手册》里面有很多篇幅是在对比RISC-V和其他处理器指令集架构的区别，如果想全部看懂是需要很宽的知识面的，所以这里有一些看不懂也不重要。大家完成操作系统实验其实只需要这本书中的一小部分知识，我们需要写的汇编代码也很少。与其一次性看完所有的指令，不如遇到了哪一条再来查哪一条。</p>
+<p>P36~P40有大量不同架构汇编代码的对比，仅供特别有兴趣的同学可以看看。这里只介绍一个RISC-V语言汇编的语法，看P36，有这样一行代码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lw a7, -4(a2)</span><br></pre></td></tr></table></figure>
+<p>这里<code>-4(a2)</code>的写法是寄存器相对寻址的写法，意思是把a2寄存器里面的数取出来，和括号外面的数值相加，将加出来的结果作为一个内存地址，去这个内存地址上读取数据，把读取到的结果存到a7寄存器里面去。<br>可以翻到《开源指令集手册》的P151，看一下lw命令的格式。在这里：</p>
+<ul>
+<li>offset 是 -4，用12位补码表示，应该是<code>0b111111111100</code></li>
+<li>rs1在这里是a2, a2按照编号来说是x12, 12转成5bit的二进制是<code>0b01100</code></li>
+<li>rd在这里是a7，a7按照编号来说是x17, 17转成5bit的二进制是<code>0b10001</code></li>
+</ul>
+<p>按照表格里面的指令格式，我们可以拼出来这样的一个二进制序列：</p>
+<p><code>1111_1111_1100_0110_0010_1000_1000_0011</code></p>
+<p>翻译成16进制，就是 <code>0xFFC62883</code>，这个值正好与<code>lw a7, -4(a2)</code>这段汇编前面的机器码一样。在这里又演示了一遍人肉汇编的过程。通过上述的流程，希望大家已经学会了如何自己查找指令的说明。碰到不知道的指令，就能够自己去查了。</p>
+<p>接下来的第三章，汇编语言，前面已经多多少少接触到一些了，所以希望大家不再感到慌张了。</p>
+<p>第三章会讲到汇编器和链接器相关的内容，从P41的图3.1可以先了解一下汇编器和链接器在整个编译过程中所处的位置。虽然我们用的是Rust而不是C，但基础原理差不多。</p>
+<p>我们来看P42最下面一块，前面我们提到过，在函数调用的过程中，要遵循一定的规范，每个寄存器的用途都有相关的标准可以参考。这里就给出了一小段汇编代码，他就是在函数调用的过程中，由编译器生成的一小段汇编代码，其中调用一个函数之后，就会先通过一条<code>addi sp, sp, -framesize</code>这样的指令来调整栈指针。这里的<code>framesize</code>指的是这个函数执行过程中需要使用的栈空间的大小，前面的负号是因为RISC-V的栈是向下生长的。这里值得注意的是<code>framesize</code>是一个立即数，立即数就是硬编码在机器指令里面的一个数对吧，所以这个<code>framesize</code>必须在编译程序的过程中就提前计算出来，是一个永远都不会变的常量。之所以要提这个，和学习指令集架构没啥关系，而是希望和rust编程语言里面的DST概念相结合一下，帮助大家更好的理解为什么Rust要求所有栈上的变量，在编译的时候都必须有明确的大小，对于那些DST类型，为什么要放在Box或者&amp;这样的指针之后使它们变成一个由确定大小的变量。</p>
+<p>接下来第43页讲汇编器，通过我们前面人肉汇编的过程，其实大家应该已经知道了，写一个最基础的汇编器其实很容易，只要把每一条指令按照架构规范给出的格式，拼接出一条一条的二进制序列就可以了。这是汇编器最核心最基础的工作。</p>
+<p>但是人总想懒一点，能让机器自动做一些事情，那就尽量让机器做，所以真实世界中的汇编器具备的功能总是会更多一点，其中很重要的功能就是支持<code>伪指令</code>。 例如有这么一条汇编语句：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">call offset</span><br></pre></td></tr></table></figure>
+<p>其中offset是一个地址，这个指令call指令，你在riscv的指令集手册里面是找不到他对应的二进制编码的，因为他就是一条伪指令，汇编器可以把一条伪指令翻译成另外一条或多条真正的机器指令。之所以要这么做，就是因为有一些常见的指令组合，或者常见的写法，他们太常用了，所以干脆给他们提供一些简易写法，这些简易写法就是伪指令，例如上面的call伪指令，经过汇编器翻译以后，实际会翻译成下面两条指令所对应的机器码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">auipc x1, offset[31:12]</span><br><span class="line">jalr x1, x1, offset[11:0]</span><br></pre></td></tr></table></figure>
+
+<p>除了翻译伪指令以外，汇编器还有一个功能就是可以根据一些称之为<code>汇编指示符</code>的指示，改变汇编器的一些行为，这个部分展开说的话会很多。所以接下来的时间，我会分两步来做，首先是给出大家一些相关的学习资料，感兴趣的同学可以在课后深入自学。第二步是尽量简要的给大家讲一下，但是不保证讲的很透彻，因为涉及到的东西真的太多，如果感觉还是没听明白，还是要自学一下相关的材料。</p>
+<p>首先是参考资料：</p>
+<ul>
+<li>参考资料1：rCore-Tutorial-Book-v3中“程序内存布局与编译流程”小节：<a target="_blank" rel="noopener" href="http://rcore-os.cn/rCore-Tutorial-Book-v3/chapter1/3first-instruction-in-kernel1.html">http://rcore-os.cn/rCore-Tutorial-Book-v3/chapter1/3first-instruction-in-kernel1.html</a></li>
+<li>参考资料2：我在之前一段时间只做过一个介绍链接脚本工作原理以及连接脚本编写的视频，一共是4段视频，有兴趣的同学可以深入学习一下：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1gL411A7dX">https://www.bilibili.com/video/BV1gL411A7dX</a></li>
+</ul>
+<p>以下内容结合《开源指令集手册》P45-P47的C和汇编代码讲解。</p>
+<ul>
+<li>Section是什么，<code>.text</code>, <code>.data</code>, <code>.bss</code>分别是什么<ul>
+<li><code>.text</code>、<code>.section</code> 指示符的用法</li>
+</ul>
+</li>
+<li>汇编代码中除了可以写指令，也可以存放数据<ul>
+<li><code>.string</code> 之类的用法</li>
+</ul>
+</li>
+<li>生成的ELF文件和我们上面手工汇编生成的.bin文件有什么区别？里面多存储了哪些东西？<ul>
+<li>什么是符号表<ul>
+<li><code>.global</code>的使用</li>
+<li>用多个<code>.string</code>连续使用的例子，介绍符号表如何帮助存储字符串</li>
+<li>符号表是程序运行必须的吗？</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>链接器是干啥的</li>
+</ul>
+<p>到此为止，和指令集有关的基础知识已经介绍完了。《开源指令集手册》的第4~9章分别介绍了其他的扩展指令集，这些指令集对于我们做实验而言意义不大，如果有想做编译器的同学倒是可以好好读一读。</p>
+<p>随后的第10章里面介绍的指令集，是我们操作系统需要经常使用的，但是在前面的课程中已经介绍过，此处不再继续介绍。</p>
 
     </div>
 
@@ -569,7 +701,7 @@
   </li>
   <li class="post-copyright-link">
     <strong>本文链接：</strong>
-    <a href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/" title="rCore tutorial 实验入门指导(持续更新中)">http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/</a>
+    <a href="http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/" title="rCore tutorial 实验入门指导（2022年秋季）">http://blog.ideawand.com/2022/11/18/rcore_tutorial/os-camp-2022-winter-riscv/</a>
   </li>
   <li class="post-copyright-license">
     <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/null" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-ND</a> 许可协议。转载请注明出处！
@@ -630,7 +762,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFRISC-V"><span class="nav-number">1.</span> <span class="nav-text">什么是RISC-V</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84PPT-%E3%80%8ARISC-V-%E6%89%8B%E5%86%8C-%E4%B8%80%E6%9C%AC%E5%BC%80%E6%BA%90%E6%8C%87%E4%BB%A4%E9%9B%86%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%AC%E5%8D%81%E7%AB%A0"><span class="nav-number">2.</span> <span class="nav-text">特权级架构PPT + 《RISC-V 手册 一本开源指令集指南》第十章</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#P2%EF%BC%8C%E7%9B%AE%E5%BD%95"><span class="nav-number">2.0.1.</span> <span class="nav-text">P2，目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P3%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84"><span class="nav-number">2.0.2.</span> <span class="nav-text">P3，为什么需要特权级架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P4%EF%BC%8C%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84%E7%9A%84%E5%B1%82%E6%AC%A1%E5%88%92%E5%88%86"><span class="nav-number">2.0.3.</span> <span class="nav-text">P4，特权级架构的层次划分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P6%EF%BC%8CRISC-V%E7%9A%84%E5%B9%B3%E5%8F%B0%E9%85%8D%E7%BD%AE%E6%A6%82%E5%BF%B5%EF%BC%9A%E4%B8%80%E4%BA%9B%E5%B8%B8%E8%A7%81%E9%85%8D%E7%BD%AE"><span class="nav-number">2.0.4.</span> <span class="nav-text">P6，RISC-V的平台配置概念：一些常见配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P8-%E7%89%B9%E6%9D%83%E7%BA%A7%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.0.5.</span> <span class="nav-text">P8 特权级模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P10-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84%E6%8C%87%E4%BB%A4"><span class="nav-number">2.0.6.</span> <span class="nav-text">P10, 各特权态的指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P11-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84CSR"><span class="nav-number">2.0.7.</span> <span class="nav-text">P11 各特权态的CSR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P12-CSR%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">2.0.8.</span> <span class="nav-text">P12 CSR的地址空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P13-CSR%E5%8F%8A%E5%85%B6%E5%88%86%E7%B1%BB"><span class="nav-number">2.0.9.</span> <span class="nav-text">P13 CSR及其分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P15-%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80%E7%BF%BB%E8%AF%91%EF%BC%9A%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98"><span class="nav-number">2.0.10.</span> <span class="nav-text">P15 内存地址翻译：虚拟内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P16-RISC-V-%E9%A1%B5%E8%A1%A8%E9%A1%B9"><span class="nav-number">2.0.11.</span> <span class="nav-text">P16 RISC-V 页表项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P17-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.0.12.</span> <span class="nav-text">P17 内存屏障</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P19-P21-%E5%86%85%E5%AD%98%E4%BF%9D%E6%8A%A4%E7%9B%B8%E5%85%B3%E7%9A%84%E5%86%85%E5%AE%B9"><span class="nav-number">2.0.13.</span> <span class="nav-text">P19~P21 内存保护相关的内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P23-%E4%B8%AD%E6%96%AD%E4%B8%8E%E5%BC%82%E5%B8%B8"><span class="nav-number">2.0.14.</span> <span class="nav-text">P23 中断与异常</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P24-Trap%E7%9A%84%E4%BB%A3%E7%90%86%E6%9C%BA%E5%88%B6"><span class="nav-number">2.0.15.</span> <span class="nav-text">P24 Trap的代理机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P25-Trap%E5%A4%84%E7%90%86%E4%B8%AD%E5%BC%82%E5%B8%B8%E3%80%81%E4%B8%AD%E6%96%AD%E5%8E%9F%E5%9B%A0%E5%88%97%E8%A1%A8"><span class="nav-number">2.0.16.</span> <span class="nav-text">P25 Trap处理中异常、中断原因列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P28-P31-%E4%B8%AD%E6%96%AD%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.17.</span> <span class="nav-text">P28~P31 中断相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P33-P34-%E5%AE%9A%E6%97%B6%E5%99%A8%E3%80%81%E6%80%A7%E8%83%BD%E8%AE%A1%E6%95%B0%E5%99%A8%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.18.</span> <span class="nav-text">P33~P34 定时器、性能计数器相关</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E3%80%81%E9%A1%B5%E8%A1%A8%E7%9B%B8%E5%85%B3%E7%9A%84%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E5%A4%8D%E4%B9%A0"><span class="nav-number">3.</span> <span class="nav-text">虚拟内存、页表相关的基础知识复习</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFRISC-V"><span class="nav-number">1.</span> <span class="nav-text">什么是RISC-V</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84PPT-%E3%80%8ARISC-V-%E6%89%8B%E5%86%8C-%E4%B8%80%E6%9C%AC%E5%BC%80%E6%BA%90%E6%8C%87%E4%BB%A4%E9%9B%86%E6%8C%87%E5%8D%97%E3%80%8B%E7%AC%AC%E5%8D%81%E7%AB%A0"><span class="nav-number">2.</span> <span class="nav-text">特权级架构PPT + 《RISC-V 手册 一本开源指令集指南》第十章</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#P2%EF%BC%8C%E7%9B%AE%E5%BD%95"><span class="nav-number">2.0.1.</span> <span class="nav-text">P2，目录</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P3%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84"><span class="nav-number">2.0.2.</span> <span class="nav-text">P3，为什么需要特权级架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P4%EF%BC%8C%E7%89%B9%E6%9D%83%E7%BA%A7%E6%9E%B6%E6%9E%84%E7%9A%84%E5%B1%82%E6%AC%A1%E5%88%92%E5%88%86"><span class="nav-number">2.0.3.</span> <span class="nav-text">P4，特权级架构的层次划分</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P6%EF%BC%8CRISC-V%E7%9A%84%E5%B9%B3%E5%8F%B0%E9%85%8D%E7%BD%AE%E6%A6%82%E5%BF%B5%EF%BC%9A%E4%B8%80%E4%BA%9B%E5%B8%B8%E8%A7%81%E9%85%8D%E7%BD%AE"><span class="nav-number">2.0.4.</span> <span class="nav-text">P6，RISC-V的平台配置概念：一些常见配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P8-%E7%89%B9%E6%9D%83%E7%BA%A7%E6%A8%A1%E5%BC%8F"><span class="nav-number">2.0.5.</span> <span class="nav-text">P8 特权级模式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P10-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84%E6%8C%87%E4%BB%A4"><span class="nav-number">2.0.6.</span> <span class="nav-text">P10, 各特权态的指令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P11-%E5%90%84%E7%89%B9%E6%9D%83%E6%80%81%E7%9A%84CSR"><span class="nav-number">2.0.7.</span> <span class="nav-text">P11 各特权态的CSR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P12-CSR%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4"><span class="nav-number">2.0.8.</span> <span class="nav-text">P12 CSR的地址空间</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P13-CSR%E5%8F%8A%E5%85%B6%E5%88%86%E7%B1%BB"><span class="nav-number">2.0.9.</span> <span class="nav-text">P13 CSR及其分类</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P15-%E5%86%85%E5%AD%98%E5%9C%B0%E5%9D%80%E7%BF%BB%E8%AF%91%EF%BC%9A%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98"><span class="nav-number">2.0.10.</span> <span class="nav-text">P15 内存地址翻译：虚拟内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P16-RISC-V-%E9%A1%B5%E8%A1%A8%E9%A1%B9"><span class="nav-number">2.0.11.</span> <span class="nav-text">P16 RISC-V 页表项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P17-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="nav-number">2.0.12.</span> <span class="nav-text">P17 内存屏障</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P19-P21-%E5%86%85%E5%AD%98%E4%BF%9D%E6%8A%A4%E7%9B%B8%E5%85%B3%E7%9A%84%E5%86%85%E5%AE%B9"><span class="nav-number">2.0.13.</span> <span class="nav-text">P19~P21 内存保护相关的内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P23-%E4%B8%AD%E6%96%AD%E4%B8%8E%E5%BC%82%E5%B8%B8"><span class="nav-number">2.0.14.</span> <span class="nav-text">P23 中断与异常</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P24-Trap%E7%9A%84%E4%BB%A3%E7%90%86%E6%9C%BA%E5%88%B6"><span class="nav-number">2.0.15.</span> <span class="nav-text">P24 Trap的代理机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P25-Trap%E5%A4%84%E7%90%86%E4%B8%AD%E5%BC%82%E5%B8%B8%E3%80%81%E4%B8%AD%E6%96%AD%E5%8E%9F%E5%9B%A0%E5%88%97%E8%A1%A8"><span class="nav-number">2.0.16.</span> <span class="nav-text">P25 Trap处理中异常、中断原因列表</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P28-P31-%E4%B8%AD%E6%96%AD%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.17.</span> <span class="nav-text">P28~P31 中断相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#P33-P34-%E5%AE%9A%E6%97%B6%E5%99%A8%E3%80%81%E6%80%A7%E8%83%BD%E8%AE%A1%E6%95%B0%E5%99%A8%E7%9B%B8%E5%85%B3"><span class="nav-number">2.0.18.</span> <span class="nav-text">P33~P34 定时器、性能计数器相关</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%99%9A%E6%8B%9F%E5%86%85%E5%AD%98%E3%80%81%E9%A1%B5%E8%A1%A8%E7%9B%B8%E5%85%B3%E7%9A%84%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86%E5%A4%8D%E4%B9%A0"><span class="nav-number">3.</span> <span class="nav-text">虚拟内存、页表相关的基础知识复习</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#RISC-V%E7%9A%84%E6%8C%87%E4%BB%A4%E9%9B%86-%E4%BB%A5%E5%8F%8A-%E3%80%8ARISC-V-%E6%89%8B%E5%86%8C-%E4%B8%80%E6%9C%AC%E5%BC%80%E6%BA%90%E6%8C%87%E4%BB%A4%E9%9B%86%E6%8C%87%E5%8D%97%E3%80%8B%E7%9B%B8%E5%85%B3%E5%86%85%E5%AE%B9"><span class="nav-number">3.1.</span> <span class="nav-text">RISC-V的指令集 以及 《RISC-V 手册-一本开源指令集指南》相关内容</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%AF%E4%BB%A5%E6%9F%A5%E6%89%BE%E6%B1%87%E7%BC%96%E6%8C%87%E4%BB%A4%E8%AF%B4%E6%98%8E%E7%9A%84%E5%90%84%E7%A7%8D%E8%B5%84%E6%BA%90%E5%88%97%E8%A1%A8"><span class="nav-number">3.1.0.1.</span> <span class="nav-text">可以查找汇编指令说明的各种资源列表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0%EF%BC%8CRISC-V%E6%A6%82%E8%BF%B0"><span class="nav-number">3.1.0.2.</span> <span class="nav-text">第一章，RISC-V概述</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%8CRV32I%EF%BC%9ARISC-V-%E5%9F%BA%E7%A1%80%E6%95%B4%E6%95%B0%E6%8C%87%E4%BB%A4%E9%9B%86"><span class="nav-number">3.1.0.3.</span> <span class="nav-text">第二章，RV32I：RISC-V 基础整数指令集</span></a></li></ol></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -683,7 +815,7 @@
 <div class="copyright">
   
   &copy; 
-  <span itemprop="copyrightYear">2022</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-user"></i>
   </span>
